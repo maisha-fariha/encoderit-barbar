@@ -60,51 +60,53 @@ class _LoginPageState extends State<LoginPage> {
                 if (usePhoneLayout) {
                   return SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    child: SizedBox(
-                      height: constraints.maxHeight,
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 28),
-                          SizedBox(
-                            height: 58,
-                            child: ClipRect(
-                              child: Align(
-                                alignment: const Alignment(0, 0.21),
-                                heightFactor: 0.21,
-                                child: Image.asset(
-                                  'assets/images/app_icon.png',
-                                  filterQuality: FilterQuality.high,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 28),
+                            SizedBox(
+                              height: 58,
+                              child: ClipRect(
+                                child: Align(
+                                  alignment: const Alignment(0, 0.21),
+                                  heightFactor: 0.21,
+                                  child: Image.asset(
+                                    'assets/images/app_icon.png',
+                                    filterQuality: FilterQuality.high,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            'Accedi al tuo account',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              height: 1.08,
+                            const SizedBox(height: 18),
+                            Text(
+                              'Accedi al tuo account',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                height: 1.08,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Bentornato! Inserisci i tuoi dati.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              color: Colors.white.withValues(alpha: 0.50),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
+                            const SizedBox(height: 10),
+                            Text(
+                              'Bentornato! Inserisci i tuoi dati.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.white.withValues(alpha: 0.50),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
+                            const Spacer(),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
                                 _GlassTextField(
                                   controller: _email,
                                   hintText: 'yourmail@mail.com',
@@ -189,10 +191,11 @@ class _LoginPageState extends State<LoginPage> {
                                   ],
                                 ),
                                 SizedBox(height: 10 + pad.bottom),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );

@@ -69,24 +69,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
+    final size = MediaQuery.sizeOf(context);
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = size.width >= 600;
+            final buttonMaxWidth = isWide ? 520.0 : double.infinity;
+            final header = Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               child: Row(
                 children: [
                   const Spacer(),
                   GestureDetector(
-                    onTap: () {},
+                    onTap: () => Get.offNamed(AppRoutes.register),
                     behavior: HitTestBehavior.opaque,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 6,
-                      ),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                       child: Text(
                         'Saltare',
                         style: GoogleFonts.inter(
@@ -99,64 +100,87 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   ),
                 ],
               ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: _items.length,
-                onPageChanged: (i) => setState(() => _index = i),
-                itemBuilder: (context, i) => _OnboardingSlide(item: _items[i]),
-              ),
-            ),
-            _PageIndicator(count: _items.length, index: _index),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.sizeOf(context).width >= 600 ? 520 : double.infinity,
-                  ),
-                  child: _PrimaryButton(
-                    label: 'Continuare',
-                    onPressed: () => Get.toNamed(AppRoutes.register),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            );
+
+            final footer = Column(
               children: [
-                Text(
-                  'Hai già un account? ',
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFF8E8E8E),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Get.toNamed(AppRoutes.login),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text(
-                    'Accedi',
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFE7E7E7),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                _PageIndicator(count: _items.length, index: _index),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: buttonMaxWidth),
+                      child: _PrimaryButton(
+                        label: 'Continuare',
+                        onPressed: () => Get.toNamed(AppRoutes.register),
+                      ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 18),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Hai già un account? ',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF8E8E8E),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Get.toNamed(AppRoutes.login),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text(
+                        'Accedi',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFE7E7E7),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12 + pad.bottom),
               ],
-            ),
-            SizedBox(height: 12 + pad.bottom),
-          ],
+            );
+
+            // Always scroll-safe to eliminate any RenderFlex overflow on edge cases.
+            final pageViewHeight =
+                (constraints.maxHeight * (isWide ? 0.64 : 0.60))
+                    .clamp(280.0, isWide ? 620.0 : 520.0);
+
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  children: [
+                    header,
+                    SizedBox(
+                      height: pageViewHeight,
+                      child: PageView.builder(
+                        controller: _controller,
+                        itemCount: _items.length,
+                        onPageChanged: (i) => setState(() => _index = i),
+                        itemBuilder: (context, i) =>
+                            _OnboardingSlide(item: _items[i]),
+                      ),
+                    ),
+                    footer,
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
