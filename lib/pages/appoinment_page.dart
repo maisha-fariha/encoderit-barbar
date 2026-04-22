@@ -30,23 +30,22 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
+    final scale = isWide ? 1.12 : 1.0;
+    final hPad = isWide ? 28.0 : 18.0;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isWide ? 560 : double.infinity),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 6),
                   child: Row(
                     children: [
                       IconButton(
                         onPressed: () => Get.back(),
                         icon: SvgPicture.asset('assets/icons/back_button.svg'),
                         color: Colors.white,
-                        iconSize: 18,
+                        iconSize: 20,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -54,7 +53,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                           'Prenota un appuntamento',
                           style: GoogleFonts.inter(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 18 * scale,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -62,8 +61,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: hPad + 4, vertical: 8),
                   child: Row(
                     children: List.generate(4, (i) {
                       final active = i == 0;
@@ -82,15 +81,15 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     }),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 10, 22, 14),
+            Padding(
+              padding: EdgeInsets.fromLTRB(hPad + 4, 10, hPad + 4, 14),
                   child: Row(
                     children: [
                       Text(
                         'Seleziona il servizio',
                         style: GoogleFonts.inter(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 18 * scale,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -99,16 +98,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                         'Fase 1 di 4',
                         style: GoogleFonts.inter(
                           color: const Color(0xFF9A9A9A),
-                          fontSize: 12,
+                          fontSize: 12 * scale,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+            Expanded(
+              child: ListView.separated(
+                    padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
                     itemCount: _items.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 16),
@@ -123,8 +122,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     },
                   ),
                 ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(18, 6, 18, 10 + pad.bottom),
+            Padding(
+              padding: EdgeInsets.fromLTRB(hPad, 6, hPad, 10 + pad.bottom),
                   child: SizedBox(
                     width: double.infinity,
                     height: 58,
@@ -138,7 +137,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                           'Continuare',
                           style: GoogleFonts.inter(
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 16 * scale,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -146,9 +145,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
@@ -172,6 +169,7 @@ class _ServiceCard extends StatelessWidget {
     final title = selected ? const Color(0xFF0B0B0B) : Colors.white;
     final sub = selected ? const Color(0xFF2C2C2C) : const Color(0xFFBDBDBD);
     final price = selected ? const Color(0xFF0B0B0B) : Colors.white;
+    final scale = MediaQuery.sizeOf(context).width >= 600 ? 1.12 : 1.0;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
@@ -193,7 +191,7 @@ class _ServiceCard extends StatelessWidget {
                     item.title,
                     style: GoogleFonts.inter(
                       color: title,
-                      fontSize: 15.5,
+                      fontSize: 15.5 * scale,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -202,7 +200,7 @@ class _ServiceCard extends StatelessWidget {
                     '${item.minutes} minuti',
                     style: GoogleFonts.inter(
                       color: sub,
-                      fontSize: 13,
+                      fontSize: 13 * scale,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -217,7 +215,7 @@ class _ServiceCard extends StatelessWidget {
                   '€${item.priceEuro}',
                   style: GoogleFonts.inter(
                     color: price,
-                    fontSize: 18,
+                    fontSize: 18 * scale,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
