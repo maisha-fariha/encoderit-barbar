@@ -2,7 +2,9 @@ import 'package:get/get.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/barbar_list_controller.dart';
+import '../controllers/barber_services_controller.dart';
 import '../pages/barbar_list_page.dart';
+import '../pages/barber_services_page.dart';
 import '../pages/login_page.dart';
 import '../pages/register_page.dart';
 import '../pages/splash_page.dart';
@@ -15,6 +17,7 @@ class AppRoutes {
   static const login = '/login';
   static const register = '/register';
   static const barbarList = '/barbar';
+  static const barberServices = '/barber-services';
 }
 
 class AppPages {
@@ -43,6 +46,19 @@ class AppPages {
         }
         if (!Get.isRegistered<BarbarListController>()) {
           Get.put(AppServices.getIt<BarbarListController>());
+        }
+      }),
+    ),
+    GetPage(
+      name: AppRoutes.barberServices,
+      page: () => const BarberServicesPage(),
+      binding: BindingsBuilder(() {
+        if (!Get.find<AuthController>().isLoggedIn.value) {
+          Future.microtask(() => Get.offAllNamed(AppRoutes.login));
+          return;
+        }
+        if (!Get.isRegistered<BarberServicesController>()) {
+          Get.put(AppServices.getIt<BarberServicesController>());
         }
       }),
     ),

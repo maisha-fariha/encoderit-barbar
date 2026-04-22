@@ -7,4 +7,7 @@ class ApiEndpoints {
 
   /// List endpoint (ReqRes wraps items in `data`).
   static const barbarList = '/users';
+
+  /// Services list (demo: ReqRes `/products` — same `data` list pattern).
+  static const barberServices = '/products';
 }

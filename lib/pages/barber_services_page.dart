@@ -2,24 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../controllers/auth_controller.dart';
-import '../controllers/barbar_list_controller.dart';
-import '../models/barbar/barbar_model.dart';
-import '../routes/app_pages.dart';
-
-class BarbarListPage extends GetView<BarbarListController> {
-  const BarbarListPage({super.key});
+import '../controllers/barber_services_controller.dart';
+import '../models/barber_service/barber_service_model.dart';
+class BarberServicesPage extends GetView<BarberServicesController> {
+  const BarberServicesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Barbar list'),
+        title: const Text('Barber services'),
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
         actions: [
-          IconButton(
-            tooltip: 'Barber services',
-            onPressed: () => Get.toNamed(AppRoutes.barberServices),
-            icon: const Icon(Icons.design_services_outlined),
-          ),
           IconButton(
             tooltip: 'Sign out',
             onPressed: () => Get.find<AuthController>().logout(),
@@ -35,15 +33,15 @@ class BarbarListPage extends GetView<BarbarListController> {
           return Center(child: Text(controller.errorMessage.value));
         }
         if (controller.items.isEmpty) {
-          return const Center(child: Text('No items'));
+          return const Center(child: Text('No services'));
         }
         return ListView.builder(
           itemCount: controller.items.length,
           itemBuilder: (context, index) {
-            final Barbar item = controller.items[index];
+            final BarberService item = controller.items[index];
             return ListTile(
               title: Text(item.displayTitle),
-              subtitle: Text(item.displaySubtitle, maxLines: 1),
+              subtitle: Text(item.displaySubtitle, maxLines: 2),
             );
           },
         );

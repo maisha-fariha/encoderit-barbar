@@ -7,5 +7,6 @@ void main() {
     expect(ApiEndpoints.barbarList, '/users');
     expect(ApiEndpoints.authLogin, '/login');
     expect(ApiEndpoints.authRegister, '/register');
+    expect(ApiEndpoints.barberServices, '/products');
   });
 }
