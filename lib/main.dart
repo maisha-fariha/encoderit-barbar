@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:gems_core/gems_core.dart';
 
@@ -6,8 +7,17 @@ import 'routes/app_pages.dart';
 import 'services/app_services.dart';
 import 'controllers/auth_controller.dart';
 
+const _statusBarStyle = SystemUiOverlayStyle(
+  statusBarColor: Colors.transparent,
+  statusBarIconBrightness: Brightness.light, // Android
+  statusBarBrightness: Brightness.dark, // iOS (dark bg => light icons)
+);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(_statusBarStyle);
 
   final appServices = AppServices();
   await appServices.initialize(
@@ -29,15 +39,25 @@ class EncoderitBarbarApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: 'EncoderIT Barbar',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _statusBarStyle,
+      child: GetMaterialApp(
+        title: 'EncoderIT Barbar',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          appBarTheme: const AppBarTheme(
+            systemOverlayStyle: _statusBarStyle,
+          ),
+        ),
+        builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+          value: _statusBarStyle,
+          child: child ?? const SizedBox.shrink(),
+        ),
+        initialRoute: AppRoutes.splash,
+        getPages: AppPages.routes,
+        debugShowCheckedModeBanner: false,
       ),
-      initialRoute: AppRoutes.splash,
-      getPages: AppPages.routes,
-      debugShowCheckedModeBanner: false,
     );
   }
 }
