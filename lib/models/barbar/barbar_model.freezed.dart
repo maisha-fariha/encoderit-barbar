@@ -21,11 +21,18 @@ Barbar _$BarbarFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Barbar {
+  // ignore: invalid_annotation_target
   @JsonKey(fromJson: _idFromJson)
   String get id => throw _privateConstructorUsedError;
-  String get name => throw _privateConstructorUsedError;
+  String get name =>
+      throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  @JsonKey(name: 'first_name')
+  String get firstName => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  @JsonKey(name: 'last_name')
+  String get lastName => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(name: 'username')
   String get username => throw _privateConstructorUsedError;
+  String get email => throw _privateConstructorUsedError;
 
   /// Serializes this Barbar to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -44,7 +51,10 @@ abstract class $BarbarCopyWith<$Res> {
   $Res call({
     @JsonKey(fromJson: _idFromJson) String id,
     String name,
+    @JsonKey(name: 'first_name') String firstName,
+    @JsonKey(name: 'last_name') String lastName,
     @JsonKey(name: 'username') String username,
+    String email,
   });
 }
 
@@ -62,7 +72,14 @@ class _$BarbarCopyWithImpl<$Res, $Val extends Barbar>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? id = null, Object? name = null, Object? username = null}) {
+  $Res call({
+    Object? id = null,
+    Object? name = null,
+    Object? firstName = null,
+    Object? lastName = null,
+    Object? username = null,
+    Object? email = null,
+  }) {
     return _then(
       _value.copyWith(
             id: null == id
@@ -73,9 +90,21 @@ class _$BarbarCopyWithImpl<$Res, $Val extends Barbar>
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
                       as String,
+            firstName: null == firstName
+                ? _value.firstName
+                : firstName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            lastName: null == lastName
+                ? _value.lastName
+                : lastName // ignore: cast_nullable_to_non_nullable
+                      as String,
             username: null == username
                 ? _value.username
                 : username // ignore: cast_nullable_to_non_nullable
+                      as String,
+            email: null == email
+                ? _value.email
+                : email // ignore: cast_nullable_to_non_nullable
                       as String,
           )
           as $Val,
@@ -94,7 +123,10 @@ abstract class _$$BarbarImplCopyWith<$Res> implements $BarbarCopyWith<$Res> {
   $Res call({
     @JsonKey(fromJson: _idFromJson) String id,
     String name,
+    @JsonKey(name: 'first_name') String firstName,
+    @JsonKey(name: 'last_name') String lastName,
     @JsonKey(name: 'username') String username,
+    String email,
   });
 }
 
@@ -111,7 +143,14 @@ class __$$BarbarImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? id = null, Object? name = null, Object? username = null}) {
+  $Res call({
+    Object? id = null,
+    Object? name = null,
+    Object? firstName = null,
+    Object? lastName = null,
+    Object? username = null,
+    Object? email = null,
+  }) {
     return _then(
       _$BarbarImpl(
         id: null == id
@@ -122,9 +161,21 @@ class __$$BarbarImplCopyWithImpl<$Res>
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
                   as String,
+        firstName: null == firstName
+            ? _value.firstName
+            : firstName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        lastName: null == lastName
+            ? _value.lastName
+            : lastName // ignore: cast_nullable_to_non_nullable
+                  as String,
         username: null == username
             ? _value.username
             : username // ignore: cast_nullable_to_non_nullable
+                  as String,
+        email: null == email
+            ? _value.email
+            : email // ignore: cast_nullable_to_non_nullable
                   as String,
       ),
     );
@@ -136,25 +187,42 @@ class __$$BarbarImplCopyWithImpl<$Res>
 class _$BarbarImpl implements _Barbar {
   const _$BarbarImpl({
     @JsonKey(fromJson: _idFromJson) required this.id,
-    required this.name,
+    this.name = '',
+    @JsonKey(name: 'first_name') this.firstName = '',
+    @JsonKey(name: 'last_name') this.lastName = '',
     @JsonKey(name: 'username') this.username = '',
+    this.email = '',
   });
 
   factory _$BarbarImpl.fromJson(Map<String, dynamic> json) =>
       _$$BarbarImplFromJson(json);
 
+  // ignore: invalid_annotation_target
   @override
   @JsonKey(fromJson: _idFromJson)
   final String id;
   @override
+  @JsonKey()
   final String name;
+  // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'first_name')
+  final String firstName;
+  // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'last_name')
+  final String lastName;
+  // ignore: invalid_annotation_target
   @override
   @JsonKey(name: 'username')
   final String username;
+  @override
+  @JsonKey()
+  final String email;
 
   @override
   String toString() {
-    return 'Barbar(id: $id, name: $name, username: $username)';
+    return 'Barbar(id: $id, name: $name, firstName: $firstName, lastName: $lastName, username: $username, email: $email)';
   }
 
   @override
@@ -164,13 +232,19 @@ class _$BarbarImpl implements _Barbar {
             other is _$BarbarImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.firstName, firstName) ||
+                other.firstName == firstName) &&
+            (identical(other.lastName, lastName) ||
+                other.lastName == lastName) &&
             (identical(other.username, username) ||
-                other.username == username));
+                other.username == username) &&
+            (identical(other.email, email) || other.email == email));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, username);
+  int get hashCode =>
+      Object.hash(runtimeType, id, name, firstName, lastName, username, email);
 
   /// Create a copy of Barbar
   /// with the given fields replaced by the non-null parameter values.
@@ -189,20 +263,32 @@ class _$BarbarImpl implements _Barbar {
 abstract class _Barbar implements Barbar {
   const factory _Barbar({
     @JsonKey(fromJson: _idFromJson) required final String id,
-    required final String name,
+    final String name,
+    @JsonKey(name: 'first_name') final String firstName,
+    @JsonKey(name: 'last_name') final String lastName,
     @JsonKey(name: 'username') final String username,
+    final String email,
   }) = _$BarbarImpl;
 
   factory _Barbar.fromJson(Map<String, dynamic> json) = _$BarbarImpl.fromJson;
 
+  // ignore: invalid_annotation_target
   @override
   @JsonKey(fromJson: _idFromJson)
   String get id;
   @override
-  String get name;
+  String get name; // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'first_name')
+  String get firstName; // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'last_name')
+  String get lastName; // ignore: invalid_annotation_target
   @override
   @JsonKey(name: 'username')
   String get username;
+  @override
+  String get email;
 
   /// Create a copy of Barbar
   /// with the given fields replaced by the non-null parameter values.

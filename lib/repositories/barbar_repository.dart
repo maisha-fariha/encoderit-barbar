@@ -9,7 +9,10 @@ class BarbarRepository extends BaseRepository<Barbar> {
     required super.apiService,
     required super.databaseService,
     required super.syncService,
-  }) : super(baseEndpoint: ApiEndpoints.barbarList);
+  }) : super(
+          baseEndpoint: ApiEndpoints.barbarList,
+          responseListKey: 'data',
+        );
 
   @override
   Barbar fromJson(Map<String, dynamic> json) => Barbar.fromJson(json);

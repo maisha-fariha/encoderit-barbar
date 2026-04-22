@@ -1,7 +1,10 @@
-/// REST paths for features. Replace when the real Barbar API is available.
+/// REST paths for the app. Point [AppConfig.apiBaseUrl] at your backend; shapes should match [AuthService].
 class ApiEndpoints {
   ApiEndpoints._();
 
-  /// Demo list endpoint (JSONPlaceholder users stand in for barbers).
+  static const authLogin = '/login';
+  static const authRegister = '/register';
+
+  /// List endpoint (ReqRes wraps items in `data`).
   static const barbarList = '/users';
 }

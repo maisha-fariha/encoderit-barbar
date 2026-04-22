@@ -3,6 +3,7 @@ import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get_it/get_it.dart';
 
+import '../di/auth/auth_di.dart';
 import '../di/barbar_list/barbar_list_di.dart';
 
 /// Central bootstrap: core env, data layer (API, Hive [DatabaseService], [SyncService]), feature DI.
@@ -33,6 +34,7 @@ class AppServices {
 
     setupResponsiveServices();
 
+    await setupAuthDomainServices();
     await setupBarbarListDomainServices();
   }
 

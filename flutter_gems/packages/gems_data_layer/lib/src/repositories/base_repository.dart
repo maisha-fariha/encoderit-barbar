@@ -13,15 +13,30 @@ abstract class BaseRepository<T extends BaseModel> {
   final SyncService syncService;
   final String baseEndpoint;
 
+  /// When the API wraps the list (e.g. `{ "data": [ ... ] }`), set this to `data`.
+  final String? responseListKey;
+
   BaseRepository({
     required this.apiService,
     required this.databaseService,
     required this.syncService,
     required this.baseEndpoint,
+    this.responseListKey,
   });
 
   /// Parse JSON to model (use Freezed's fromJson)
   T fromJson(Map<String, dynamic> json);
+
+  List<dynamic> _unwrapListPayload(dynamic data) {
+    if (responseListKey != null && data is Map<String, dynamic>) {
+      final inner = data[responseListKey!];
+      if (inner is List<dynamic>) return inner;
+      if (inner is List) return inner;
+    }
+    if (data is List<dynamic>) return data;
+    if (data is List) return data;
+    throw FormatException('Expected a JSON list or map with list at "$responseListKey"');
+  }
 
   // Helper methods for cache operations
   String _cacheKey(String suffix) => '${baseEndpoint}_$suffix';
@@ -97,7 +112,7 @@ abstract class BaseRepository<T extends BaseModel> {
       // Fetch from API
       final response = await apiService.get<List<dynamic>>(
         baseEndpoint,
-        fromJson: (data) => (data as List)
+        fromJson: (data) => _unwrapListPayload(data)
             .map((e) => fromJson(e as Map<String, dynamic>))
             .toList(),
       );
@@ -125,7 +140,7 @@ abstract class BaseRepository<T extends BaseModel> {
     try {
       final response = await apiService.get<List<dynamic>>(
         baseEndpoint,
-        fromJson: (data) => (data as List)
+        fromJson: (data) => _unwrapListPayload(data)
             .map((e) => fromJson(e as Map<String, dynamic>))
             .toList(),
       );
