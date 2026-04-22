@@ -113,7 +113,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       constraints: BoxConstraints(maxWidth: buttonMaxWidth),
                       child: _PrimaryButton(
                         label: 'Continuare',
-                        onPressed: () => Get.toNamed(AppRoutes.register),
+                        onPressed: () => Get.toNamed(AppRoutes.appoinment),
                       ),
                     ),
                   ),
