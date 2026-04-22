@@ -6,6 +6,7 @@ import '../controllers/barber_services_controller.dart';
 import '../pages/barbar_list_page.dart';
 import '../pages/barber_services_page.dart';
 import '../pages/login_page.dart';
+import '../pages/onboarding_page.dart';
 import '../pages/register_page.dart';
 import '../pages/splash_page.dart';
 import '../services/app_services.dart';
@@ -14,6 +15,7 @@ class AppRoutes {
   AppRoutes._();
 
   static const splash = '/';
+  static const onboarding = '/onboarding';
   static const login = '/login';
   static const register = '/register';
   static const barbarList = '/barbar';
@@ -27,6 +29,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.splash,
       page: () => const SplashPage(),
+    ),
+    GetPage(
+      name: AppRoutes.onboarding,
+      page: () => const OnboardingPage(),
     ),
     GetPage(
       name: AppRoutes.login,
