@@ -51,138 +51,308 @@ class _LoginPageState extends State<LoginPage> {
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: SizedBox(
-                    height: constraints.maxHeight,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 28),
-                        SizedBox(
-                          height: 58,
-                          child: ClipRect(
-                            child: Align(
-                              alignment: const Alignment(0, 0.21),
-                              heightFactor: 0.21,
-                              child: Image.asset(
-                                'assets/images/app_icon.png',
-                                filterQuality: FilterQuality.high,
+                final h = constraints.maxHeight;
+                final w = constraints.maxWidth;
+                final isWide = w >= 600;
+                final usePhoneLayout = w < 600 && h >= 650;
+
+                // Phone/portrait layout: keep original look (form pushed down).
+                if (usePhoneLayout) {
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 28),
+                            SizedBox(
+                              height: 58,
+                              child: ClipRect(
+                                child: Align(
+                                  alignment: const Alignment(0, 0.21),
+                                  heightFactor: 0.21,
+                                  child: Image.asset(
+                                    'assets/images/app_icon.png',
+                                    filterQuality: FilterQuality.high,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                         Text(
-                          'Accedi al tuo account',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            height: 1.08,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Bentornato! Inserisci i tuoi dati.',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            color: Colors.white.withValues(alpha: 0.50),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const Spacer(),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _GlassTextField(
-                                controller: _email,
-                                hintText: 'yourmail@mail.com',
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.next,
+                            const SizedBox(height: 18),
+                            Text(
+                              'Accedi al tuo account',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                height: 1.08,
                               ),
-                              const SizedBox(height: 16),
-                              _GlassTextField(
-                                controller: _password,
-                                hintText: 'Password',
-                                obscureText: _obscure,
-                                textInputAction: TextInputAction.done,
-                                suffix: Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: IconButton(
-                                    onPressed: () =>
-                                        setState(() => _obscure = !_obscure),
-                                    icon: Icon(
-                                      _obscure
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
-                                      color: Colors.white.withValues(alpha: 0.55),
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Bentornato! Inserisci i tuoi dati.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.white.withValues(alpha: 0.50),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
                               ),
-                              const SizedBox(height: 16),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: Text(
-                                    'Ha dimenticato la password',
-                                    style: GoogleFonts.inter(
-                                      color: Color(0xFF797979),
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 12,
-                                      height: 1,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              _PrimaryLoginButton(onPressed: () {}),
-                              const SizedBox(height: 24),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                            ),
+                            const Spacer(),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 18),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  Text(
-                                    'Non hai un account? ',
-                                    style: GoogleFonts.inter(
-                                      color: Color(0xFF797979),
-                                      fontWeight: FontWeight.w400,
-                                      fontSize: 14,
+                                _GlassTextField(
+                                  controller: _email,
+                                  hintText: 'yourmail@mail.com',
+                                  keyboardType: TextInputType.emailAddress,
+                                  textInputAction: TextInputAction.next,
+                                ),
+                                const SizedBox(height: 16),
+                                _GlassTextField(
+                                  controller: _password,
+                                  hintText: 'Password',
+                                  obscureText: _obscure,
+                                  textInputAction: TextInputAction.done,
+                                  suffix: Padding(
+                                    padding: const EdgeInsets.only(right: 6),
+                                    child: IconButton(
+                                      onPressed: () => setState(
+                                        () => _obscure = !_obscure,
+                                      ),
+                                      icon: Icon(
+                                        _obscure
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                        color:
+                                            Colors.white.withValues(alpha: 0.55),
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
-                                  TextButton(
-                                    onPressed: () => Get.toNamed(AppRoutes.register),
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 0,
-                                      ),
-                                      minimumSize: Size.zero,
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      foregroundColor: Colors.white,
-                                    ),
+                                ),
+                                const SizedBox(height: 16),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 6),
                                     child: Text(
-                                      'Iscrizione',
+                                      'Ha dimenticato la password',
                                       style: GoogleFonts.inter(
-                                        color: Color(0xFFDDDDDD),
+                                        color: Color(0xFF797979),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12,
+                                        height: 1,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                _PrimaryLoginButton(
+                                  onPressed: () =>
+                                      Get.offAllNamed(AppRoutes.home),
+                                ),
+                                const SizedBox(height: 24),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Non hai un account? ',
+                                      style: GoogleFonts.inter(
+                                        color: Color(0xFF797979),
                                         fontWeight: FontWeight.w400,
                                         fontSize: 14,
                                       ),
                                     ),
-                                  ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Get.toNamed(AppRoutes.register),
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 0,
+                                        ),
+                                        minimumSize: Size.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: Text(
+                                        'Iscrizione',
+                                        style: GoogleFonts.inter(
+                                          color: Color(0xFFDDDDDD),
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 10 + pad.bottom),
                                 ],
                               ),
-                              SizedBox(height: 10 + pad.bottom),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Tablet/landscape layout: overflow-safe + centered with max width.
+                final topPad = h < 600 ? 18.0 : 28.0;
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isWide ? 560 : double.infinity,
+                        ),
+                        child: Column(
+                          children: [
+                            SizedBox(height: topPad),
+                            SizedBox(
+                              height: 58,
+                              child: ClipRect(
+                                child: Align(
+                                  alignment: const Alignment(0, 0.21),
+                                  heightFactor: 0.21,
+                                  child: Image.asset(
+                                    'assets/images/app_icon.png',
+                                    filterQuality: FilterQuality.high,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              'Accedi al tuo account',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                height: 1.08,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Bentornato! Inserisci i tuoi dati.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: Colors.white.withValues(alpha: 0.50),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            SizedBox(height: h < 600 ? 22 : 56),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isWide ? 24 : 18,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _GlassTextField(
+                                    controller: _email,
+                                    hintText: 'yourmail@mail.com',
+                                    keyboardType: TextInputType.emailAddress,
+                                    textInputAction: TextInputAction.next,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _GlassTextField(
+                                    controller: _password,
+                                    hintText: 'Password',
+                                    obscureText: _obscure,
+                                    textInputAction: TextInputAction.done,
+                                    suffix: Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: IconButton(
+                                        onPressed: () => setState(
+                                          () => _obscure = !_obscure,
+                                        ),
+                                        icon: Icon(
+                                          _obscure
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                          color: Colors.white
+                                              .withValues(alpha: 0.55),
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: Text(
+                                        'Ha dimenticato la password',
+                                        style: GoogleFonts.inter(
+                                          color: Color(0xFF797979),
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 12,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _PrimaryLoginButton(
+                                    onPressed: () =>
+                                        Get.offAllNamed(AppRoutes.home),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Non hai un account? ',
+                                        style: GoogleFonts.inter(
+                                          color: Color(0xFF797979),
+                                          fontWeight: FontWeight.w400,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Get.toNamed(AppRoutes.register),
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 0,
+                                          ),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        child: Text(
+                                          'Iscrizione',
+                                          style: GoogleFonts.inter(
+                                            color: Color(0xFFDDDDDD),
+                                            fontWeight: FontWeight.w400,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 10 + pad.bottom),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 );

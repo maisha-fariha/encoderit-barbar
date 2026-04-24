@@ -48,7 +48,6 @@ class AuthController extends GetxController {
       );
       if (res.success && res.data != null) {
         isLoggedIn.value = true;
-        Get.offAllNamed(AppRoutes.barbarList);
       } else {
         Get.snackbar('Login failed', res.message ?? 'Unknown error');
       }
@@ -67,7 +66,6 @@ class AuthController extends GetxController {
       if (res.success && res.data != null) {
         isLoggedIn.value = true;
         Get.snackbar('Welcome', 'Account ready');
-        Get.offAllNamed(AppRoutes.barbarList);
       } else {
         Get.snackbar('Register failed', res.message ?? 'Unknown error');
       }

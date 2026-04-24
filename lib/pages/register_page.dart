@@ -59,191 +59,220 @@ class _RegisterPageState extends State<RegisterPage> {
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final h = constraints.maxHeight;
+                final w = constraints.maxWidth;
+                final isWide = w >= 600;
+                final isShort = h < 600;
+                final topPad = isShort
+                    ? 24.0
+                    : isWide
+                        ? 32.0
+                        : 80.0;
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  child: SizedBox(
-                    height: constraints.maxHeight,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 80),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 26),
-                          SizedBox(
-                            height: 58,
-                            child: ClipRect(
-                              child: Align(
-                                alignment: const Alignment(0, 0.21),
-                                heightFactor: 0.21,
-                                child: Image.asset(
-                                  'assets/images/app_icon.png',
-                                  filterQuality: FilterQuality.high,
-                                ),
-                              ),
-                            ),
+                      padding: EdgeInsets.only(top: topPad),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: isWide ? 560 : double.infinity,
                           ),
-                          const SizedBox(height: 30),
-                          Text(
-                            'Creare un account',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              height: 1.08,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Unisciti a noi ed esplora nuove possibilità!',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              color: Colors.white.withValues(alpha: 0.50),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const SizedBox(height: 50),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 18),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _GlassTextField(
-                                  controller: _name,
-                                  hintText: 'Nome e cognome',
-                                  textInputAction: TextInputAction.next,
-                                ),
-                                const SizedBox(height: 16),
-                                _GlassTextField(
-                                  controller: _email,
-                                  hintText: 'tuaemail@mail.com',
-                                  keyboardType: TextInputType.emailAddress,
-                                  textInputAction: TextInputAction.next,
-                                ),
-                                const SizedBox(height: 16),
-                                _GlassTextField(
-                                  controller: _phone,
-                                  hintText: '+39 333 12 4564',
-                                  keyboardType: TextInputType.phone,
-                                  textInputAction: TextInputAction.next,
-                                ),
-                                const SizedBox(height: 16),
-                                _GlassTextField(
-                                  controller: _password,
-                                  hintText: 'Password',
-                                  obscureText: _obscure,
-                                  textInputAction: TextInputAction.done,
-                                  suffix: Padding(
-                                    padding: const EdgeInsets.only(right: 6),
-                                    child: IconButton(
-                                      onPressed: () =>
-                                          setState(() => _obscure = !_obscure),
-                                      icon: Icon(
-                                        _obscure
-                                            ? Icons.visibility_outlined
-                                            : Icons.visibility_off_outlined,
-                                        color: Colors.white.withValues(alpha: 0.55),
-                                        size: 20,
-                                      ),
+                          child: Column(
+                            children: [
+                              SizedBox(height: isWide ? 18 : 26),
+                              SizedBox(
+                                height: 58,
+                                child: ClipRect(
+                                  child: Align(
+                                    alignment: const Alignment(0, 0.21),
+                                    heightFactor: 0.21,
+                                    child: Image.asset(
+                                      'assets/images/app_icon.png',
+                                      filterQuality: FilterQuality.high,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 30),
-                                _PrimaryButton(
-                                  label: 'Creare un account',
-                                  onPressed: () {},
+                              ),
+                              SizedBox(height: isWide ? 18 : 30),
+                              Text(
+                                'Creare un account',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.08,
                                 ),
-                                const SizedBox(height: 30),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Unisciti a noi ed esplora nuove possibilità!',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white.withValues(alpha: 0.50),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              SizedBox(
+                                height: isShort
+                                    ? 28
+                                    : isWide
+                                        ? 28
+                                        : 50,
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isWide ? 24 : 18,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    InkResponse(
-                                      onTap: () =>
-                                          setState(() => _accepted = !_accepted),
-                                      radius: 20,
-                                      child: Icon(
-                                        _accepted
-                                            ? Icons.check_circle
-                                            : Icons.radio_button_unchecked,
-                                        size: 18,
-                                        color: _accepted
-                                            ? const Color(0xFFECECEC)
-                                            : const Color(0xFF797979),
+                                    _GlassTextField(
+                                      controller: _name,
+                                      hintText: 'Nome e cognome',
+                                      textInputAction: TextInputAction.next,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _GlassTextField(
+                                      controller: _email,
+                                      hintText: 'tuaemail@mail.com',
+                                      keyboardType: TextInputType.emailAddress,
+                                      textInputAction: TextInputAction.next,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _GlassTextField(
+                                      controller: _phone,
+                                      hintText: '+39 333 12 4564',
+                                      keyboardType: TextInputType.phone,
+                                      textInputAction: TextInputAction.next,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _GlassTextField(
+                                      controller: _password,
+                                      hintText: 'Password',
+                                      obscureText: _obscure,
+                                      textInputAction: TextInputAction.done,
+                                      suffix: Padding(
+                                        padding: const EdgeInsets.only(right: 6),
+                                        child: IconButton(
+                                          onPressed: () => setState(
+                                            () => _obscure = !_obscure,
+                                          ),
+                                          icon: Icon(
+                                            _obscure
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            color:
+                                                Colors.white.withValues(alpha: 0.55),
+                                            size: 20,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: RichText(
-                                        text: TextSpan(
+                                    const SizedBox(height: 30),
+                                    _PrimaryButton(
+                                      label: 'Creare un account',
+                                      onPressed: () => Get.offNamed(AppRoutes.login),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        InkResponse(
+                                          onTap: () => setState(
+                                            () => _accepted = !_accepted,
+                                          ),
+                                          radius: 20,
+                                          child: Icon(
+                                            _accepted
+                                                ? Icons.check_circle
+                                                : Icons.radio_button_unchecked,
+                                            size: 18,
+                                            color: _accepted
+                                                ? const Color(0xFFECECEC)
+                                                : const Color(0xFF797979),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: RichText(
+                                            text: TextSpan(
+                                              style: GoogleFonts.inter(
+                                                color: const Color(0xFF797979),
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                                height: 1.3,
+                                              ),
+                                              children: const [
+                                                TextSpan(text: 'Accetto il '),
+                                                TextSpan(
+                                                  text:
+                                                      'politica sulla riservatezza',
+                                                  style: TextStyle(
+                                                    decoration:
+                                                        TextDecoration.underline,
+                                                  ),
+                                                ),
+                                                TextSpan(text: ' e '),
+                                                TextSpan(
+                                                  text: 'Termini di servizio',
+                                                  style: TextStyle(
+                                                    decoration:
+                                                        TextDecoration.underline,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 18),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Hai già un account? ',
                                           style: GoogleFonts.inter(
                                             color: const Color(0xFF797979),
-                                            fontSize: 12,
                                             fontWeight: FontWeight.w400,
-                                            height: 1.3,
+                                            fontSize: 14,
                                           ),
-                                          children: const [
-                                            TextSpan(text: 'Accetto il '),
-                                            TextSpan(
-                                              text: 'politica sulla riservatezza',
-                                              style: TextStyle(
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
-                                            ),
-                                            TextSpan(text: ' e '),
-                                            TextSpan(
-                                              text: 'Termini di servizio',
-                                              style: TextStyle(
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
-                                            ),
-                                          ],
                                         ),
-                                      ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Get.offNamed(AppRoutes.login),
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 0,
+                                            ),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                          child: Text(
+                                            'Login',
+                                            style: GoogleFonts.inter(
+                                              color: const Color(0xFFDDDDDD),
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                    SizedBox(height: 8 + pad.bottom),
                                   ],
                                 ),
-                                const SizedBox(height: 18),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Hai già un account? ',
-                                      style: GoogleFonts.inter(
-                                        color: const Color(0xFF797979),
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Get.offNamed(AppRoutes.login),
-                                      style: TextButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 0,
-                                        ),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                      child: Text(
-                                        'Login',
-                                        style: GoogleFonts.inter(
-                                          color: const Color(0xFFDDDDDD),
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 8 + pad.bottom),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

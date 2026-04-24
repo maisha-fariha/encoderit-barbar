@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../controllers/auth_controller.dart';
 import '../routes/app_pages.dart';
 
 class SplashPage extends StatefulWidget {
@@ -19,19 +18,13 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _route() async {
-    final auth = Get.find<AuthController>();
-    await auth.bootstrap();
+    await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    if (auth.isLoggedIn.value) {
-      Get.offAllNamed(AppRoutes.barbarList);
-    } else {
-      Get.offAllNamed(AppRoutes.login);
-    }
+    Get.offAllNamed(AppRoutes.onboarding);
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomPad = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -46,21 +39,6 @@ class _SplashPageState extends State<SplashPage> {
                     'assets/images/app_icon.png',
                     fit: BoxFit.contain,
                     filterQuality: FilterQuality.high,
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 16 + bottomPad,
-              child: const Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
                   ),
                 ),
               ),
