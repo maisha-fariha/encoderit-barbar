@@ -1,16 +1,15 @@
 import 'package:get/get.dart';
 
-import '../controllers/auth_controller.dart';
-import '../controllers/barbar_list_controller.dart';
-import '../controllers/barber_services_controller.dart';
-import '../pages/barbar_list_page.dart';
-import '../pages/barber_services_page.dart';
 import '../pages/appoinment_page.dart';
+import '../pages/home_page.dart';
 import '../pages/login_page.dart';
 import '../pages/onboarding_page.dart';
+import '../pages/contact_page.dart';
+import '../pages/profile_page.dart';
+import '../pages/reservation_list_page.dart';
 import '../pages/register_page.dart';
 import '../pages/splash_page.dart';
-import '../services/app_services.dart';
+
 
 class AppRoutes {
   AppRoutes._();
@@ -18,10 +17,12 @@ class AppRoutes {
   static const splash = '/';
   static const onboarding = '/onboarding';
   static const appoinment = '/appoinment';
+  static const home = '/home';
+  static const reservations = '/reservations';
+  static const profile = '/profile';
+  static const contact = '/contact';
   static const login = '/login';
   static const register = '/register';
-  static const barbarList = '/barbar';
-  static const barberServices = '/barber-services';
 }
 
 class AppPages {
@@ -49,30 +50,20 @@ class AppPages {
       page: () => const RegisterPage(),
     ),
     GetPage(
-      name: AppRoutes.barbarList,
-      page: () => const BarbarListPage(),
-      binding: BindingsBuilder(() {
-        if (!Get.find<AuthController>().isLoggedIn.value) {
-          Future.microtask(() => Get.offAllNamed(AppRoutes.login));
-          return;
-        }
-        if (!Get.isRegistered<BarbarListController>()) {
-          Get.put(AppServices.getIt<BarbarListController>());
-        }
-      }),
+      name: AppRoutes.home,
+      page: () => const HomePage(),
     ),
     GetPage(
-      name: AppRoutes.barberServices,
-      page: () => const BarberServicesPage(),
-      binding: BindingsBuilder(() {
-        if (!Get.find<AuthController>().isLoggedIn.value) {
-          Future.microtask(() => Get.offAllNamed(AppRoutes.login));
-          return;
-        }
-        if (!Get.isRegistered<BarberServicesController>()) {
-          Get.put(AppServices.getIt<BarberServicesController>());
-        }
-      }),
+      name: AppRoutes.reservations,
+      page: () => const ReservationListPage(),
+    ),
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const ProfilePage(),
+    ),
+    GetPage(
+      name: AppRoutes.contact,
+      page: () => const ContactPage(),
     ),
   ];
 }

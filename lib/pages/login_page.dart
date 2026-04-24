@@ -153,7 +153,10 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                _PrimaryLoginButton(onPressed: () {}),
+                                _PrimaryLoginButton(
+                                  onPressed: () =>
+                                      Get.offAllNamed(AppRoutes.home),
+                                ),
                                 const SizedBox(height: 24),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -303,7 +306,10 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                  _PrimaryLoginButton(onPressed: () {}),
+                                  _PrimaryLoginButton(
+                                    onPressed: () =>
+                                        Get.offAllNamed(AppRoutes.home),
+                                  ),
                                   const SizedBox(height: 24),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
