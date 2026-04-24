@@ -8,6 +8,7 @@ A comprehensive data layer package for Flutter with REST API, CRUD operations, a
 
 - ✅ **REST API Client** - Full CRUD operations (GET, POST, PUT, PATCH, DELETE)
 - ✅ **Authentication** - Login, register, token refresh with automatic token management
+- ✅ **Push Notifications** - Unified setup for Firebase or custom provider
 - ✅ **GetX Integration** - Base controllers and repositories ready to use
 - ✅ **Hive Database** - Local NoSQL database for offline data storage
 - ✅ **Offline Support** - Automatic caching and sync queue
@@ -211,6 +212,115 @@ final isAuth = await authService.isAuthenticated();
 // Logout
 await authService.logout();
 ```
+
+## Push Notifications
+
+### Firebase provider
+
+```dart
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:gems_data_layer/gems_data_layer.dart';
+
+await Firebase.initializeApp();
+final messaging = FirebaseMessaging.instance;
+
+await setupDataLayerServices(
+  apiConfig: ApiConfig(baseUrl: 'https://api.example.com'),
+  pushNotificationProvider: FirebasePushNotificationProvider(
+    permissionHandler: () async {
+      final settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: true,
+      );
+
+      switch (settings.authorizationStatus) {
+        case AuthorizationStatus.authorized:
+          return NotificationPermissionStatus.granted;
+        case AuthorizationStatus.denied:
+          return NotificationPermissionStatus.denied;
+        case AuthorizationStatus.provisional:
+          return NotificationPermissionStatus.provisional;
+        case AuthorizationStatus.notDetermined:
+          return NotificationPermissionStatus.notDetermined;
+      }
+    },
+    tokenHandler: () => messaging.getToken(),
+    tokenRefreshStream: messaging.onTokenRefresh,
+    messageStream: FirebaseMessaging.onMessage.map(
+      (message) => PushMessage(
+        id: message.messageId,
+        title: message.notification?.title,
+        body: message.notification?.body,
+        data: message.data,
+        source: NotificationSource.foreground,
+      ),
+    ),
+    messageOpenedStream: FirebaseMessaging.onMessageOpenedApp.map(
+      (message) => PushMessage(
+        id: message.messageId,
+        title: message.notification?.title,
+        body: message.notification?.body,
+        data: message.data,
+        source: NotificationSource.openedApp,
+      ),
+    ),
+    initialMessageHandler: () async {
+      final message = await messaging.getInitialMessage();
+      if (message == null) return null;
+      return PushMessage(
+        id: message.messageId,
+        title: message.notification?.title,
+        body: message.notification?.body,
+        data: message.data,
+        source: NotificationSource.initialMessage,
+      );
+    },
+    subscribeHandler: messaging.subscribeToTopic,
+    unsubscribeHandler: messaging.unsubscribeFromTopic,
+    deleteTokenHandler: messaging.deleteToken,
+  ),
+);
+
+final pushService = getIt<PushNotificationService>();
+
+pushService.messages.listen((message) {
+  print('Push message: ${message.title} / ${message.body}');
+});
+```
+
+### Custom provider
+
+```dart
+import 'package:gems_data_layer/gems_data_layer.dart';
+
+final customProvider = CustomPushNotificationProvider(
+  tokenHandler: () async => 'my-custom-token',
+  messageStream: myForegroundMessageStream,
+  messageOpenedStream: myOpenedMessageStream,
+  subscribeHandler: (topic) async {
+    await myCustomNotificationSdk.subscribe(topic);
+  },
+);
+
+await setupDataLayerServices(
+  apiConfig: ApiConfig(baseUrl: 'https://api.example.com'),
+  pushNotificationProvider: customProvider,
+);
+```
+
+### PushNotificationService API
+
+- `initialize()` - Initializes provider and token handling
+- `getToken()` - Gets latest provider token and stores locally
+- `getStoredToken()` - Gets last saved token from local storage
+- `messages` - Unified stream for foreground/open/initial message events
+- `tokenChanges` - Stream of token refresh events
+- `subscribeToTopic(topic)` - Topic subscription
+- `unsubscribeFromTopic(topic)` - Topic unsubscription
+- `clearToken()` - Deletes provider token and local token
 
 ## Offline Support
 

@@ -6,6 +6,7 @@ export 'src/services/api_service.dart';
 export 'src/services/auth_service.dart';
 export 'src/services/sync_service.dart';
 export 'src/services/database_service.dart';
+export 'src/services/push_notification_service.dart';
 
 // Controllers
 export 'src/controllers/base_controller.dart';

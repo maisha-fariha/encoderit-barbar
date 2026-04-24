@@ -17,6 +17,9 @@ class AppServices {
   Future<void> initialize({
     EnvironmentMode environmentMode = EnvironmentMode.development,
     AppConfig? appConfig,
+    PushNotificationProvider? pushNotificationProvider,
+    PushNotificationConfig pushNotificationConfig =
+        const PushNotificationConfig(),
   }) async {
     // Setup gems_core services (environment, config)
     await setupCoreServices(
@@ -26,7 +29,7 @@ class AppServices {
 
     // Get environment config
     final env = Environment.instance;
-    
+
     // Configure API using environment config
     final apiConfig = ApiConfig(
       baseUrl: env.apiBaseUrl,
@@ -37,6 +40,8 @@ class AppServices {
     // Setup gems_data_layer services
     await setupDataLayerServices(
       apiConfig: apiConfig,
+      pushNotificationProvider: pushNotificationProvider,
+      pushNotificationConfig: pushNotificationConfig,
     );
 
     // Setup gems_responsive services
@@ -68,6 +73,10 @@ class AppServices {
   SyncService get syncService => getIt<SyncService>();
   AuthService get authService => getIt<AuthService>();
   DatabaseService get databaseService => getIt<DatabaseService>();
+  PushNotificationService? get pushNotificationService =>
+      getIt.isRegistered<PushNotificationService>()
+      ? getIt<PushNotificationService>()
+      : null;
 
   /// Reset all services (useful for testing)
   Future<void> reset() async {
@@ -77,4 +86,3 @@ class AppServices {
     await resetResponsiveServices();
   }
 }
-

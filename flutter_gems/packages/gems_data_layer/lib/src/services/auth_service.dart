@@ -3,13 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import '../utils/api_response.dart';
 
-Map<String, dynamic>? _authMapOrNull(Object? value) {
-  if (value == null) return null;
-  if (value is Map<String, dynamic>) return value;
-  if (value is Map) return Map<String, dynamic>.from(value);
-  return null;
-}
-
 /// Authentication data model
 class AuthData {
   final String accessToken;
@@ -59,22 +52,17 @@ class AuthService {
   AuthService(this.apiService, this.prefs);
 
   /// Login
-  ///
-  /// When [requestBody] is set, it is sent as JSON as-is (e.g. `{username, password}`).
-  /// Otherwise `{email, password}` is used.
   Future<ApiResponse<AuthData>> login({
     required String email,
     required String password,
     String endpoint = '/auth/login',
-    Map<String, dynamic>? requestBody,
   }) async {
     final response = await apiService.post<Map<String, dynamic>>(
       endpoint,
-      data: requestBody ??
-          {
-            'email': email,
-            'password': password,
-          },
+      data: {
+        'email': email,
+        'password': password,
+      },
     );
 
     if (response.success && response.data != null) {
@@ -189,52 +177,19 @@ class AuthService {
     }
   }
 
-  /// Restores [ApiService] bearer token from persisted auth (for offline use).
-  ///
-  /// Call only after you have verified the session should be allowed offline
-  /// (e.g. JWT `exp` not passed). When [allowExpiredAccessToken] is true, the
-  /// token is applied even if [AuthData.isExpired] is true.
-  Future<bool> applyStoredTokenForOfflineUse({
-    bool allowExpiredAccessToken = false,
-  }) async {
-    final stored = await getStoredAuth();
-    if (stored == null || stored.accessToken.isEmpty) return false;
-    if (stored.isExpired && !allowExpiredAccessToken) return false;
-    apiService.setAuthToken(stored.accessToken);
-    return true;
-  }
-
   /// Parse auth response
   AuthData _parseAuthResponse(Map<String, dynamic> data) {
-    final nested = data['data'];
-    final Map<String, dynamic> tokenSource =
-        nested is Map ? Map<String, dynamic>.from(nested) : data;
     return AuthData(
-      accessToken: (tokenSource['accessToken'] ??
-              tokenSource['token'] ??
-              data['accessToken'] ??
-              data['token'] ??
-              '')
-          .toString(),
-      refreshToken: tokenSource['refreshToken'] as String? ??
-          data['refreshToken'] as String?,
+      accessToken: data['accessToken'] ?? data['token'] ?? '',
+      refreshToken: data['refreshToken'],
       expiresAt: data['expiresAt'] != null
-          ? DateTime.parse(data['expiresAt'] as String)
+          ? DateTime.parse(data['expiresAt'])
           : data['expiresIn'] != null
               ? DateTime.now().add(
                   Duration(seconds: data['expiresIn'] as int),
                 )
-              : tokenSource['expiresIn'] != null
-                  ? DateTime.now().add(
-                      Duration(seconds: (tokenSource['expiresIn'] as num).toInt()),
-                    )
-                  : null,
-      userData: _authMapOrNull(
-        tokenSource['user'] ??
-            tokenSource['userData'] ??
-            data['user'] ??
-            data['userData'],
-      ),
+              : null,
+      userData: data['user'] ?? data['userData'],
     );
   }
 

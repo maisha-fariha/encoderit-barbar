@@ -7,7 +7,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 final getIt = GetIt.instance;
 
 /// Initialize all gems_data_layer services with get_it
-/// 
+///
 /// Usage:
 /// ```dart
 /// await setupDataLayerServices(
@@ -19,6 +19,9 @@ Future<void> setupDataLayerServices({
   SharedPreferences? sharedPreferences,
   Connectivity? connectivity,
   String? databaseBoxName,
+  PushNotificationProvider? pushNotificationProvider,
+  PushNotificationConfig pushNotificationConfig =
+      const PushNotificationConfig(),
 }) async {
   // Register SharedPreferences (singleton)
   if (sharedPreferences != null) {
@@ -68,10 +71,21 @@ Future<void> setupDataLayerServices({
     ),
   );
   await getIt<AuthService>().initialize();
+
+  // Register PushNotificationService when a provider is supplied.
+  if (pushNotificationProvider != null) {
+    getIt.registerSingleton<PushNotificationService>(
+      PushNotificationService(
+        pushNotificationProvider,
+        getIt<SharedPreferences>(),
+        config: pushNotificationConfig,
+      ),
+    );
+    await getIt<PushNotificationService>().initialize();
+  }
 }
 
 /// Reset all registered services (useful for testing)
 Future<void> resetDataLayerServices() async {
   await getIt.reset();
 }
-
