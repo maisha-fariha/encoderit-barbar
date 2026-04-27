@@ -14,6 +14,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   int _step = 1;
   int _selected = 0;
   int _selectedTime = 0;
+  DateTime _selectedDate = DateTime(2026, 4, 9);
   bool _recurringEnabled = true;
   int _recurringIndex = 0;
 
@@ -90,6 +91,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       setState(() {
         _step = 3;
         _selectedTime = 0;
+        _selectedDate = DateTime(2026, 4, 9);
         _recurringEnabled = true;
         _recurringIndex = 0;
       });
@@ -100,6 +102,113 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       return;
     }
     // Next steps can be implemented later.
+  }
+
+  String _monthLabelIt(DateTime date) {
+    const months = [
+      'Gennaio',
+      'Febbraio',
+      'Marzo',
+      'Aprile',
+      'Maggio',
+      'Giugno',
+      'Luglio',
+      'Agosto',
+      'Settembre',
+      'Ottobre',
+      'Novembre',
+      'Dicembre',
+    ];
+    final m = months[(date.month - 1).clamp(0, 11)];
+    return '$m ${date.year}';
+  }
+
+  Future<void> _pickStep3Date() async {
+    final initial = _selectedDate;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: DateTime(2035, 12, 31),
+      builder: (context, child) {
+        final base = Theme.of(context);
+        const surface = Color(0xFF242424);
+        const onSurface = Color(0xFFEDEDED);
+        const primary = Color(0xFF185C5C);
+        const onPrimary = Color(0xFFEDEDED);
+        const divider = Color(0xFF3A3A3A);
+
+        final scheme = base.colorScheme.copyWith(
+          brightness: Brightness.dark,
+          primary: primary,
+          onPrimary: onPrimary,
+          secondary: primary,
+          onSecondary: onPrimary,
+          surface: surface,
+          onSurface: onSurface,
+        );
+        return Theme(
+          data: ThemeData(
+            brightness: Brightness.dark,
+            useMaterial3: true,
+            colorScheme: scheme,
+            dialogTheme: const DialogThemeData(
+              backgroundColor: surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(22)),
+              ),
+            ),
+            dividerColor: divider,
+            datePickerTheme: DatePickerThemeData(
+              backgroundColor: surface,
+              dividerColor: divider,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(22)),
+              ),
+              headerBackgroundColor: surface,
+              headerForegroundColor: onSurface,
+              weekdayStyle: const TextStyle(
+                color: Color(0xFFBDBDBD),
+                fontWeight: FontWeight.w700,
+              ),
+              dayStyle: const TextStyle(
+                color: onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+              todayForegroundColor: const WidgetStatePropertyAll(onSurface),
+              todayBorder: const BorderSide(color: primary, width: 1),
+              dayForegroundColor: const WidgetStatePropertyAll(onSurface),
+              dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) return primary;
+                return Colors.transparent;
+              }),
+              yearForegroundColor: const WidgetStatePropertyAll(onSurface),
+              yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) return primary;
+                return Colors.transparent;
+              }),
+              rangePickerBackgroundColor: surface,
+              rangePickerHeaderBackgroundColor: surface,
+              rangePickerHeaderForegroundColor: onSurface,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+              bodyColor: onSurface,
+              displayColor: onSurface,
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+
+    if (picked == null) return;
+    setState(() => _selectedDate = picked);
   }
 
   Future<void> _showConfirmDialog() async {
@@ -120,147 +229,152 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
+                  constraints: const BoxConstraints(maxWidth: 680),
                   child: Material(
-                    color: const Color(0xFF2B2B2B),
-                    borderRadius: BorderRadius.circular(26),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          right: 14,
-                          top: 14,
-                          child: InkWell(
-                            onTap: () => Navigator.of(context).pop(),
-                            borderRadius: BorderRadius.circular(18),
-                            child: const Padding(
-                              padding: EdgeInsets.all(10),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: Color(0xFF8A8A8A),
-                                size: 28,
+                    color: const Color(0xFF242424),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0xFF185C5C), width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 0),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            right: 18,
+                            top: 18,
+                            child: InkWell(
+                              onTap: () => Navigator.of(context).pop(),
+                              borderRadius: BorderRadius.circular(18),
+                              child: const Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  color: Color(0xFF797979),
+                                  size: 32,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(height: 12),
-                              Container(
-                                width: 86,
-                                height: 86,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.black.withValues(alpha: 0.12),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(26, 30, 26, 26),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(height: 10),
+                                SvgPicture.asset(
+                                  'assets/icons/shield.svg',
+                                  width: 70,
                                 ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.shield_outlined,
-                                    size: 54,
-                                    color: Color(0xFFE24B4B),
+                                const SizedBox(height: 22),
+                                Text(
+                                  'Sei sicuro?',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFFDDDDDD),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.5,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 22),
-                              Text(
-                                'Sei sicuro?',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFFEDEDED),
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1.05,
+                                const SizedBox(height: 14),
+                                Text(
+                                  'Questa azione non può essere annullata.\n'
+                                  'Conferma se desideri procedere.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFFDDDDDD),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.5,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                'Questa azione non può essere annullata.\n'
-                                'Conferma se desideri procedere.',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFFBDBDBD),
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.35,
-                                ),
-                              ),
-                              const SizedBox(height: 28),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 72,
-                                      child: OutlinedButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(),
-                                        style: OutlinedButton.styleFrom(
-                                          side: const BorderSide(
-                                            color: Color(0xFF5A5A5A),
-                                            width: 2,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              28,
+                                const SizedBox(height: 30),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 54,
+                                        child: OutlinedButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          style: OutlinedButton.styleFrom(
+                                            side: const BorderSide(
+                                              color: Color(0xFF797979),
+                                              width: 1,
                                             ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            backgroundColor: Colors.transparent,
                                           ),
-                                          backgroundColor: const Color(
-                                            0xFF2B2B2B,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Cancellare',
-                                          style: GoogleFonts.inter(
-                                            color: const Color(0xFF6E6E6E),
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w700,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 15.0),
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Text(
+                                                'Cancellare',
+                                                style: GoogleFonts.inter(
+                                                  color: const Color(0xFF797979),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  height: 1.5,
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 72,
-                                      child: FilledButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          if (!mounted) return;
-                                          // Stay (or return) on step 4 as requested.
-                                          setState(() => _step = 4);
-                                        },
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFFF2F2F2,
-                                          ),
-                                          foregroundColor: const Color(
-                                            0xFF0B0B0B,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              28,
+                                    const SizedBox(width: 18),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 54,
+                                        child: FilledButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                            if (!mounted) return;
+                                            setState(() => _step = 4);
+                                          },
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFFEEEEEE),
+                                            foregroundColor:
+                                                const Color(0xFF242424),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
                                           ),
-                                        ),
-                                        child: Text(
-                                          'Confermare',
-                                          style: GoogleFonts.inter(
-                                            color: const Color(0xFF0B0B0B),
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w800,
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              'Confermare',
+                                              style: GoogleFonts.inter(
+                                                color: const Color(0xFF242424),
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                height: 1.5,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -412,10 +526,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             _Step3CalendarCard(
+                              monthLabel: _monthLabelIt(_selectedDate),
                               selectedTimeIndex: _selectedTime,
                               times: _times,
                               onSelectTime: (i) =>
                                   setState(() => _selectedTime = i),
+                              onTapCalendar: _pickStep3Date,
                             ),
                             const SizedBox(height: 20),
                             _Step3RecurringToggle(
@@ -430,14 +546,14 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 onSelect: (i) =>
                                     setState(() => _recurringIndex = i),
                               ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 15),
                             _Step3MonthlySummary(),
                           ],
                         ),
                       )
                     : SingleChildScrollView(
                         key: const ValueKey('step4'),
-                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
+                        padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 20),
                         child: _Step4SummaryCard(
                           service: _items[_selected],
                           barber: _barbers[_selected],
@@ -453,7 +569,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                 height: 58,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2B2B2B),
+                    color: const Color(0xFF242424),
                     borderRadius: BorderRadius.circular(32),
                   ),
                   child: Material(
@@ -499,11 +615,18 @@ class _Step4SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(30, 25, 30, 25),
       decoration: BoxDecoration(
-        color: const Color(0xFF2B2B2B),
+        color: const Color(0xFF242424),
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: const Color(0xFF3A3A3A)),
+        border: Border.all(color: const Color(0xFF185C5C)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 0),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -515,30 +638,32 @@ class _Step4SummaryCard extends StatelessWidget {
           const _Step4KeyValueRow(label: 'Data', value: 'Gio, Aprile 09'),
           const SizedBox(height: 14),
           _Step4KeyValueRow(label: 'Tempo', value: '$time AM'),
-          const SizedBox(height: 18),
+          const SizedBox(height: 25),
           const _Step4Divider(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           const _Step4MonthlyRecurrence(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 25),
           const _Step4Divider(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           Row(
             children: [
               Text(
                 'Totale',
                 style: GoogleFonts.inter(
-                  color: const Color(0xFFE6E6E6),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFFFFFFFF),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
                 ),
               ),
               const Spacer(),
               Text(
                 '€${service.priceEuro}',
                 style: GoogleFonts.inter(
-                  color: const Color(0xFFE6E6E6),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFFFFFFFF),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
                 ),
               ),
             ],
@@ -562,22 +687,22 @@ class _Step4KeyValueRow extends StatelessWidget {
         Text(
           label,
           style: GoogleFonts.inter(
-            color: const Color(0xFFBDBDBD),
+            color: const Color(0xFFDDDDDD),
             fontSize: 14,
             fontWeight: FontWeight.w600,
+            height: 1.5,
           ),
         ),
         const Spacer(),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              color: const Color(0xFFE6E6E6),
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
+        Text(
+          value,
+          textAlign: TextAlign.right,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(
+            color: const Color(0xFFFFFFFF),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            height: 1.5,
           ),
         ),
       ],
@@ -590,7 +715,7 @@ class _Step4Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 2, color: const Color(0xFF3A3A3A));
+    return Container(height: 1, color: Color(0xFF797979).withValues(alpha: 0.30));
   }
 }
 
@@ -599,10 +724,11 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget row(String text, {bool muted = false, bool withPill = true}) {
+    Widget row(String text, { bool withPill = true}) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 15),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Column(
@@ -611,30 +737,29 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
                   Text(
                     text,
                     style: GoogleFonts.inter(
-                      color: muted
-                          ? const Color(0xFF7A7A7A)
-                          : const Color(0xFFE6E6E6),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFDDDDDD),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   if (withPill) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF232323),
+                        color: Color(0xFF797979).withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
                         'con Marcus Silva',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFFBDBDBD),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFDDDDDD),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5,
                         ),
                       ),
                     ),
@@ -645,8 +770,8 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
             const SizedBox(width: 12),
             Icon(
               Icons.close_rounded,
-              size: 22,
-              color: muted ? const Color(0xFF6B6B6B) : const Color(0xFF8A8A8A),
+              size: 16,
+              color: Color(0xFF797979),
             ),
           ],
         ),
@@ -658,30 +783,31 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(
-              Icons.autorenew_rounded,
-              color: Color(0xFFE6E6E6),
-              size: 18,
+            SvgPicture.asset(
+              'assets/icons/recurrence_icon.svg',
+              width: 18,
             ),
             const SizedBox(width: 10),
             Text(
               'Ricorrenza mensile',
               style: GoogleFonts.inter(
-                color: const Color(0xFFE6E6E6),
+                color: const Color(0xFFFFFFFF),
                 fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
+                height: 1.5,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         row('Giovedì 9 aprile 2026, ore 10:00'),
-        const _Step4Divider(),
+
         row('Giovedì 16 aprile 2026, ore 10:00'),
-        const _Step4Divider(),
+
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
@@ -690,31 +816,32 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
                     Text(
                       'Giovedì 23 aprile 2026, ore 10:00',
                       style: GoogleFonts.inter(
-                        color: const Color(0xFF7A7A7A),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFDDDDDD),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
+                        color: Color(0xFF797979).withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: const Color(0xFFB14A4A),
-                          width: 1.5,
+                          color: const Color(0xFFEF4444),
+                          width: 1,
                         ),
                       ),
                       child: Text(
                         'Alternative Barber with James Martinez',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFFE6E6E6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFDDDDDD),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5,
                         ),
                       ),
                     ),
@@ -724,13 +851,12 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
               const SizedBox(width: 12),
               const Icon(
                 Icons.close_rounded,
-                size: 22,
-                color: Color(0xFF6B6B6B),
+                size: 16,
+                color: Color(0xFF797979),
               ),
             ],
           ),
         ),
-        const _Step4Divider(),
         row('Giovedì 30 aprile 2026, ore 10:00'),
       ],
     );
@@ -988,14 +1114,18 @@ class _BarberItem {
 
 class _Step3CalendarCard extends StatelessWidget {
   const _Step3CalendarCard({
+    required this.monthLabel,
     required this.selectedTimeIndex,
     required this.times,
     required this.onSelectTime,
+    required this.onTapCalendar,
   });
 
+  final String monthLabel;
   final int selectedTimeIndex;
   final List<String> times;
   final ValueChanged<int> onSelectTime;
+  final VoidCallback onTapCalendar;
 
   @override
   Widget build(BuildContext context) {
@@ -1021,7 +1151,7 @@ class _Step3CalendarCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Aprile 2026',
+                monthLabel,
                 style: GoogleFonts.inter(
                   color: const Color(0xFFDDDDDD),
                   fontSize: 15,
@@ -1030,7 +1160,14 @@ class _Step3CalendarCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              SvgPicture.asset('assets/icons/calendar.svg', width: 24),
+              InkWell(
+                onTap: onTapCalendar,
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: SvgPicture.asset('assets/icons/calendar.svg', width: 24),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1077,6 +1214,13 @@ class _Step3CalendarCard extends StatelessWidget {
                 _DayChip(
                   day: 'Lun',
                   date: '13',
+                  selected: false,
+                  emphasized: true,
+                  ),
+                SizedBox(width: 14),
+                _DayChip(
+                  day: 'Mar',
+                  date: '14',
                   selected: false,
                   emphasized: true,
                 ),
@@ -1306,47 +1450,45 @@ class _Step3RecurringOptions extends StatelessWidget {
       '2 mesi',
       '3 mesi',
     ];
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0xFF242424),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF185C5C)),
-      ),
-      child: Column(
-        children: List.generate(options.length, (i) {
-          return InkWell(
-            onTap: () => onSelect(i),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: i == options.length - 1
-                        ? Colors.transparent
-                        : const Color(0xFF797979).withValues(alpha: 0.30),
-                    width: 2,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF242424),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF185C5C)),
+        ),
+        child: Column(
+          children: List.generate(options.length * 2 - 1, (idx) {
+            final isDivider = idx.isOdd;
+            if (isDivider) {
+              return Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
+                child: Container(
+                  height: 1,
+                  color: const Color(0xFF797979).withValues(alpha: 0.30),
+                ),
+              );
+            }
+            final i = idx ~/ 2;
+            return InkWell(
+              onTap: () => onSelect(i),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
+                alignment: Alignment.topLeft,
+                child: Text(
+                  options[i],
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFDDDDDD),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    height: 1.5,
                   ),
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      options[i],
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFFE6E6E6),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -1362,60 +1504,66 @@ class _Step3MonthlySummary extends StatelessWidget {
       'Giovedì 30 aprile 2026, ore 10:00',
     ];
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(30, 27, 30, 30),
       decoration: BoxDecoration(
-        color: const Color(0xFF2B2B2B),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: const Color(0xFF3A3A3A)),
+        color: const Color(0xFF242424),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF185C5C)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 0),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.autorenew_rounded,
-                color: Color(0xFFEDEDED),
-                size: 28,
+              SvgPicture.asset(
+                'assets/icons/recurrence_icon.svg',
+                width: 18,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 10),
               Text(
                 'Ricorrenza mensile',
                 style: GoogleFonts.inter(
-                  color: const Color(0xFFE6E6E6),
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  height: 1.0,
+                  color: const Color(0xFFFFFFFF),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           const _Step3Divider(),
           _Step3MonthlyRow(text: lines[0], muted: false),
           const _Step3Divider(),
           _Step3MonthlyRow(text: lines[1], muted: false),
           const _Step3Divider(),
           _Step3MonthlyRow(text: lines[2], muted: true),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFB14A4A), width: 2),
+              color: Color(0xFF797979).withValues(alpha: 0.20),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFEF4444), width: 1),
             ),
             child: Text(
               'Barbiere alternativo con James\nMartinez',
               style: GoogleFonts.inter(
-                color: const Color(0xFFE6E6E6),
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                height: 1.25,
+                color: const Color(0xFFDDDDDD),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.5,
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           const _Step3Divider(),
           _Step3MonthlyRow(text: lines[3], muted: false),
         ],
@@ -1433,7 +1581,7 @@ class _Step3MonthlyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 22),
+      padding: const EdgeInsets.symmetric(vertical: 20.0),
       child: Row(
         children: [
           Expanded(
@@ -1441,19 +1589,19 @@ class _Step3MonthlyRow extends StatelessWidget {
               text,
               style: GoogleFonts.inter(
                 color: muted
-                    ? const Color(0xFF7A7A7A)
-                    : const Color(0xFFE6E6E6),
-                fontSize: 26,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
+                    ? const Color(0xFF797979)
+                    : const Color(0xFFDDDDDD),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.5,
               ),
             ),
           ),
           const SizedBox(width: 12),
           Icon(
             Icons.close_rounded,
-            size: 30,
-            color: muted ? const Color(0xFF6B6B6B) : const Color(0xFF8A8A8A),
+            size: 16,
+            color: Color(0xFF797979),
           ),
         ],
       ),
@@ -1466,6 +1614,6 @@ class _Step3Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 2, color: const Color(0xFF3A3A3A));
+    return Container(height: 1, color: Color(0xFF797979).withValues(alpha: 0.30));
   }
 }
