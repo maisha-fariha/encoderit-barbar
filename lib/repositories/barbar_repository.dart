@@ -11,7 +11,6 @@ class BarbarRepository extends BaseRepository<Barbar> {
     required super.syncService,
   }) : super(
           baseEndpoint: ApiEndpoints.barbarList,
-          responseListKey: 'data',
         );
 
   @override

@@ -10,7 +10,6 @@ class BarberServiceRepository extends BaseRepository<BarberService> {
     required super.syncService,
   }) : super(
           baseEndpoint: ApiEndpoints.barberServices,
-          responseListKey: 'data',
         );
 
   @override
