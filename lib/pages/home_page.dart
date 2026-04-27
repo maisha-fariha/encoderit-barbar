@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,16 +19,40 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLarge = ResponsiveHelper.isLargeDevice(context);
+    final pad = MediaQuery.paddingOf(context);
+    final hPad = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 16,
+      medium: 22,
+      large: 28,
+    );
+    final contentMaxWidth = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: double.infinity,
+      large: 980,
+    );
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.12,
+      large: 1.28,
+    );
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
+          padding: EdgeInsets.only(bottom: 120 + pad.bottom),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: contentMaxWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                    child: Row(
                   children: [
                     Container(
                       width: 50,
@@ -56,7 +81,7 @@ class _HomePageState extends State<HomePage> {
                             'Leonardo',
                             style: GoogleFonts.inter(
                               color: const Color(0xFFFFFFFF),
-                              fontSize: 18,
+                              fontSize: 18 * fontScale,
                               fontWeight: FontWeight.w600,
                               height: 1.5,
                             ),
@@ -66,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                             'ID n.: 5630',
                             style: GoogleFonts.inter(
                               color: const Color(0xFFDDDDDD),
-                              fontSize: 14,
+                              fontSize: 14 * fontScale,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -80,7 +105,7 @@ class _HomePageState extends State<HomePage> {
                           '30',
                           style: GoogleFonts.inter(
                             color: const Color(0xFFFFFFFF),
-                            fontSize: 18,
+                            fontSize: 18 * fontScale,
                             fontWeight: FontWeight.w600,
                             height: 1.5,
                           ),
@@ -90,7 +115,7 @@ class _HomePageState extends State<HomePage> {
                           'Prenotazioni',
                           style: GoogleFonts.inter(
                             color: const Color(0xFFDDDDDD),
-                            fontSize: 14,
+                            fontSize: 14 * fontScale,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -98,59 +123,63 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 30),
-              Container(
-                padding: EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF242424),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _UpcomingCard(
-                      expandedIndex: _expandedIndex,
-                      onToggle: (i) => setState(
-                        () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                  const SizedBox(height: 30),
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: hPad),
+                    padding: EdgeInsets.all(isLarge ? 34 : 30),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF242424),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 54,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEEEEE),
-                          borderRadius: BorderRadius.circular(30),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _UpcomingCard(
+                          expandedIndex: _expandedIndex,
+                          onToggle: (i) => setState(
+                            () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                          ),
                         ),
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 54,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEEEEE),
                               borderRadius: BorderRadius.circular(30),
                             ),
-                          ),
-                          onPressed: () {},
-                          child: Text(
-                            'Prenotazione di un servizio',
-                            style: GoogleFonts.inter(
-                              color: Color(0xFF000000),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              height: 1.5,
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: () {},
+                              child: Text(
+                                'Prenotazione di un servizio',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF000000),
+                                  fontSize: 16 * fontScale,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.5,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -208,6 +237,12 @@ class _UpcomingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     final items = const <_UpcomingItem>[
       _UpcomingItem(
         title: 'Taglio di capelli',
@@ -239,7 +274,7 @@ class _UpcomingCard extends StatelessWidget {
           'Prossimo appuntamento',
           style: GoogleFonts.inter(
             color: const Color(0xFFEEEEEE),
-            fontSize: 18,
+            fontSize: 18 * fontScale,
             fontWeight: FontWeight.w700,
             height: 1.5,
           ),
@@ -275,6 +310,12 @@ class _UpcomingAccordionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOut,
@@ -309,7 +350,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                           item.title,
                           style: GoogleFonts.inter(
                             color: const Color(0xFFFFFFFF),
-                            fontSize: 16,
+                            fontSize: 16 * fontScale,
                             fontWeight: FontWeight.w600,
                             height: 1.5,
                           ),
@@ -319,7 +360,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                           '${item.subtitle}   •   ${item.dateText}',
                           style: GoogleFonts.inter(
                             color: const Color(0xFFDDDDDD),
-                            fontSize: 13,
+                            fontSize: 13 * fontScale,
                             fontWeight: FontWeight.w500,
                             height: 1.5,
                           ),
@@ -361,7 +402,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                           'Ricorrenza mensile',
                           style: GoogleFonts.inter(
                             color: Color(0xFFFFFFFF),
-                            fontSize: 16,
+                            fontSize: 16 * fontScale,
                             fontWeight: FontWeight.w700,
                             height: 1.5,
                           ),
@@ -427,6 +468,12 @@ class _RecurrenceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
       child: Row(
@@ -440,7 +487,7 @@ class _RecurrenceRow extends StatelessWidget {
                   text,
                   style: GoogleFonts.inter(
                     color: const Color(0xFFEEEEEE),
-                    fontSize: 14,
+                    fontSize: 14 * fontScale,
                     fontWeight: FontWeight.w500,
                     height: 1.5,
                   ),
@@ -459,7 +506,7 @@ class _RecurrenceRow extends StatelessWidget {
                     pillText,
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
-                      fontSize: 14,
+                      fontSize: 14 * fontScale,
                       fontWeight: FontWeight.w500,
                       height: 1.5,
                     ),
@@ -491,6 +538,12 @@ class _RecurrenceAltRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
       child: Row(
@@ -504,7 +557,7 @@ class _RecurrenceAltRow extends StatelessWidget {
                   text,
                   style: GoogleFonts.inter(
                     color: Color(0xFFEEEEEE),
-                    fontSize: 14,
+                    fontSize: 14 * fontScale,
                     fontWeight: FontWeight.w500,
                     height: 1.5,
                   ),
@@ -527,7 +580,7 @@ class _RecurrenceAltRow extends StatelessWidget {
                     altText,
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
-                      fontSize: 14,
+                      fontSize: 14 * fontScale,
                       fontWeight: FontWeight.w500,
                       height: 1.5,
                     ),
