@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -12,10 +13,31 @@ class AppoinmentPage extends StatefulWidget {
 
 class _AppoinmentPageState extends State<AppoinmentPage> {
   int _step = 1;
-  int _selected = 0;
+  int _selectedShop = 0;
+  int _selectedService = 0;
+  int _selectedBarber = 0;
   int _selectedTime = 0;
+  DateTime _selectedDate = DateTime(2026, 4, 9);
   bool _recurringEnabled = true;
   int _recurringIndex = 0;
+
+  final _shops = const <_ShopItem>[
+    _ShopItem(
+      name: 'Moda Bella S.r.l.',
+      addressLine1: 'Via Roma, 15',
+      addressLine2: '20121 Milano (MI)',
+    ),
+    _ShopItem(
+      name: 'AEB Industriale S.r.l',
+      addressLine1: 'Via Brodolini, 8',
+      addressLine2: '40053 Valsamoggia (BO)',
+    ),
+    _ShopItem(
+      name: 'AEB Industriale S.r.l',
+      addressLine1: 'Via Brodolini, 8',
+      addressLine2: '40053 Valsamoggia (BO)',
+    ),
+  ];
 
   final _items = const <_ServiceItem>[
     _ServiceItem(title: 'Taglio di capelli', minutes: 45, priceEuro: 45),
@@ -82,24 +104,139 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     if (_step == 1) {
       setState(() {
         _step = 2;
-        _selected = 0;
+        _selectedService = 0;
       });
       return;
     }
     if (_step == 2) {
       setState(() {
         _step = 3;
+        _selectedBarber = 0;
+      });
+      return;
+    }
+    if (_step == 3) {
+      setState(() {
+        _step = 4;
         _selectedTime = 0;
+        _selectedDate = DateTime(2026, 4, 9);
         _recurringEnabled = true;
         _recurringIndex = 0;
       });
       return;
     }
-    if (_step == 3) {
-      setState(() => _step = 4);
+    if (_step == 4) {
+      setState(() => _step = 5);
       return;
     }
     // Next steps can be implemented later.
+  }
+
+  String _monthLabelIt(DateTime date) {
+    const months = [
+      'Gennaio',
+      'Febbraio',
+      'Marzo',
+      'Aprile',
+      'Maggio',
+      'Giugno',
+      'Luglio',
+      'Agosto',
+      'Settembre',
+      'Ottobre',
+      'Novembre',
+      'Dicembre',
+    ];
+    final m = months[(date.month - 1).clamp(0, 11)];
+    return '$m ${date.year}';
+  }
+
+  Future<void> _pickStep3Date() async {
+    final initial = _selectedDate;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: DateTime(2035, 12, 31),
+      builder: (context, child) {
+        final base = Theme.of(context);
+        const surface = Color(0xFF242424);
+        const onSurface = Color(0xFFEDEDED);
+        const primary = Color(0xFF185C5C);
+        const onPrimary = Color(0xFFEDEDED);
+        const divider = Color(0xFF3A3A3A);
+
+        final scheme = base.colorScheme.copyWith(
+          brightness: Brightness.dark,
+          primary: primary,
+          onPrimary: onPrimary,
+          secondary: primary,
+          onSecondary: onPrimary,
+          surface: surface,
+          onSurface: onSurface,
+        );
+        return Theme(
+          data: ThemeData(
+            brightness: Brightness.dark,
+            useMaterial3: true,
+            colorScheme: scheme,
+            dialogTheme: const DialogThemeData(
+              backgroundColor: surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(22)),
+              ),
+            ),
+            dividerColor: divider,
+            datePickerTheme: DatePickerThemeData(
+              backgroundColor: surface,
+              dividerColor: divider,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(22)),
+              ),
+              headerBackgroundColor: surface,
+              headerForegroundColor: onSurface,
+              weekdayStyle: const TextStyle(
+                color: Color(0xFFBDBDBD),
+                fontWeight: FontWeight.w700,
+              ),
+              dayStyle: const TextStyle(
+                color: onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+              todayForegroundColor: const WidgetStatePropertyAll(onSurface),
+              todayBorder: const BorderSide(color: primary, width: 1),
+              dayForegroundColor: const WidgetStatePropertyAll(onSurface),
+              dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) return primary;
+                return Colors.transparent;
+              }),
+              yearForegroundColor: const WidgetStatePropertyAll(onSurface),
+              yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) return primary;
+                return Colors.transparent;
+              }),
+              rangePickerBackgroundColor: surface,
+              rangePickerHeaderBackgroundColor: surface,
+              rangePickerHeaderForegroundColor: onSurface,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
+              bodyColor: onSurface,
+              displayColor: onSurface,
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+
+    if (picked == null) return;
+    setState(() => _selectedDate = picked);
   }
 
   Future<void> _showConfirmDialog() async {
@@ -120,147 +257,152 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
+                  constraints: const BoxConstraints(maxWidth: 680),
                   child: Material(
-                    color: const Color(0xFF2B2B2B),
-                    borderRadius: BorderRadius.circular(26),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          right: 14,
-                          top: 14,
-                          child: InkWell(
-                            onTap: () => Navigator.of(context).pop(),
-                            borderRadius: BorderRadius.circular(18),
-                            child: const Padding(
-                              padding: EdgeInsets.all(10),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: Color(0xFF8A8A8A),
-                                size: 28,
+                    color: const Color(0xFF242424),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0xFF185C5C), width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 0),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            right: 18,
+                            top: 18,
+                            child: InkWell(
+                              onTap: () => Navigator.of(context).pop(),
+                              borderRadius: BorderRadius.circular(18),
+                              child: const Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  color: Color(0xFF797979),
+                                  size: 32,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(height: 12),
-                              Container(
-                                width: 86,
-                                height: 86,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.black.withValues(alpha: 0.12),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(26, 30, 26, 26),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(height: 10),
+                                SvgPicture.asset(
+                                  'assets/icons/shield.svg',
+                                  width: 70,
                                 ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.shield_outlined,
-                                    size: 54,
-                                    color: Color(0xFFE24B4B),
+                                const SizedBox(height: 22),
+                                Text(
+                                  'Sei sicuro?',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFFDDDDDD),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.5,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 22),
-                              Text(
-                                'Sei sicuro?',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFFEDEDED),
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1.05,
+                                const SizedBox(height: 14),
+                                Text(
+                                  'Questa azione non può essere annullata.\n'
+                                  'Conferma se desideri procedere.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFFDDDDDD),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.5,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                'Questa azione non può essere annullata.\n'
-                                'Conferma se desideri procedere.',
-                                textAlign: TextAlign.center,
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFFBDBDBD),
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.35,
-                                ),
-                              ),
-                              const SizedBox(height: 28),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 72,
-                                      child: OutlinedButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(),
-                                        style: OutlinedButton.styleFrom(
-                                          side: const BorderSide(
-                                            color: Color(0xFF5A5A5A),
-                                            width: 2,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              28,
+                                const SizedBox(height: 30),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 54,
+                                        child: OutlinedButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          style: OutlinedButton.styleFrom(
+                                            side: const BorderSide(
+                                              color: Color(0xFF797979),
+                                              width: 1,
                                             ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            backgroundColor: Colors.transparent,
                                           ),
-                                          backgroundColor: const Color(
-                                            0xFF2B2B2B,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Cancellare',
-                                          style: GoogleFonts.inter(
-                                            color: const Color(0xFF6E6E6E),
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w700,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 15.0),
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              child: Text(
+                                                'Cancellare',
+                                                style: GoogleFonts.inter(
+                                                  color: const Color(0xFF797979),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  height: 1.5,
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: SizedBox(
-                                      height: 72,
-                                      child: FilledButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          if (!mounted) return;
-                                          // Stay (or return) on step 4 as requested.
-                                          setState(() => _step = 4);
-                                        },
-                                        style: FilledButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFFF2F2F2,
-                                          ),
-                                          foregroundColor: const Color(
-                                            0xFF0B0B0B,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              28,
+                                    const SizedBox(width: 18),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 54,
+                                        child: FilledButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                            if (!mounted) return;
+                                            setState(() => _step = 4);
+                                          },
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor:
+                                                const Color(0xFFEEEEEE),
+                                            foregroundColor:
+                                                const Color(0xFF242424),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
                                           ),
-                                        ),
-                                        child: Text(
-                                          'Confermare',
-                                          style: GoogleFonts.inter(
-                                            color: const Color(0xFF0B0B0B),
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.w800,
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              'Confermare',
+                                              style: GoogleFonts.inter(
+                                                color: const Color(0xFF242424),
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                                height: 1.5,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -276,7 +418,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
-    final scale = isWide ? 1.12 : 1.0;
+    final scale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.12,
+      large: 1.22,
+    );
     final hPad = isWide ? 28.0 : 18.0;
     return Scaffold(
       backgroundColor: Colors.black,
@@ -311,12 +458,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPad + 4, vertical: 8),
               child: Row(
-                children: List.generate(4, (i) {
+                children: List.generate(5, (i) {
                   final active = i < _step;
                   return Expanded(
                     child: Container(
                       height: 6,
-                      margin: EdgeInsets.only(right: i == 3 ? 0 : 6),
+                      margin: EdgeInsets.only(right: i == 4 ? 0 : 6),
                       decoration: BoxDecoration(
                         color: active
                             ? const Color(0xFFDDDDDD)
@@ -329,15 +476,17 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(hPad + 4, 10, hPad + 4, 14),
+              padding: EdgeInsets.fromLTRB(hPad + 4, 20, hPad + 4, 14),
               child: Row(
                 children: [
                   Text(
                     _step == 1
-                        ? 'Seleziona il servizio'
-                        : _step == 2
                         ? 'Scegli il tuo barbiere'
+                        : _step == 2
+                        ? 'Seleziona il servizio'
                         : _step == 3
+                        ? 'Seleziona il barbiere'
+                        : _step == 4
                         ? 'Scegli una data'
                         : 'Riepilogo della prenotazione',
                     style: GoogleFonts.inter(
@@ -349,7 +498,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                   ),
                   const Spacer(),
                   Text(
-                    _step >= 3 ? 'Passo $_step di 4' : 'Fase $_step di 4',
+                    'Fase $_step di 5',
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
                       fontSize: 12 * scale,
@@ -365,111 +514,213 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeOut,
                 child: _step == 1
+                    ? GridView.builder(
+                        key: const ValueKey('shops'),
+                        padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 18),
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              ResponsiveHelper.getResponsiveValue<int>(
+                            context,
+                            small: 2,
+                            large: 3,
+                          ),
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio:
+                              ResponsiveHelper.getResponsiveValue<double>(
+                            context,
+                            small: 0.66,
+                            large: 0.86,
+                          ),
+                        ),
+                        itemCount: _shops.length,
+                        itemBuilder: (context, i) {
+                          final item = _shops[i];
+                          final selected = i == _selectedShop;
+                          return _ShopCard(
+                            item: item,
+                            selected: selected,
+                            onTap: () => setState(() => _selectedShop = i),
+                          );
+                        },
+                      )
+                    : _step == 2
                     ? ListView.separated(
                         key: const ValueKey('services'),
-                        padding: EdgeInsets.fromLTRB(hPad + 2, 8, hPad + 2, 18),
+                        padding:
+                            EdgeInsets.fromLTRB(hPad + 2, 8, hPad + 2, 18),
                         itemCount: _items.length,
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 16),
                         itemBuilder: (context, i) {
                           final item = _items[i];
-                          final selected = i == _selected;
+                          final selected = i == _selectedService;
                           return _ServiceCard(
                             item: item,
                             selected: selected,
-                            onTap: () => setState(() => _selected = i),
-                          );
-                        },
-                      )
-                    : _step == 2
-                    ? GridView.builder(
-                        key: const ValueKey('barbers'),
-                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 16,
-                              // Slightly taller tiles to avoid card overflow.
-                              childAspectRatio: 0.70,
-                            ),
-                        itemCount: _barbers.length,
-                        itemBuilder: (context, i) {
-                          final item = _barbers[i];
-                          final selected = i == _selected;
-                          return _BarberCard(
-                            item: item,
-                            selected: selected,
-                            onTap: () => setState(() => _selected = i),
+                            onTap: () => setState(() => _selectedService = i),
                           );
                         },
                       )
                     : _step == 3
+                    ? GridView.builder(
+                        key: const ValueKey('barbers'),
+                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              ResponsiveHelper.getResponsiveValue<int>(
+                            context,
+                            small: 2,
+                            large: 3,
+                          ),
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          // Slightly taller tiles to avoid card overflow.
+                          childAspectRatio:
+                              ResponsiveHelper.getResponsiveValue<double>(
+                            context,
+                            small: 0.70,
+                            large: 0.88,
+                          ),
+                        ),
+                        itemCount: _barbers.length,
+                        itemBuilder: (context, i) {
+                          final item = _barbers[i];
+                          final selected = i == _selectedBarber;
+                          return _BarberCard(
+                            item: item,
+                            selected: selected,
+                            onTap: () => setState(() => _selectedBarber = i),
+                          );
+                        },
+                      )
+                    : _step == 4
                     ? SingleChildScrollView(
-                        key: const ValueKey('step3'),
+                        key: const ValueKey('step4'),
                         padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _Step3CalendarCard(
+                        child: Builder(
+                          builder: (context) {
+                            final isLarge =
+                                ResponsiveHelper.isLargeDevice(context);
+
+                            final calendar = _Step3CalendarCard(
+                              monthLabel: _monthLabelIt(_selectedDate),
                               selectedTimeIndex: _selectedTime,
                               times: _times,
                               onSelectTime: (i) =>
                                   setState(() => _selectedTime = i),
-                            ),
-                            const SizedBox(height: 20),
-                            _Step3RecurringToggle(
-                              value: _recurringEnabled,
-                              onChanged: (v) =>
-                                  setState(() => _recurringEnabled = v),
-                            ),
-                            const SizedBox(height: 15),
-                            if (_recurringEnabled)
-                              _Step3RecurringOptions(
-                                selectedIndex: _recurringIndex,
-                                onSelect: (i) =>
-                                    setState(() => _recurringIndex = i),
+                              onTapCalendar: _pickStep3Date,
+                            );
+
+                            final right = Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _Step3RecurringToggle(
+                                  value: _recurringEnabled,
+                                  onChanged: (v) =>
+                                      setState(() => _recurringEnabled = v),
+                                ),
+                                const SizedBox(height: 15),
+                                if (_recurringEnabled)
+                                  _Step3RecurringOptions(
+                                    selectedIndex: _recurringIndex,
+                                    onSelect: (i) =>
+                                        setState(() => _recurringIndex = i),
+                                  ),
+                                const SizedBox(height: 15),
+                                _Step3MonthlySummary(),
+                              ],
+                            );
+
+                            if (!isLarge) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  calendar,
+                                  const SizedBox(height: 20),
+                                  right,
+                                ],
+                              );
+                            }
+
+                            return Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 1100),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(flex: 5, child: calendar),
+                                    const SizedBox(width: 18),
+                                    Expanded(flex: 6, child: right),
+                                  ],
+                                ),
                               ),
-                            const SizedBox(height: 14),
-                            _Step3MonthlySummary(),
-                          ],
+                            );
+                          },
                         ),
                       )
                     : SingleChildScrollView(
-                        key: const ValueKey('step4'),
-                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
-                        child: _Step4SummaryCard(
-                          service: _items[_selected],
-                          barber: _barbers[_selected],
-                          time: _times[_selectedTime],
+                        key: const ValueKey('step5'),
+                        padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 20),
+                        child: Builder(
+                          builder: (context) {
+                            final isLarge =
+                                ResponsiveHelper.isLargeDevice(context);
+                            final card = _Step4SummaryCard(
+                              service: _items[_selectedService],
+                              barber: _barbers[_selectedBarber],
+                              time: _times[_selectedTime],
+                            );
+                            if (!isLarge) return card;
+                            return Center(
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 980),
+                                child: card,
+                              ),
+                            );
+                          },
                         ),
                       ),
               ),
             ),
             Padding(
               padding: EdgeInsets.fromLTRB(hPad, 6, hPad, 10 + pad.bottom),
-              child: SizedBox(
-                width: double.infinity,
-                height: 58,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2B2B2B),
-                    borderRadius: BorderRadius.circular(32),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: ResponsiveHelper.getResponsiveValue<double>(
+                      context,
+                      small: double.infinity,
+                      large: 560,
+                    ),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(32),
-                      onTap: _step == 4 ? _showConfirmDialog : _onContinue,
-                      child: Center(
-                        child: Text(
-                          _step == 4
-                              ? 'Conferma la prenotazione'
-                              : 'Continuare',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 16 * scale,
-                            fontWeight: FontWeight.w600,
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF242424),
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(32),
+                          onTap: _step == 5 ? _showConfirmDialog : _onContinue,
+                          child: Center(
+                            child: Text(
+                              _step == 5
+                                  ? 'Conferma la prenotazione'
+                                  : 'Continuare',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 16 * scale,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -499,11 +750,18 @@ class _Step4SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(30, 25, 30, 25),
       decoration: BoxDecoration(
-        color: const Color(0xFF2B2B2B),
+        color: const Color(0xFF242424),
         borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: const Color(0xFF3A3A3A)),
+        border: Border.all(color: const Color(0xFF185C5C)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 0),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -515,30 +773,32 @@ class _Step4SummaryCard extends StatelessWidget {
           const _Step4KeyValueRow(label: 'Data', value: 'Gio, Aprile 09'),
           const SizedBox(height: 14),
           _Step4KeyValueRow(label: 'Tempo', value: '$time AM'),
-          const SizedBox(height: 18),
+          const SizedBox(height: 25),
           const _Step4Divider(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           const _Step4MonthlyRecurrence(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 25),
           const _Step4Divider(),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           Row(
             children: [
               Text(
                 'Totale',
                 style: GoogleFonts.inter(
-                  color: const Color(0xFFE6E6E6),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFFFFFFFF),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
                 ),
               ),
               const Spacer(),
               Text(
                 '€${service.priceEuro}',
                 style: GoogleFonts.inter(
-                  color: const Color(0xFFE6E6E6),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFFFFFFFF),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
                 ),
               ),
             ],
@@ -562,22 +822,22 @@ class _Step4KeyValueRow extends StatelessWidget {
         Text(
           label,
           style: GoogleFonts.inter(
-            color: const Color(0xFFBDBDBD),
+            color: const Color(0xFFDDDDDD),
             fontSize: 14,
             fontWeight: FontWeight.w600,
+            height: 1.5,
           ),
         ),
         const Spacer(),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              color: const Color(0xFFE6E6E6),
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-            ),
+        Text(
+          value,
+          textAlign: TextAlign.right,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.inter(
+            color: const Color(0xFFFFFFFF),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            height: 1.5,
           ),
         ),
       ],
@@ -590,7 +850,7 @@ class _Step4Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 2, color: const Color(0xFF3A3A3A));
+    return Container(height: 1, color: Color(0xFF797979).withValues(alpha: 0.30));
   }
 }
 
@@ -599,10 +859,11 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget row(String text, {bool muted = false, bool withPill = true}) {
+    Widget row(String text, { bool withPill = true}) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 15),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Column(
@@ -611,30 +872,29 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
                   Text(
                     text,
                     style: GoogleFonts.inter(
-                      color: muted
-                          ? const Color(0xFF7A7A7A)
-                          : const Color(0xFFE6E6E6),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFDDDDDD),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   if (withPill) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF232323),
+                        color: Color(0xFF797979).withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
                         'con Marcus Silva',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFFBDBDBD),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFDDDDDD),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5,
                         ),
                       ),
                     ),
@@ -645,8 +905,8 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
             const SizedBox(width: 12),
             Icon(
               Icons.close_rounded,
-              size: 22,
-              color: muted ? const Color(0xFF6B6B6B) : const Color(0xFF8A8A8A),
+              size: 16,
+              color: Color(0xFF797979),
             ),
           ],
         ),
@@ -658,30 +918,31 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(
-              Icons.autorenew_rounded,
-              color: Color(0xFFE6E6E6),
-              size: 18,
+            SvgPicture.asset(
+              'assets/icons/recurrence_icon.svg',
+              width: 18,
             ),
             const SizedBox(width: 10),
             Text(
               'Ricorrenza mensile',
               style: GoogleFonts.inter(
-                color: const Color(0xFFE6E6E6),
+                color: const Color(0xFFFFFFFF),
                 fontSize: 16,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
+                height: 1.5,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         row('Giovedì 9 aprile 2026, ore 10:00'),
-        const _Step4Divider(),
+
         row('Giovedì 16 aprile 2026, ore 10:00'),
-        const _Step4Divider(),
+
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
@@ -690,31 +951,32 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
                     Text(
                       'Giovedì 23 aprile 2026, ore 10:00',
                       style: GoogleFonts.inter(
-                        color: const Color(0xFF7A7A7A),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFDDDDDD),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
+                        color: Color(0xFF797979).withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: const Color(0xFFB14A4A),
-                          width: 1.5,
+                          color: const Color(0xFFEF4444),
+                          width: 1,
                         ),
                       ),
                       child: Text(
                         'Alternative Barber with James Martinez',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFFE6E6E6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFDDDDDD),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5,
                         ),
                       ),
                     ),
@@ -724,13 +986,12 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
               const SizedBox(width: 12),
               const Icon(
                 Icons.close_rounded,
-                size: 22,
-                color: Color(0xFF6B6B6B),
+                size: 16,
+                color: Color(0xFF797979),
               ),
             ],
           ),
         ),
-        const _Step4Divider(),
         row('Giovedì 30 aprile 2026, ore 10:00'),
       ],
     );
@@ -754,7 +1015,12 @@ class _ServiceCard extends StatelessWidget {
     final title = selected ? const Color(0xFF000000) : Colors.white;
     final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
     final price = selected ? const Color(0xFF000000) : Colors.white;
-    final scale = MediaQuery.sizeOf(context).width >= 600 ? 1.12 : 1.0;
+    final scale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.12,
+      large: 1.20,
+    );
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -840,6 +1106,123 @@ class _SelectIcon extends StatelessWidget {
   }
 }
 
+class _ShopCard extends StatelessWidget {
+  const _ShopCard({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _ShopItem item;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
+    final title = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+    final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
+    final scale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.10,
+      large: 1.18,
+    );
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Color(0xFF242424)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 4,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Image.asset(
+              'assets/images/shop.png',
+              width: 60,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              item.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                color: title,
+                fontSize: 16 * scale,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: Text(
+                '${item.addressLine1}\n${item.addressLine2}',
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  color: sub,
+                  fontSize: 12 * scale,
+                  fontWeight: FontWeight.w600,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+            if (selected)
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEEEEE),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFDDDDDD), width: 1),
+                ),
+                child: SvgPicture.asset('assets/icons/checked.svg', width: 24),
+              )
+            else
+              Container(
+                height: 39,
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.30),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: const Color(0xFF242424), width: 1),
+                ),
+                child: Center(
+                  child: Text(
+                    'Selezionare',
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFF797979),
+                      fontSize: 14 * scale,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _BarberCard extends StatelessWidget {
   const _BarberCard({
     required this.item,
@@ -856,6 +1239,12 @@ class _BarberCard extends StatelessWidget {
     final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
     final name = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
     final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
+    final scale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.10,
+      large: 1.18,
+    );
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(30),
@@ -896,7 +1285,7 @@ class _BarberCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                   color: name,
-                  fontSize: 16,
+                  fontSize: 16 * scale,
                   fontWeight: FontWeight.w600,
                   height: 1.5,
                 ),
@@ -911,7 +1300,7 @@ class _BarberCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                   color: sub,
-                  fontSize: 12,
+                  fontSize: 12 * scale,
                   fontWeight: FontWeight.w600,
                   height: 1.15,
                 ),
@@ -948,7 +1337,7 @@ class _BarberCard extends StatelessWidget {
                     'Selezionare',
                     style: GoogleFonts.inter(
                       color: const Color(0xFF797979),
-                      fontSize: 14,
+                      fontSize: 14 * scale,
                       fontWeight: FontWeight.w600,
                       height: 1.5,
                     ),
@@ -974,6 +1363,18 @@ class _ServiceItem {
   final int priceEuro;
 }
 
+class _ShopItem {
+  const _ShopItem({
+    required this.name,
+    required this.addressLine1,
+    required this.addressLine2,
+  });
+
+  final String name;
+  final String addressLine1;
+  final String addressLine2;
+}
+
 class _BarberItem {
   const _BarberItem({
     required this.name,
@@ -988,14 +1389,18 @@ class _BarberItem {
 
 class _Step3CalendarCard extends StatelessWidget {
   const _Step3CalendarCard({
+    required this.monthLabel,
     required this.selectedTimeIndex,
     required this.times,
     required this.onSelectTime,
+    required this.onTapCalendar,
   });
 
+  final String monthLabel;
   final int selectedTimeIndex;
   final List<String> times;
   final ValueChanged<int> onSelectTime;
+  final VoidCallback onTapCalendar;
 
   @override
   Widget build(BuildContext context) {
@@ -1021,7 +1426,7 @@ class _Step3CalendarCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Aprile 2026',
+                monthLabel,
                 style: GoogleFonts.inter(
                   color: const Color(0xFFDDDDDD),
                   fontSize: 15,
@@ -1030,7 +1435,14 @@ class _Step3CalendarCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              SvgPicture.asset('assets/icons/calendar.svg', width: 24),
+              InkWell(
+                onTap: onTapCalendar,
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: SvgPicture.asset('assets/icons/calendar.svg', width: 24),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1077,6 +1489,13 @@ class _Step3CalendarCard extends StatelessWidget {
                 _DayChip(
                   day: 'Lun',
                   date: '13',
+                  selected: false,
+                  emphasized: true,
+                  ),
+                SizedBox(width: 14),
+                _DayChip(
+                  day: 'Mar',
+                  date: '14',
                   selected: false,
                   emphasized: true,
                 ),
@@ -1306,47 +1725,45 @@ class _Step3RecurringOptions extends StatelessWidget {
       '2 mesi',
       '3 mesi',
     ];
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: const Color(0xFF242424),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF185C5C)),
-      ),
-      child: Column(
-        children: List.generate(options.length, (i) {
-          return InkWell(
-            onTap: () => onSelect(i),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: i == options.length - 1
-                        ? Colors.transparent
-                        : const Color(0xFF797979).withValues(alpha: 0.30),
-                    width: 2,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF242424),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF185C5C)),
+        ),
+        child: Column(
+          children: List.generate(options.length * 2 - 1, (idx) {
+            final isDivider = idx.isOdd;
+            if (isDivider) {
+              return Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
+                child: Container(
+                  height: 1,
+                  color: const Color(0xFF797979).withValues(alpha: 0.30),
+                ),
+              );
+            }
+            final i = idx ~/ 2;
+            return InkWell(
+              onTap: () => onSelect(i),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
+                alignment: Alignment.topLeft,
+                child: Text(
+                  options[i],
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFDDDDDD),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    height: 1.5,
                   ),
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      options[i],
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFFE6E6E6),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -1362,60 +1779,66 @@ class _Step3MonthlySummary extends StatelessWidget {
       'Giovedì 30 aprile 2026, ore 10:00',
     ];
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(30, 27, 30, 30),
       decoration: BoxDecoration(
-        color: const Color(0xFF2B2B2B),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: const Color(0xFF3A3A3A)),
+        color: const Color(0xFF242424),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF185C5C)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 0),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.autorenew_rounded,
-                color: Color(0xFFEDEDED),
-                size: 28,
+              SvgPicture.asset(
+                'assets/icons/recurrence_icon.svg',
+                width: 18,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 10),
               Text(
                 'Ricorrenza mensile',
                 style: GoogleFonts.inter(
-                  color: const Color(0xFFE6E6E6),
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  height: 1.0,
+                  color: const Color(0xFFFFFFFF),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           const _Step3Divider(),
           _Step3MonthlyRow(text: lines[0], muted: false),
           const _Step3Divider(),
           _Step3MonthlyRow(text: lines[1], muted: false),
           const _Step3Divider(),
           _Step3MonthlyRow(text: lines[2], muted: true),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFB14A4A), width: 2),
+              color: Color(0xFF797979).withValues(alpha: 0.20),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFEF4444), width: 1),
             ),
             child: Text(
               'Barbiere alternativo con James\nMartinez',
               style: GoogleFonts.inter(
-                color: const Color(0xFFE6E6E6),
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                height: 1.25,
+                color: const Color(0xFFDDDDDD),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.5,
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           const _Step3Divider(),
           _Step3MonthlyRow(text: lines[3], muted: false),
         ],
@@ -1433,7 +1856,7 @@ class _Step3MonthlyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 22),
+      padding: const EdgeInsets.symmetric(vertical: 20.0),
       child: Row(
         children: [
           Expanded(
@@ -1441,19 +1864,19 @@ class _Step3MonthlyRow extends StatelessWidget {
               text,
               style: GoogleFonts.inter(
                 color: muted
-                    ? const Color(0xFF7A7A7A)
-                    : const Color(0xFFE6E6E6),
-                fontSize: 26,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
+                    ? const Color(0xFF797979)
+                    : const Color(0xFFDDDDDD),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                height: 1.5,
               ),
             ),
           ),
           const SizedBox(width: 12),
           Icon(
             Icons.close_rounded,
-            size: 30,
-            color: muted ? const Color(0xFF6B6B6B) : const Color(0xFF8A8A8A),
+            size: 16,
+            color: Color(0xFF797979),
           ),
         ],
       ),
@@ -1466,6 +1889,6 @@ class _Step3Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 2, color: const Color(0xFF3A3A3A));
+    return Container(height: 1, color: Color(0xFF797979).withValues(alpha: 0.30));
   }
 }

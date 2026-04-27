@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -17,129 +19,192 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLarge = ResponsiveHelper.isLargeDevice(context);
     final pad = MediaQuery.paddingOf(context);
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
-    final hPad = isWide ? 28.0 : 18.0;
+    final hPad = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 16,
+      medium: 22,
+      large: 28,
+    );
+    final contentMaxWidth = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: double.infinity,
+      large: 980,
+    );
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.12,
+      large: 1.28,
+    );
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 140 + pad.bottom),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
+          padding: EdgeInsets.only(bottom: 120 + pad.bottom),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: contentMaxWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: const Color(0xFF2B2B2B),
-                    backgroundImage:
-                        const AssetImage('assets/images/onboarding_1.png'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                    child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFFDDDDDD),
+                          width: 2,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 22,
+                        backgroundColor: const Color(0xFF2B2B2B),
+                        backgroundImage: const AssetImage(
+                          'assets/images/profile.jpg',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Leonardo',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFFFFFFFF),
+                              fontSize: 18 * fontScale,
+                              fontWeight: FontWeight.w600,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'ID n.: 5630',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFFDDDDDD),
+                              fontSize: 14 * fontScale,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          'Leonardo',
+                          '30',
                           style: GoogleFonts.inter(
-                            color: const Color(0xFFEDEDED),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            height: 1.0,
+                            color: const Color(0xFFFFFFFF),
+                            fontSize: 18 * fontScale,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'ID n.: 5630',
+                          'Prenotazioni',
                           style: GoogleFonts.inter(
-                            color: const Color(0xFF8E8E8E),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFDDDDDD),
+                            fontSize: 14 * fontScale,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                  ),
+                  const SizedBox(height: 30),
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: hPad),
+                    padding: EdgeInsets.all(isLarge ? 34 : 30),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF242424),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _UpcomingCard(
+                          expandedIndex: _expandedIndex,
+                          onToggle: (i) => setState(
+                            () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 54,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEEEEE),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: () {},
+                              child: Text(
+                                'Prenotazione di un servizio',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF000000),
+                                  fontSize: 16 * fontScale,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '30',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFEDEDED),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Prenotazioni',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF8E8E8E),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                  const SizedBox(height: 18),
                 ],
               ),
-              const SizedBox(height: 18),
-              _UpcomingCard(
-                expandedIndex: _expandedIndex,
-                onToggle: (i) => setState(
-                  () => _expandedIndex = _expandedIndex == i ? -1 : i,
-                ),
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                height: 56,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2F2F2),
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.35),
-                        blurRadius: 28,
-                        offset: const Offset(0, 18),
-                      ),
-                    ],
-                  ),
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    onPressed: () {},
-                    child: Text(
-                      'Prenotazione di un servizio',
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFF0B0B0B),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: SizedBox(
-        width: 58,
-        height: 58,
+      floatingActionButton: Container(
+        width: 62,
+        height: 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(colors: [Color(0xFF797979), Color(0xFF302C2C)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          border: Border.all(
+            color: Color(0xFF8E8888).withValues(alpha: 0.7),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFF4D4C4C).withValues(alpha: 0.70),
+              blurRadius: 10,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
         child: FloatingActionButton(
           onPressed: () {},
-          backgroundColor: const Color(0xFF3A3A3A),
+          backgroundColor: Colors.transparent,
           elevation: 0,
           shape: const CircleBorder(),
           child: const Icon(Icons.add_rounded, size: 30, color: Colors.white),
@@ -172,62 +237,62 @@ class _UpcomingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     final items = const <_UpcomingItem>[
       _UpcomingItem(
         title: 'Taglio di capelli',
         subtitle: 'con Silva',
         dateText: '12 aprile 2026, 14:30',
-        imageAsset: 'assets/images/onboarding_1.png',
+        imageAsset: 'assets/images/barbar_1.jpg',
         hasRecurrence: true,
       ),
       _UpcomingItem(
         title: 'Rifinitura della barba',
         subtitle: 'con Rossi',
         dateText: '12 aprile 2026, 14:30',
-        imageAsset: 'assets/images/onboarding_1.png',
+        imageAsset: 'assets/images/barbar_2.jpg',
         hasRecurrence: false,
       ),
       _UpcomingItem(
         title: 'Capelli + Barba',
         subtitle: 'con David',
         dateText: '12 aprile 2026, 14:30',
-        imageAsset: 'assets/images/onboarding_1.png',
+        imageAsset: 'assets/images/barbar_3.jpg',
         hasRecurrence: false,
       ),
     ];
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2B2B2B),
-        borderRadius: BorderRadius.circular(26),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Prossimo appuntamento',
-            style: GoogleFonts.inter(
-              color: const Color(0xFFEDEDED),
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Prossimo appuntamento',
+          style: GoogleFonts.inter(
+            color: const Color(0xFFEEEEEE),
+            fontSize: 18 * fontScale,
+            fontWeight: FontWeight.w700,
+            height: 1.5,
           ),
-          const SizedBox(height: 14),
-          ...List.generate(items.length, (i) {
-            final item = items[i];
-            final expanded = expandedIndex == i;
-            return Padding(
-              padding: EdgeInsets.only(bottom: i == items.length - 1 ? 0 : 12),
-              child: _UpcomingAccordionItem(
-                item: item,
-                expanded: expanded,
-                onTap: () => onToggle(i),
-              ),
-            );
-          }),
-        ],
-      ),
+        ),
+        const SizedBox(height: 15),
+        ...List.generate(items.length, (i) {
+          final item = items[i];
+          final expanded = expandedIndex == i;
+          return Padding(
+            padding: EdgeInsets.only(bottom: i == items.length - 1 ? 0 : 12),
+            child: _UpcomingAccordionItem(
+              item: item,
+              expanded: expanded,
+              onTap: () => onToggle(i),
+            ),
+          );
+        }),
+      ],
     );
   }
 }
@@ -245,11 +310,17 @@ class _UpcomingAccordionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
+        color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(18),
       ),
       child: InkWell(
@@ -258,15 +329,15 @@ class _UpcomingAccordionItem extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+              padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
               child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     child: Image.asset(
                       item.imageAsset,
-                      width: 44,
-                      height: 44,
+                      width: 56,
+                      height: 56,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -278,18 +349,20 @@ class _UpcomingAccordionItem extends StatelessWidget {
                         Text(
                           item.title,
                           style: GoogleFonts.inter(
-                            color: const Color(0xFFEDEDED),
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFFFFFFFF),
+                            fontSize: 16 * fontScale,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '${item.subtitle}   •   ${item.dateText}',
                           style: GoogleFonts.inter(
-                            color: const Color(0xFFBDBDBD),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFDDDDDD),
+                            fontSize: 13 * fontScale,
+                            fontWeight: FontWeight.w500,
+                            height: 1.5,
                           ),
                         ),
                       ],
@@ -297,11 +370,9 @@ class _UpcomingAccordionItem extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Icon(
-                    expanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
-                    color: const Color(0xFFBDBDBD),
-                    size: 22,
+                    expanded ? Icons.keyboard_arrow_up_rounded : null,
+                    color: const Color(0xFF797979),
+                    size: 20,
                   ),
                 ],
               ),
@@ -316,49 +387,52 @@ class _UpcomingAccordionItem extends StatelessWidget {
                   : CrossFadeState.showFirst,
               firstChild: const SizedBox.shrink(),
               secondChild: Column(
-                children: const [
+                children: [
                   _HomeDivider(),
                   Padding(
-                    padding: EdgeInsets.fromLTRB(14, 12, 14, 8),
+                    padding: EdgeInsets.fromLTRB(15, 15, 15, 15),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.autorenew_rounded,
-                          color: Color(0xFFE6E6E6),
-                          size: 18,
+                        SvgPicture.asset(
+                          'assets/icons/recurrence_icon.svg',
+                          width: 18,
                         ),
                         SizedBox(width: 10),
-                        Text('Ricorrenza mensile'),
+                        Text(
+                          'Ricorrenza mensile',
+                          style: GoogleFonts.inter(
+                            color: Color(0xFFFFFFFF),
+                            fontSize: 16 * fontScale,
+                            fontWeight: FontWeight.w700,
+                            height: 1.5,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  _HomeDivider(),
                   Padding(
-                    padding: EdgeInsets.fromLTRB(14, 0, 14, 0),
+                    padding: EdgeInsets.only(bottom: 8, left: 16, right: 16),
                     child: _RecurrenceRow(
                       text: 'Giovedì 9 aprile 2026, ore 10:00',
                       pillText: 'con Marcus Silva',
                     ),
                   ),
-                  _HomeDivider(),
                   Padding(
-                    padding: EdgeInsets.fromLTRB(14, 0, 14, 0),
+                    padding: EdgeInsets.only(bottom: 8, left: 16, right: 16),
                     child: _RecurrenceRow(
                       text: 'Giovedì 16 aprile 2026, ore 10:00',
                       pillText: 'con Marcus Silva',
                     ),
                   ),
-                  _HomeDivider(),
                   Padding(
-                    padding: EdgeInsets.fromLTRB(14, 0, 14, 0),
+                    padding: EdgeInsets.only(bottom: 8, left: 16, right: 16),
                     child: _RecurrenceAltRow(
                       text: 'Giovedì 23 aprile 2026, ore 10:00',
                       altText: 'Alternative Barber with James Martinez',
                     ),
                   ),
-                  _HomeDivider(),
                   Padding(
-                    padding: EdgeInsets.fromLTRB(14, 0, 14, 6),
+                    padding: EdgeInsets.only(bottom: 8, left: 16, right: 16),
                     child: _RecurrenceRow(
                       text: 'Giovedì 30 aprile 2026, ore 10:00',
                       pillText: 'con Marcus Silva',
@@ -379,7 +453,10 @@ class _HomeDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 1, color: const Color(0xFF3A3A3A));
+    return Container(
+      height: 1,
+      color: Color(0xFF797979).withValues(alpha: 0.30),
+    );
   }
 }
 
@@ -391,6 +468,12 @@ class _RecurrenceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
       child: Row(
@@ -403,25 +486,29 @@ class _RecurrenceRow extends StatelessWidget {
                 Text(
                   text,
                   style: GoogleFonts.inter(
-                    color: const Color(0xFFE0E0E0),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFEEEEEE),
+                    fontSize: 14 * fontScale,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF232323),
+                    color: Color(0xFF797979).withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Text(
                     pillText,
                     style: GoogleFonts.inter(
-                      color: const Color(0xFFBDBDBD),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFDDDDDD),
+                      fontSize: 14 * fontScale,
+                      fontWeight: FontWeight.w500,
+                      height: 1.5,
                     ),
                   ),
                 ),
@@ -433,8 +520,8 @@ class _RecurrenceRow extends StatelessWidget {
             padding: EdgeInsets.only(top: 2),
             child: Icon(
               Icons.close_rounded,
-              size: 20,
-              color: Color(0xFF8A8A8A),
+              size: 16,
+              color: Color(0xFF797979),
             ),
           ),
         ],
@@ -451,6 +538,12 @@ class _RecurrenceAltRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
       child: Row(
@@ -463,29 +556,33 @@ class _RecurrenceAltRow extends StatelessWidget {
                 Text(
                   text,
                   style: GoogleFonts.inter(
-                    color: const Color(0xFFE0E0E0),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFEEEEEE),
+                    fontSize: 14 * fontScale,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.transparent,
+                    color: Color(0xFF797979).withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: const Color(0xFFB14A4A),
-                      width: 1.2,
+                      color: const Color(0xFFEF4444),
+                      width: 1,
                     ),
                   ),
                   child: Text(
                     altText,
                     style: GoogleFonts.inter(
-                      color: const Color(0xFFE6E6E6),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFDDDDDD),
+                      fontSize: 14 * fontScale,
+                      fontWeight: FontWeight.w500,
+                      height: 1.5,
                     ),
                   ),
                 ),
@@ -497,8 +594,8 @@ class _RecurrenceAltRow extends StatelessWidget {
             padding: EdgeInsets.only(top: 2),
             child: Icon(
               Icons.close_rounded,
-              size: 20,
-              color: Color(0xFF8A8A8A),
+              size: 16,
+              color: Color(0xFF797979),
             ),
           ),
         ],
@@ -539,34 +636,36 @@ class _BottomNavBar extends StatelessWidget {
           Positioned.fill(
             child: Container(
               padding: EdgeInsets.only(bottom: pad),
-              decoration: const BoxDecoration(
-                color: Color(0xFF1F1F1F),
-              ),
+              decoration: const BoxDecoration(color: Color(0xFF1F1F1F)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _NavItem(
                     label: 'Casa',
-                    icon: Icons.home_rounded,
+                    activeAsset: 'assets/icons/home_active.svg',
+                    inactiveAsset: 'assets/icons/home_inactive.svg',
                     selected: currentIndex == 0,
                     onTap: () => onTap(0),
                   ),
                   _NavItem(
                     label: 'Prenotazione',
-                    icon: Icons.calendar_month_rounded,
+                    activeAsset: 'assets/icons/reservation_active.svg',
+                    inactiveAsset: 'assets/icons/reservation_inactive.svg',
                     selected: currentIndex == 1,
                     onTap: () => onTap(1),
                   ),
                   const SizedBox(width: 58),
                   _NavItem(
                     label: 'Profilo',
-                    icon: Icons.person_rounded,
+                    activeAsset: 'assets/icons/profile_active.svg',
+                    inactiveAsset: 'assets/icons/profile_inactive.svg',
                     selected: currentIndex == 3,
                     onTap: () => onTap(3),
                   ),
                   _NavItem(
                     label: 'Contatto',
-                    icon: Icons.mail_rounded,
+                    activeAsset: 'assets/icons/contact_active.svg',
+                    inactiveAsset: 'assets/icons/contact_inactive.svg',
                     selected: currentIndex == 4,
                     onTap: () => onTap(4),
                   ),
@@ -583,34 +682,47 @@ class _BottomNavBar extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.label,
-    required this.icon,
+    required this.activeAsset,
+    required this.inactiveAsset,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
+  final String activeAsset;
+  final String inactiveAsset;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFFEDEDED) : const Color(0xFF8E8E8E);
+    final color = selected
+        ? const Color(0xFFFFFFFF)
+        : Color(0xFFFFFFFF).withValues(alpha: 0.4);
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 22),
+            Center(
+              child: SvgPicture.asset(
+                selected ? activeAsset : inactiveAsset,
+                width: 22,
+                height: 22,
+                fit: BoxFit.contain,
+              ),
+            ),
             const SizedBox(height: 6),
             Text(
               label,
               style: GoogleFonts.inter(
                 color: color,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                height: 1.0,
               ),
             ),
           ],
@@ -619,4 +731,3 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-
