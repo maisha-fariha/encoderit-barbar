@@ -35,7 +35,8 @@ class AuthController extends GetxController {
     final stored = await authService.getStoredAuth();
     if (stored == null || stored.accessToken.isEmpty) return false;
     if (stored.isExpired) return false;
-    return authService.applyStoredTokenForOfflineUse();
+    authService.apiService.setAuthToken(stored.accessToken);
+    return true;
   }
 
   Future<void> login(String email, String password) async {
