@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import '../routes/app_pages.dart';
@@ -217,12 +218,31 @@ class _ContactPageState extends State<ContactPage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: SizedBox(
-        width: 58,
-        height: 58,
+      floatingActionButton: Container(
+        width: 62,
+        height: 60,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF797979), Color(0xFF302C2C)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(
+            color: const Color(0xFF8E8888).withValues(alpha: 0.7),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF4D4C4C).withValues(alpha: 0.70),
+              blurRadius: 10,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
         child: FloatingActionButton(
           onPressed: () {},
-          backgroundColor: const Color(0xFF3A3A3A),
+          backgroundColor: Colors.transparent,
           elevation: 0,
           shape: const CircleBorder(),
           child: const Icon(Icons.add_rounded, size: 30, color: Colors.white),
@@ -493,26 +513,30 @@ class _BottomNavBar extends StatelessWidget {
                 children: [
                   _NavItem(
                     label: 'Casa',
-                    icon: Icons.home_rounded,
+                    activeAsset: 'assets/icons/home_active.svg',
+                    inactiveAsset: 'assets/icons/home_inactive.svg',
                     selected: currentIndex == 0,
                     onTap: () => onTap(0),
                   ),
                   _NavItem(
                     label: 'Prenotazione',
-                    icon: Icons.calendar_month_rounded,
+                    activeAsset: 'assets/icons/reservation_active.svg',
+                    inactiveAsset: 'assets/icons/reservation_inactive.svg',
                     selected: currentIndex == 1,
                     onTap: () => onTap(1),
                   ),
                   const SizedBox(width: 58),
                   _NavItem(
                     label: 'Profilo',
-                    icon: Icons.person_rounded,
+                    activeAsset: 'assets/icons/profile_active.svg',
+                    inactiveAsset: 'assets/icons/profile_inactive.svg',
                     selected: currentIndex == 3,
                     onTap: () => onTap(3),
                   ),
                   _NavItem(
                     label: 'Contatto',
-                    icon: Icons.mail_rounded,
+                    activeAsset: 'assets/icons/contact_active.svg',
+                    inactiveAsset: 'assets/icons/contact_inactive.svg',
                     selected: currentIndex == 4,
                     onTap: () => onTap(4),
                   ),
@@ -529,13 +553,15 @@ class _BottomNavBar extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.label,
-    required this.icon,
+    required this.activeAsset,
+    required this.inactiveAsset,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
+  final String activeAsset;
+  final String inactiveAsset;
   final bool selected;
   final VoidCallback onTap;
 
@@ -547,9 +573,21 @@ class _NavItem extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 22),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Center(
+                child: SvgPicture.asset(
+                  selected ? activeAsset : inactiveAsset,
+                  width: 22,
+                  height: 22,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
             const SizedBox(height: 6),
             Text(
               label,
@@ -557,6 +595,7 @@ class _NavItem extends StatelessWidget {
                 color: color,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
+                height: 1.0,
               ),
             ),
           ],
