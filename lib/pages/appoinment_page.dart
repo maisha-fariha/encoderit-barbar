@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -12,11 +13,31 @@ class AppoinmentPage extends StatefulWidget {
 
 class _AppoinmentPageState extends State<AppoinmentPage> {
   int _step = 1;
-  int _selected = 0;
+  int _selectedShop = 0;
+  int _selectedService = 0;
+  int _selectedBarber = 0;
   int _selectedTime = 0;
   DateTime _selectedDate = DateTime(2026, 4, 9);
   bool _recurringEnabled = true;
   int _recurringIndex = 0;
+
+  final _shops = const <_ShopItem>[
+    _ShopItem(
+      name: 'Moda Bella S.r.l.',
+      addressLine1: 'Via Roma, 15',
+      addressLine2: '20121 Milano (MI)',
+    ),
+    _ShopItem(
+      name: 'AEB Industriale S.r.l',
+      addressLine1: 'Via Brodolini, 8',
+      addressLine2: '40053 Valsamoggia (BO)',
+    ),
+    _ShopItem(
+      name: 'AEB Industriale S.r.l',
+      addressLine1: 'Via Brodolini, 8',
+      addressLine2: '40053 Valsamoggia (BO)',
+    ),
+  ];
 
   final _items = const <_ServiceItem>[
     _ServiceItem(title: 'Taglio di capelli', minutes: 45, priceEuro: 45),
@@ -83,13 +104,20 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     if (_step == 1) {
       setState(() {
         _step = 2;
-        _selected = 0;
+        _selectedService = 0;
       });
       return;
     }
     if (_step == 2) {
       setState(() {
         _step = 3;
+        _selectedBarber = 0;
+      });
+      return;
+    }
+    if (_step == 3) {
+      setState(() {
+        _step = 4;
         _selectedTime = 0;
         _selectedDate = DateTime(2026, 4, 9);
         _recurringEnabled = true;
@@ -97,8 +125,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       });
       return;
     }
-    if (_step == 3) {
-      setState(() => _step = 4);
+    if (_step == 4) {
+      setState(() => _step = 5);
       return;
     }
     // Next steps can be implemented later.
@@ -390,7 +418,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
-    final scale = isWide ? 1.12 : 1.0;
+    final scale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.12,
+      large: 1.22,
+    );
     final hPad = isWide ? 28.0 : 18.0;
     return Scaffold(
       backgroundColor: Colors.black,
@@ -425,12 +458,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPad + 4, vertical: 8),
               child: Row(
-                children: List.generate(4, (i) {
+                children: List.generate(5, (i) {
                   final active = i < _step;
                   return Expanded(
                     child: Container(
                       height: 6,
-                      margin: EdgeInsets.only(right: i == 3 ? 0 : 6),
+                      margin: EdgeInsets.only(right: i == 4 ? 0 : 6),
                       decoration: BoxDecoration(
                         color: active
                             ? const Color(0xFFDDDDDD)
@@ -443,15 +476,17 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(hPad + 4, 10, hPad + 4, 14),
+              padding: EdgeInsets.fromLTRB(hPad + 4, 20, hPad + 4, 14),
               child: Row(
                 children: [
                   Text(
                     _step == 1
-                        ? 'Seleziona il servizio'
-                        : _step == 2
                         ? 'Scegli il tuo barbiere'
+                        : _step == 2
+                        ? 'Seleziona il servizio'
                         : _step == 3
+                        ? 'Seleziona il barbiere'
+                        : _step == 4
                         ? 'Scegli una data'
                         : 'Riepilogo della prenotazione',
                     style: GoogleFonts.inter(
@@ -463,7 +498,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                   ),
                   const Spacer(),
                   Text(
-                    _step >= 3 ? 'Passo $_step di 4' : 'Fase $_step di 4',
+                    'Fase $_step di 5',
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
                       fontSize: 12 * scale,
@@ -479,113 +514,213 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeOut,
                 child: _step == 1
+                    ? GridView.builder(
+                        key: const ValueKey('shops'),
+                        padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 18),
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              ResponsiveHelper.getResponsiveValue<int>(
+                            context,
+                            small: 2,
+                            large: 3,
+                          ),
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio:
+                              ResponsiveHelper.getResponsiveValue<double>(
+                            context,
+                            small: 0.66,
+                            large: 0.86,
+                          ),
+                        ),
+                        itemCount: _shops.length,
+                        itemBuilder: (context, i) {
+                          final item = _shops[i];
+                          final selected = i == _selectedShop;
+                          return _ShopCard(
+                            item: item,
+                            selected: selected,
+                            onTap: () => setState(() => _selectedShop = i),
+                          );
+                        },
+                      )
+                    : _step == 2
                     ? ListView.separated(
                         key: const ValueKey('services'),
-                        padding: EdgeInsets.fromLTRB(hPad + 2, 8, hPad + 2, 18),
+                        padding:
+                            EdgeInsets.fromLTRB(hPad + 2, 8, hPad + 2, 18),
                         itemCount: _items.length,
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 16),
                         itemBuilder: (context, i) {
                           final item = _items[i];
-                          final selected = i == _selected;
+                          final selected = i == _selectedService;
                           return _ServiceCard(
                             item: item,
                             selected: selected,
-                            onTap: () => setState(() => _selected = i),
-                          );
-                        },
-                      )
-                    : _step == 2
-                    ? GridView.builder(
-                        key: const ValueKey('barbers'),
-                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 16,
-                              // Slightly taller tiles to avoid card overflow.
-                              childAspectRatio: 0.70,
-                            ),
-                        itemCount: _barbers.length,
-                        itemBuilder: (context, i) {
-                          final item = _barbers[i];
-                          final selected = i == _selected;
-                          return _BarberCard(
-                            item: item,
-                            selected: selected,
-                            onTap: () => setState(() => _selected = i),
+                            onTap: () => setState(() => _selectedService = i),
                           );
                         },
                       )
                     : _step == 3
+                    ? GridView.builder(
+                        key: const ValueKey('barbers'),
+                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              ResponsiveHelper.getResponsiveValue<int>(
+                            context,
+                            small: 2,
+                            large: 3,
+                          ),
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          // Slightly taller tiles to avoid card overflow.
+                          childAspectRatio:
+                              ResponsiveHelper.getResponsiveValue<double>(
+                            context,
+                            small: 0.70,
+                            large: 0.88,
+                          ),
+                        ),
+                        itemCount: _barbers.length,
+                        itemBuilder: (context, i) {
+                          final item = _barbers[i];
+                          final selected = i == _selectedBarber;
+                          return _BarberCard(
+                            item: item,
+                            selected: selected,
+                            onTap: () => setState(() => _selectedBarber = i),
+                          );
+                        },
+                      )
+                    : _step == 4
                     ? SingleChildScrollView(
-                        key: const ValueKey('step3'),
+                        key: const ValueKey('step4'),
                         padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 18),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _Step3CalendarCard(
+                        child: Builder(
+                          builder: (context) {
+                            final isLarge =
+                                ResponsiveHelper.isLargeDevice(context);
+
+                            final calendar = _Step3CalendarCard(
                               monthLabel: _monthLabelIt(_selectedDate),
                               selectedTimeIndex: _selectedTime,
                               times: _times,
                               onSelectTime: (i) =>
                                   setState(() => _selectedTime = i),
                               onTapCalendar: _pickStep3Date,
-                            ),
-                            const SizedBox(height: 20),
-                            _Step3RecurringToggle(
-                              value: _recurringEnabled,
-                              onChanged: (v) =>
-                                  setState(() => _recurringEnabled = v),
-                            ),
-                            const SizedBox(height: 15),
-                            if (_recurringEnabled)
-                              _Step3RecurringOptions(
-                                selectedIndex: _recurringIndex,
-                                onSelect: (i) =>
-                                    setState(() => _recurringIndex = i),
+                            );
+
+                            final right = Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _Step3RecurringToggle(
+                                  value: _recurringEnabled,
+                                  onChanged: (v) =>
+                                      setState(() => _recurringEnabled = v),
+                                ),
+                                const SizedBox(height: 15),
+                                if (_recurringEnabled)
+                                  _Step3RecurringOptions(
+                                    selectedIndex: _recurringIndex,
+                                    onSelect: (i) =>
+                                        setState(() => _recurringIndex = i),
+                                  ),
+                                const SizedBox(height: 15),
+                                _Step3MonthlySummary(),
+                              ],
+                            );
+
+                            if (!isLarge) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  calendar,
+                                  const SizedBox(height: 20),
+                                  right,
+                                ],
+                              );
+                            }
+
+                            return Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 1100),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(flex: 5, child: calendar),
+                                    const SizedBox(width: 18),
+                                    Expanded(flex: 6, child: right),
+                                  ],
+                                ),
                               ),
-                            const SizedBox(height: 15),
-                            _Step3MonthlySummary(),
-                          ],
+                            );
+                          },
                         ),
                       )
                     : SingleChildScrollView(
-                        key: const ValueKey('step4'),
+                        key: const ValueKey('step5'),
                         padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 20),
-                        child: _Step4SummaryCard(
-                          service: _items[_selected],
-                          barber: _barbers[_selected],
-                          time: _times[_selectedTime],
+                        child: Builder(
+                          builder: (context) {
+                            final isLarge =
+                                ResponsiveHelper.isLargeDevice(context);
+                            final card = _Step4SummaryCard(
+                              service: _items[_selectedService],
+                              barber: _barbers[_selectedBarber],
+                              time: _times[_selectedTime],
+                            );
+                            if (!isLarge) return card;
+                            return Center(
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 980),
+                                child: card,
+                              ),
+                            );
+                          },
                         ),
                       ),
               ),
             ),
             Padding(
               padding: EdgeInsets.fromLTRB(hPad, 6, hPad, 10 + pad.bottom),
-              child: SizedBox(
-                width: double.infinity,
-                height: 58,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF242424),
-                    borderRadius: BorderRadius.circular(32),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: ResponsiveHelper.getResponsiveValue<double>(
+                      context,
+                      small: double.infinity,
+                      large: 560,
+                    ),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(32),
-                      onTap: _step == 4 ? _showConfirmDialog : _onContinue,
-                      child: Center(
-                        child: Text(
-                          _step == 4
-                              ? 'Conferma la prenotazione'
-                              : 'Continuare',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 16 * scale,
-                            fontWeight: FontWeight.w600,
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF242424),
+                        borderRadius: BorderRadius.circular(32),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(32),
+                          onTap: _step == 5 ? _showConfirmDialog : _onContinue,
+                          child: Center(
+                            child: Text(
+                              _step == 5
+                                  ? 'Conferma la prenotazione'
+                                  : 'Continuare',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 16 * scale,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -880,7 +1015,12 @@ class _ServiceCard extends StatelessWidget {
     final title = selected ? const Color(0xFF000000) : Colors.white;
     final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
     final price = selected ? const Color(0xFF000000) : Colors.white;
-    final scale = MediaQuery.sizeOf(context).width >= 600 ? 1.12 : 1.0;
+    final scale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.12,
+      large: 1.20,
+    );
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -966,6 +1106,123 @@ class _SelectIcon extends StatelessWidget {
   }
 }
 
+class _ShopCard extends StatelessWidget {
+  const _ShopCard({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _ShopItem item;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
+    final title = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+    final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
+    final scale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.10,
+      large: 1.18,
+    );
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Color(0xFF242424)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 4,
+              offset: const Offset(0, 0),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Image.asset(
+              'assets/images/shop.png',
+              width: 60,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              item.name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                color: title,
+                fontSize: 16 * scale,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: Text(
+                '${item.addressLine1}\n${item.addressLine2}',
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  color: sub,
+                  fontSize: 12 * scale,
+                  fontWeight: FontWeight.w600,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
+            if (selected)
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEEEEE),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFDDDDDD), width: 1),
+                ),
+                child: SvgPicture.asset('assets/icons/checked.svg', width: 24),
+              )
+            else
+              Container(
+                height: 39,
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.30),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: const Color(0xFF242424), width: 1),
+                ),
+                child: Center(
+                  child: Text(
+                    'Selezionare',
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFF797979),
+                      fontSize: 14 * scale,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _BarberCard extends StatelessWidget {
   const _BarberCard({
     required this.item,
@@ -982,6 +1239,12 @@ class _BarberCard extends StatelessWidget {
     final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
     final name = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
     final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
+    final scale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.10,
+      large: 1.18,
+    );
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(30),
@@ -1022,7 +1285,7 @@ class _BarberCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                   color: name,
-                  fontSize: 16,
+                  fontSize: 16 * scale,
                   fontWeight: FontWeight.w600,
                   height: 1.5,
                 ),
@@ -1037,7 +1300,7 @@ class _BarberCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                   color: sub,
-                  fontSize: 12,
+                  fontSize: 12 * scale,
                   fontWeight: FontWeight.w600,
                   height: 1.15,
                 ),
@@ -1074,7 +1337,7 @@ class _BarberCard extends StatelessWidget {
                     'Selezionare',
                     style: GoogleFonts.inter(
                       color: const Color(0xFF797979),
-                      fontSize: 14,
+                      fontSize: 14 * scale,
                       fontWeight: FontWeight.w600,
                       height: 1.5,
                     ),
@@ -1098,6 +1361,18 @@ class _ServiceItem {
   final String title;
   final int minutes;
   final int priceEuro;
+}
+
+class _ShopItem {
+  const _ShopItem({
+    required this.name,
+    required this.addressLine1,
+    required this.addressLine2,
+  });
+
+  final String name;
+  final String addressLine1;
+  final String addressLine2;
 }
 
 class _BarberItem {
