@@ -43,7 +43,6 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: 120 + pad.bottom),
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: contentMaxWidth),
@@ -126,7 +125,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 30),
                   Container(
-                    margin: EdgeInsets.symmetric(horizontal: hPad),
                     padding: EdgeInsets.all(isLarge ? 34 : 30),
                     decoration: const BoxDecoration(
                       color: Color(0xFF242424),

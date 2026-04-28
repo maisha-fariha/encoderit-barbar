@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../routes/app_pages.dart';
 
@@ -18,9 +20,28 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final w = media.size.width;
-    final hPad = w >= 900 ? 24.0 : 18.0;
-    final maxWidth = w >= 900 ? 560.0 : 520.0;
+    final hPad = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 18,
+      medium: 22,
+      large: 28,
+    );
+    final maxWidth = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 520,
+      large: 680,
+    );
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
+    final avatarSize = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 150,
+      large: 180,
+    );
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -28,30 +49,33 @@ class _ProfilePageState extends State<ProfilePage> {
         bottom: false,
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
+            constraints: BoxConstraints(maxWidth: maxWidth,),
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 140 + media.padding.bottom),
+              padding: EdgeInsets.only(bottom: 140 + media.padding.bottom),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      InkResponse(
-                        radius: 24,
-                        onTap: () => Get.back(),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Profilo',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                    child: Row(
+                      children: [
+                        InkResponse(
+                          radius: 30,
+                          onTap: () => Get.back(),
+                          child: SvgPicture.asset('assets/icons/back_button.svg', width: 20, height: 20),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 10),
+                         Text(
+                          'Profilo',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 18 * fontScale,
+                            fontWeight: FontWeight.w700,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 18),
                   Center(
@@ -59,35 +83,39 @@ class _ProfilePageState extends State<ProfilePage> {
                       clipBehavior: Clip.none,
                       children: [
                         Container(
-                          width: 92,
-                          height: 92,
+                          width: avatarSize,
+                          height: avatarSize,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(18),
-                            image: const DecorationImage(
-                              image: AssetImage('assets/images/onboarding_1.png'),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: const Color(0xFFDDDDDD), width: 2),
+                            image:  DecorationImage(
+                              image: const AssetImage('assets/images/profile.jpg'),
                               fit: BoxFit.cover,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.55),
-                                blurRadius: 16,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
                           ),
                         ),
                         Positioned(
-                          right: -6,
-                          bottom: -6,
+                          right: 5,
+                          bottom: 5,
                           child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2C2C2C),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFF3A3A3A), width: 1),
+                            width: ResponsiveHelper.getResponsiveValue<double>(
+                              context,
+                              small: 34,
+                              large: 40,
                             ),
-                            child: const Icon(Icons.edit_outlined, color: Colors.white, size: 16),
+                            height: ResponsiveHelper.getResponsiveValue<double>(
+                              context,
+                              small: 34,
+                              large: 40,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Color(0xFF797979).withValues(alpha: 0.50),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: SvgPicture.asset('assets/icons/edit.svg', width: 20),
+                            )
                           ),
                         ),
                       ],
@@ -96,10 +124,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 18),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2A2A2A),
-                      borderRadius: BorderRadius.circular(22),
+                      color: const Color(0xFF242424),
+                      borderRadius: BorderRadius.only(topRight: Radius.circular(30), topLeft: Radius.circular(30)),
                     ),
-                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                    padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -113,7 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 14),
                         const _FieldLabel('Data di nascita'),
                         const SizedBox(height: 8),
-                        const _TextFieldBox(text: '16 Agosto 1988', trailing: Icons.calendar_month_outlined),
+                        const _TextFieldBox(text: '16 Agosto 1988', trailing: Icons.calendar_today_outlined),
                         const SizedBox(height: 14),
                         const _FieldLabel('Numero di Telefono'),
                         const SizedBox(height: 8),
@@ -151,6 +179,35 @@ class _ProfilePageState extends State<ProfilePage> {
                         _PasswordFieldBox(
                           obscure: _obscure,
                           onToggle: () => setState(() => _obscure = !_obscure),
+                        ),
+                        const SizedBox(height: 30),
+                        SizedBox(
+                          height: 48,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF2F2F2),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              onPressed: () => Get.offAllNamed(AppRoutes.login),
+                              child:  Text(
+                                'Logout',
+                                style: GoogleFonts.inter(
+                                  color: Color(0xFF000000),
+                                  fontSize: 16 * fontScale,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -336,13 +393,19 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Text(
       text,
-      style: const TextStyle(
-        color: Color(0xFFB7B7B7),
-        fontSize: 12,
+      style:  GoogleFonts.inter(
+        color: Color(0xFFDDDDDD),
+        fontSize: 14 * fontScale,
         fontWeight: FontWeight.w700,
-        letterSpacing: 0.2,
+        height: 1.5,
       ),
     );
   }
@@ -363,12 +426,24 @@ class _TextFieldBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(14, lines > 1 ? 12 : 14, 14, lines > 1 ? 12 : 14),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        (lines > 1 ? 14 : 15) * fontScale,
+        16,
+        (lines > 1 ? 14 : 15) * fontScale,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
+        color: muted ? Color(0xFFFFFFFF).withValues(alpha: 0.05) : Color(0xFFFFFFFF).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: muted ? Color(0xFFFFFFFF).withValues(alpha: 0.10) : Color(0xFFFFFFFF).withValues(alpha: 0.15), width: 1)
       ),
       child: Row(
         crossAxisAlignment: lines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
@@ -378,17 +453,17 @@ class _TextFieldBox extends StatelessWidget {
               text,
               maxLines: lines,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: muted ? const Color(0xFF8E8E8E) : Colors.white,
-                fontSize: 13,
-                height: 1.25,
-                fontWeight: FontWeight.w600,
+              style: GoogleFonts.inter(
+                color: muted ? Color(0xFFFFFFFF).withValues(alpha: 0.30) : Color(0xFFFFFFFF),
+                fontSize: 16 * fontScale,
+                height: 1,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
           if (trailing != null) ...[
             const SizedBox(width: 10),
-            Icon(trailing, color: const Color(0xFFB7B7B7), size: 18),
+            Icon(trailing, color: const Color(0xFFB7B7B7), size: 18 * fontScale),
           ],
         ],
       ),
@@ -402,26 +477,38 @@ class _SelectFieldBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      padding: EdgeInsets.fromLTRB(16, 15 * fontScale, 16, 15 * fontScale),
       decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
+        color: Color(0xFFFFFFFF).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Color(0xFFFFFFFF).withValues(alpha: 0.15), width: 1),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+              style: GoogleFonts.inter(
+                color: Color(0xFFFFFFFF),
+                fontSize: 16 * fontScale,
+                fontWeight: FontWeight.w500,
+                height: 1,
               ),
             ),
           ),
-          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFFB7B7B7), size: 22),
+          Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: const Color(0xFF797979),
+            size: 20 * fontScale,
+          ),
         ],
       ),
     );
@@ -436,33 +523,40 @@ class _PasswordFieldBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      padding: EdgeInsets.fromLTRB(16, 15 * fontScale, 16, 15 * fontScale),
       decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
+        color: Color(0xFFFFFFFF).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Color(0xFFFFFFFF).withValues(alpha: 0.15), width: 1),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               obscure ? '******' : 'password',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0,
+              style: GoogleFonts.inter(
+                color: Color(0xFFFFFFFF),
+                fontSize: 16 * fontScale,
+                fontWeight: FontWeight.w500,
+                height: 1.0,
               ),
             ),
           ),
           InkResponse(
-            radius: 20,
+            radius: 16 * fontScale,
             onTap: onToggle,
             child: Icon(
               obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: const Color(0xFFB7B7B7),
-              size: 18,
+              color: Color(0xFF999999),
+              size: 16 * fontScale,
             ),
           ),
         ],
