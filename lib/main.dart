@@ -29,7 +29,9 @@ Future<void> main() async {
     ),
   );
 
-  Get.put(AppServices.getIt<AuthController>(), permanent: true);
+  final auth = AppServices.getIt<AuthController>();
+  Get.put(auth, permanent: true);
+  await auth.bootstrap();
 
   runApp(const EncoderitBarbarApp());
 }

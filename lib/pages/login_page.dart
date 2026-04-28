@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../controllers/auth_controller.dart';
 import '../routes/app_pages.dart';
 
 class LoginPage extends StatefulWidget {
@@ -12,6 +13,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _obscure = true;
@@ -21,6 +23,42 @@ class _LoginPageState extends State<LoginPage> {
     _email.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  bool _looksLikeEmail(String value) {
+    final v = value.trim();
+    if (v.isEmpty) return false;
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
+  }
+
+  String? _validateEmail(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Inserisci la tua email';
+    if (!_looksLikeEmail(v)) return 'Email non valida';
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    final v = value ?? '';
+    if (v.isEmpty) return 'Inserisci la password';
+    if (v.length < 6) return 'Almeno 6 caratteri';
+    return null;
+  }
+
+  void _submitLogin() {
+    FocusScope.of(context).unfocus();
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final auth = Get.find<AuthController>();
+    auth.login(_email.text.trim(), _password.text);
+  }
+
+  Widget _loginButton() {
+    return Obx(() {
+      final auth = Get.find<AuthController>();
+      return _PrimaryLoginButton(
+        onPressed: auth.isBusy.value ? null : _submitLogin,
+      );
+    });
   }
 
   @override
@@ -104,14 +142,17 @@ class _LoginPageState extends State<LoginPage> {
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 18),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
                                 _GlassTextField(
                                   controller: _email,
                                   hintText: 'yourmail@mail.com',
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.next,
+                                  validator: _validateEmail,
                                 ),
                                 const SizedBox(height: 16),
                                 _GlassTextField(
@@ -119,6 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                                   hintText: 'Password',
                                   obscureText: _obscure,
                                   textInputAction: TextInputAction.done,
+                                  validator: _validatePassword,
                                   suffix: Padding(
                                     padding: const EdgeInsets.only(right: 6),
                                     child: IconButton(
@@ -153,10 +195,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                _PrimaryLoginButton(
-                                  onPressed: () =>
-                                      Get.offAllNamed(AppRoutes.home),
-                                ),
+                                _loginButton(),
                                 const SizedBox(height: 24),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -194,7 +233,8 @@ class _LoginPageState extends State<LoginPage> {
                                   ],
                                 ),
                                 SizedBox(height: 10 + pad.bottom),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -257,14 +297,17 @@ class _LoginPageState extends State<LoginPage> {
                               padding: EdgeInsets.symmetric(
                                 horizontal: isWide ? 24 : 18,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
                                   _GlassTextField(
                                     controller: _email,
                                     hintText: 'yourmail@mail.com',
                                     keyboardType: TextInputType.emailAddress,
                                     textInputAction: TextInputAction.next,
+                                    validator: _validateEmail,
                                   ),
                                   const SizedBox(height: 16),
                                   _GlassTextField(
@@ -272,6 +315,7 @@ class _LoginPageState extends State<LoginPage> {
                                     hintText: 'Password',
                                     obscureText: _obscure,
                                     textInputAction: TextInputAction.done,
+                                    validator: _validatePassword,
                                     suffix: Padding(
                                       padding: const EdgeInsets.only(right: 6),
                                       child: IconButton(
@@ -306,10 +350,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                  _PrimaryLoginButton(
-                                    onPressed: () =>
-                                        Get.offAllNamed(AppRoutes.home),
-                                  ),
+                                  _loginButton(),
                                   const SizedBox(height: 24),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -347,7 +388,8 @@ class _LoginPageState extends State<LoginPage> {
                                     ],
                                   ),
                                   SizedBox(height: 10 + pad.bottom),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -373,6 +415,7 @@ class _GlassTextField extends StatelessWidget {
     this.textInputAction,
     this.obscureText = false,
     this.suffix,
+    this.validator,
   });
 
   final TextEditingController controller;
@@ -381,6 +424,7 @@ class _GlassTextField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final bool obscureText;
   final Widget? suffix;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -393,8 +437,9 @@ class _GlassTextField extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: border),
       ),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
+        validator: validator,
         keyboardType: keyboardType,
         textInputAction: textInputAction,
         obscureText: obscureText,
@@ -406,6 +451,13 @@ class _GlassTextField extends StatelessWidget {
           hintText: hintText,
           hintStyle: GoogleFonts.inter(color: hint, fontWeight: FontWeight.w400, fontSize: 14),
           border: InputBorder.none,
+          errorStyle: GoogleFonts.inter(
+            color: const Color(0xFFFF8A8A),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          errorMaxLines: 3,
+          isDense: true,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 18,

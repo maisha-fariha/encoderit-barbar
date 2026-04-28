@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../controllers/auth_controller.dart';
 import '../routes/app_pages.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -12,12 +13,13 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
   bool _obscure = true;
-  bool _accepted = true;
+  bool _accepted = false;
 
   @override
   void dispose() {
@@ -26,6 +28,85 @@ class _RegisterPageState extends State<RegisterPage> {
     _phone.dispose();
     _password.dispose();
     super.dispose();
+  }
+
+  bool _looksLikeEmail(String value) {
+    final v = value.trim();
+    if (v.isEmpty) return false;
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
+  }
+
+  String? _validateName(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Inserisci nome e cognome';
+    if (v.length < 2) return 'Almeno 2 caratteri';
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Inserisci la tua email';
+    if (!_looksLikeEmail(v)) return 'Email non valida';
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return null;
+    final digits = RegExp(r'\d').allMatches(v).length;
+    if (digits < 8) return 'Numero non valido';
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    final v = value ?? '';
+    if (v.isEmpty) return 'Inserisci la password';
+    if (v.length < 6) return 'Almeno 6 caratteri';
+    return null;
+  }
+
+  void _showTermsSnack() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFFE8E8E8),
+        content: Text(
+          'Accetta politica sulla riservatezza e termini di servizio',
+          style: GoogleFonts.inter(
+            color: const Color(0xFF0B0B0B),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _submitRegister() {
+    FocusScope.of(context).unfocus();
+    if (!_accepted) {
+      _showTermsSnack();
+      return;
+    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final auth = Get.find<AuthController>();
+    auth.register(
+      email: _email.text.trim(),
+      password: _password.text,
+      fullName: _name.text.trim(),
+      phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+    );
+  }
+
+  Widget _registerButton() {
+    return Obx(() {
+      final auth = Get.find<AuthController>();
+      return _PrimaryButton(
+        label: 'Creare un account',
+        onPressed: auth.isBusy.value ? null : _submitRegister,
+      );
+    });
   }
 
   @override
@@ -127,13 +208,16 @@ class _RegisterPageState extends State<RegisterPage> {
                                 padding: EdgeInsets.symmetric(
                                   horizontal: isWide ? 24 : 18,
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
+                                child: Form(
+                                  key: _formKey,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
                                     _GlassTextField(
                                       controller: _name,
                                       hintText: 'Nome e cognome',
                                       textInputAction: TextInputAction.next,
+                                      validator: _validateName,
                                     ),
                                     const SizedBox(height: 16),
                                     _GlassTextField(
@@ -141,6 +225,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       hintText: 'tuaemail@mail.com',
                                       keyboardType: TextInputType.emailAddress,
                                       textInputAction: TextInputAction.next,
+                                      validator: _validateEmail,
                                     ),
                                     const SizedBox(height: 16),
                                     _GlassTextField(
@@ -148,6 +233,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       hintText: '+39 333 12 4564',
                                       keyboardType: TextInputType.phone,
                                       textInputAction: TextInputAction.next,
+                                      validator: _validatePhone,
                                     ),
                                     const SizedBox(height: 16),
                                     _GlassTextField(
@@ -155,6 +241,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       hintText: 'Password',
                                       obscureText: _obscure,
                                       textInputAction: TextInputAction.done,
+                                      validator: _validatePassword,
                                       suffix: Padding(
                                         padding: const EdgeInsets.only(right: 6),
                                         child: IconButton(
@@ -173,10 +260,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       ),
                                     ),
                                     const SizedBox(height: 30),
-                                    _PrimaryButton(
-                                      label: 'Creare un account',
-                                      onPressed: () => Get.offNamed(AppRoutes.login),
-                                    ),
+                                    _registerButton(),
                                     const SizedBox(height: 24),
                                     Row(
                                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -267,7 +351,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                       ],
                                     ),
                                     SizedBox(height: 8 + pad.bottom),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -294,6 +379,7 @@ class _GlassTextField extends StatelessWidget {
     this.textInputAction,
     this.obscureText = false,
     this.suffix,
+    this.validator,
   });
 
   final TextEditingController controller;
@@ -302,6 +388,7 @@ class _GlassTextField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final bool obscureText;
   final Widget? suffix;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
@@ -314,8 +401,9 @@ class _GlassTextField extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: border),
       ),
-      child: TextField(
+      child: TextFormField(
         controller: controller,
+        validator: validator,
         keyboardType: keyboardType,
         textInputAction: textInputAction,
         obscureText: obscureText,
@@ -335,6 +423,13 @@ class _GlassTextField extends StatelessWidget {
             fontSize: 14,
           ),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          errorStyle: GoogleFonts.inter(
+            color: const Color(0xFFFF8A8A),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          errorMaxLines: 3,
+          isDense: true,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 18,

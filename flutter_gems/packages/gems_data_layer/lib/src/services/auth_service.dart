@@ -131,6 +131,15 @@ class AuthService {
     );
   }
 
+  /// Persists [authData] and sets the API bearer token.
+  ///
+  /// Use after parsing a remote auth response, or when a local auth
+  /// implementation mints a JWT-compatible session you want stored the same way.
+  Future<void> applySession(AuthData authData) async {
+    await _saveAuthData(authData);
+    apiService.setAuthToken(authData.accessToken);
+  }
+
   /// Logout
   Future<void> logout() async {
     await prefs.remove(_authKey);
