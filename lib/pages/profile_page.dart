@@ -51,7 +51,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth,),
             child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 140 + media.padding.bottom),
+              padding: EdgeInsets.only(bottom: 70 + media.padding.bottom),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
