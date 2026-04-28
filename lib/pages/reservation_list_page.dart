@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -23,7 +24,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       subtitle: 'con Silva',
       dateText: '12 aprile 2026, 14:30',
       price: '€45',
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/barbar_1.jpg',
       recurring: true,
     ),
     _ReservationItem(
@@ -31,7 +32,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       subtitle: 'con Rossi',
       dateText: '12 aprile 2026, 14:30',
       price: '€60',
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/barbar_2.jpg',
       recurring: false,
     ),
     _ReservationItem(
@@ -39,7 +40,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       subtitle: 'con David',
       dateText: '12 aprile 2026, 14:30',
       price: '€30',
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/barbar_3.jpg',
       recurring: false,
     ),
   ];
@@ -50,7 +51,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       subtitle: 'con Silva',
       dateText: '12 aprile 2026, 14:30',
       price: '€45',
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/barbar_1.jpg',
       recurring: true,
     ),
     _ReservationItem(
@@ -58,7 +59,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       subtitle: 'con Rossi',
       dateText: '12 aprile 2026, 14:30',
       price: '€60',
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/barbar_2.jpg',
       recurring: false,
     ),
     _ReservationItem(
@@ -66,7 +67,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       subtitle: 'con David',
       dateText: '12 aprile 2026, 14:30',
       price: '€30',
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/barbar_3.jpg',
       recurring: false,
     ),
   ];
@@ -77,7 +78,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       subtitle: 'con Rossi',
       dateText: '12 aprile 2026, 14:30',
       price: '€60',
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/barbar_2.jpg',
       recurring: false,
     ),
     _ReservationItem(
@@ -85,7 +86,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       subtitle: 'con David',
       dateText: '12 aprile 2026, 14:30',
       price: '€30',
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/barbar_3.jpg',
       recurring: false,
     ),
   ];
@@ -93,8 +94,23 @@ class _ReservationListPageState extends State<ReservationListPage> {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
-    final hPad = isWide ? 28.0 : 18.0;
+    final hPad = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 18,
+      medium: 22,
+      large: 28,
+    );
+    final contentMaxWidth = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: double.infinity,
+      large: 980,
+    );
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     final list = _tab == 0
         ? _upcoming
         : _tab == 1
@@ -109,95 +125,123 @@ class _ReservationListPageState extends State<ReservationListPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                    color: Colors.white,
-                    iconSize: 18,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Elenco prenotazioni',
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFEDEDED),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2B2B2B),
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          children: [
-                            _TopPill(
-                              label: 'Prossimamente',
-                              count: '3',
-                              selected: _tab == 0,
-                              onTap: () => setState(() => _tab = 0),
-                            ),
-                            const SizedBox(width: 10),
-                            _TopPill(
-                              label: 'Completato',
-                              count: '25',
-                              selected: _tab == 1,
-                              onTap: () => setState(() => _tab = 1),
-                            ),
-                            const SizedBox(width: 10),
-                            _TopPill(
-                              label: 'Annullata',
-                              count: '2',
-                              selected: _tab == 2,
-                              onTap: () => setState(() => _tab = 2),
-                            ),
-                          ],
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: contentMaxWidth),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Get.back(),
+                        icon: SvgPicture.asset(
+                          'assets/icons/back_button.svg',
+                          width: 20 * fontScale,
                         ),
                       ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Elenco prenotazioni',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFFFFFFF),
+                          fontSize: 18 * fontScale,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 15, hPad, 15),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: ResponsiveHelper.getResponsiveValue<double>(
+                          context,
+                          small: double.infinity,
+                          large: 560,
+                        ),
+                      ),
+                      child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(40),
+                            border: Border.all(
+                              color: const Color(0xFF242424),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    const Color(0xFF000000).withValues(alpha: 0.15),
+                                blurRadius: 4,
+                                offset: const Offset(0, 0),
+                              ),
+                            ],
+                          ),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
+                              children: [
+                                _TopPill(
+                                  label: 'Prossimamente',
+                                  count: '3',
+                                  selected: _tab == 0,
+                                  onTap: () => setState(() => _tab = 0),
+                                ),
+                                const SizedBox(width: 10),
+                                _TopPill(
+                                  label: 'Completato',
+                                  count: '25',
+                                  selected: _tab == 1,
+                                  onTap: () => setState(() => _tab = 1),
+                                ),
+                                const SizedBox(width: 10),
+                                _TopPill(
+                                  label: 'Annullata',
+                                  count: '2',
+                                  selected: _tab == 2,
+                                  onTap: () => setState(() => _tab = 2),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.separated(
-                padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 120 + pad.bottom),
-                itemCount: list.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 14),
-                itemBuilder: (context, i) {
-                  final item = list[i];
-                  final expanded = _expandedIndex == i;
-                  return _ReservationCard(
-                    item: item,
-                    expanded: expanded,
-                    mode: mode,
-                    onTap: () => setState(
-                      () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    padding: EdgeInsets.fromLTRB(
+                      hPad,
+                      0,
+                      hPad,
+                      120 + pad.bottom,
                     ),
-                  );
-                },
-              ),
+                    itemCount: list.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 14),
+                    itemBuilder: (context, i) {
+                      final item = list[i];
+                      final expanded = _expandedIndex == i;
+                      return _ReservationCard(
+                        item: item,
+                        expanded: expanded,
+                        mode: mode,
+                        onTap: () => setState(
+                          () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -385,10 +429,10 @@ class _TopPill extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(26),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFF2F2F2) : const Color(0xFF3A3A3A),
-          borderRadius: BorderRadius.circular(26),
+          color: selected ? const Color(0xFFFFFFFF) : Color(0xFFFFFFFF).withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
@@ -396,28 +440,30 @@ class _TopPill extends StatelessWidget {
               label,
               style: GoogleFonts.inter(
                 color: selected
-                    ? const Color(0xFF0B0B0B)
-                    : const Color(0xFF8E8E8E),
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
+                    ? const Color(0xFF000000)
+                    : Color(0xFFFFFFFF).withValues(alpha: 0.5),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
               ),
             ),
             const SizedBox(width: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 color:
-                    selected ? const Color(0xFF0B0B0B) : const Color(0xFF2B2B2B),
+                    selected ? const Color(0xFF000000) : Color(0xFF000000).withValues(alpha: 0.30),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Text(
                 count,
                 style: GoogleFonts.inter(
                   color: selected
-                      ? const Color(0xFFF2F2F2)
-                      : const Color(0xFF8E8E8E),
+                      ? const Color(0xFFFFFFFF)
+                      : Color(0xFFFFFFFF).withValues(alpha: 0.5),
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
+                  height: 1.0,
                 ),
               ),
             ),
@@ -443,6 +489,12 @@ class _ReservationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     final statusLabel = switch (mode) {
       _ReservationMode.upcoming => 'Confermato',
       _ReservationMode.completed => 'Completato',
@@ -451,24 +503,29 @@ class _ReservationCard extends StatelessWidget {
     final showDelete = mode == _ReservationMode.upcoming;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF2B2B2B),
-        borderRadius: BorderRadius.circular(22),
+        color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Color(0xFF242424), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0xFF000000).withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 0),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Column(
-          children: [
+      child: Column(
+        children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+              padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
               child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     child: Image.asset(
                       item.imageAsset,
-                      width: 52,
-                      height: 52,
+                      width: 80,
+                      height: 80,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -480,27 +537,30 @@ class _ReservationCard extends StatelessWidget {
                         Text(
                           item.title,
                           style: GoogleFonts.inter(
-                            color: const Color(0xFFEDEDED),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFFFFFFFF),
+                            fontSize: 18 * fontScale,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '${item.subtitle}  •  ${item.dateText}',
                           style: GoogleFonts.inter(
-                            color: const Color(0xFFBDBDBD),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFDDDDDD),
+                            fontSize: 13 * fontScale,
+                            fontWeight: FontWeight.w500,
+                            height: 1.5,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           item.price,
                           style: GoogleFonts.inter(
-                            color: const Color(0xFFEDEDED),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFFFFFFFF),
+                            fontSize: 16 * fontScale,
+                            fontWeight: FontWeight.w700,
+                            height: 1.5,
                           ),
                         ),
                       ],
@@ -509,33 +569,47 @@ class _ReservationCard extends StatelessWidget {
                 ],
               ),
             ),
-            Container(height: 1, color: const Color(0xFF3A3A3A)),
             Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+              padding: const EdgeInsets.symmetric(horizontal: 15.0),
+              child: Divider(thickness: 1, color: Color(0xFF797979).withValues(alpha: 0.30)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
               child: Row(
                 children: [
                   _SmallChip(label: statusLabel),
                   const Spacer(),
                   if (item.recurring)
-                    _SmallChip(
-                      label: 'Ricorrente',
-                      trailing: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 18,
-                        color: Color(0xFFBDBDBD),
+                    InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.circular(18),
+                      child: _SmallChip(
+                        label: 'Ricorrente',
+                        trailing: Icon(
+                          expanded
+                              ? Icons.keyboard_arrow_up_rounded
+                              : Icons.keyboard_arrow_down_rounded,
+                          size: 18,
+                          color: const Color(0xFF797979),
+                        ),
                       ),
                     ),
                   const SizedBox(width: 12),
                   if (showDelete)
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE24B4B),
-                        borderRadius: BorderRadius.circular(10),
+                    Padding(
+                      padding: const EdgeInsets.all(5.0),
+                      child: Container(
+                          height: 36,
+                          width: 36,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFEF4444),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: SvgPicture.asset('assets/icons/delete.svg', width: 20, height: 20,),
+                          ),
                       ),
-                      child: const Icon(Icons.delete_rounded,
-                          color: Colors.white, size: 18),
                     ),
                 ],
               ),
@@ -556,8 +630,7 @@ class _ReservationCard extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -572,19 +645,21 @@ class _SmallChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFF232323),
+        color: Color(0xFF797979).withValues(alpha: 0.20),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Color(0xFF797979)),
       ),
       child: Row(
         children: [
           Text(
             label,
             style: GoogleFonts.inter(
-              color: const Color(0xFFBDBDBD),
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
+              color: const Color(0xFFFFFFFF),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              height: 1.5,
             ),
           ),
           if (trailing != null) ...[
@@ -602,7 +677,7 @@ class _HomeDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Container(height: 1, color: const Color(0xFF3A3A3A));
+      Container(height: 1, color: Color(0xFF797979).withValues(alpha: 0.30));
 }
 
 class _ReservationRecurrence extends StatelessWidget {
@@ -610,42 +685,44 @@ class _ReservationRecurrence extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 12),
         Row(
           children: [
-            const Icon(Icons.autorenew_rounded,
-                color: Color(0xFFE6E6E6), size: 18),
+            SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
             const SizedBox(width: 10),
             Text(
               'Ricorrenza mensile',
               style: GoogleFonts.inter(
-                color: const Color(0xFFE6E6E6),
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
+                color: const Color(0xFFFFFFFF),
+                fontSize: 16 * fontScale,
+                fontWeight: FontWeight.w700,
+                height: 1.5,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        const _HomeDivider(),
         const _RecurrenceRow(
           text: 'Giovedì 9 aprile 2026, ore 10:00',
           pillText: 'con Marcus Silva',
         ),
-        const _HomeDivider(),
         const _RecurrenceRow(
           text: 'Giovedì 16 aprile 2026, ore 10:00',
           pillText: 'con Marcus Silva',
         ),
-        const _HomeDivider(),
         const _RecurrenceAltRow(
           text: 'Giovedì 23 aprile 2026, ore 10:00',
           altText: 'Alternative Barber with James Martinez',
         ),
-        const _HomeDivider(),
         const _RecurrenceRow(
           text: 'Giovedì 30 aprile 2026, ore 10:00',
           pillText: 'con Marcus Silva',
@@ -663,8 +740,14 @@ class _RecurrenceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
+      padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -675,25 +758,27 @@ class _RecurrenceRow extends StatelessWidget {
                 Text(
                   text,
                   style: GoogleFonts.inter(
-                    color: const Color(0xFFE0E0E0),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFEEEEEE),
+                    fontSize: 14 * fontScale,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF232323),
-                    borderRadius: BorderRadius.circular(14),
+                    color:  Color(0xFF797979).withValues(alpha: 0.20),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     pillText,
                     style: GoogleFonts.inter(
-                      color: const Color(0xFFBDBDBD),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFDDDDDD),
+                      fontSize: 14 * fontScale,
+                      fontWeight: FontWeight.w500,
+                      height: 1.5,
                     ),
                   ),
                 ),
@@ -705,8 +790,8 @@ class _RecurrenceRow extends StatelessWidget {
             padding: EdgeInsets.only(top: 2),
             child: Icon(
               Icons.close_rounded,
-              size: 20,
-              color: Color(0xFF8A8A8A),
+              size: 18,
+              color: Color(0xFF797979),
             ),
           ),
         ],
@@ -723,8 +808,14 @@ class _RecurrenceAltRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
+      padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -735,29 +826,31 @@ class _RecurrenceAltRow extends StatelessWidget {
                 Text(
                   text,
                   style: GoogleFonts.inter(
-                    color: const Color(0xFFE0E0E0),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFEEEEEE),
+                    fontSize: 14 * fontScale,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
+                    color: Color(0xFF797979).withValues(alpha: 0.20),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: const Color(0xFFB14A4A),
-                      width: 1.2,
+                      color: const Color(0xFFEF4444),
+                      width: 1,
                     ),
                   ),
                   child: Text(
                     altText,
                     style: GoogleFonts.inter(
-                      color: const Color(0xFFE6E6E6),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFDDDDDD),
+                      fontSize: 14 * fontScale,
+                      fontWeight: FontWeight.w500,
+                      height: 1.5,
                     ),
                   ),
                 ),
@@ -769,8 +862,8 @@ class _RecurrenceAltRow extends StatelessWidget {
             padding: EdgeInsets.only(top: 2),
             child: Icon(
               Icons.close_rounded,
-              size: 20,
-              color: Color(0xFF8A8A8A),
+              size: 18,
+              color: Color(0xFF797979),
             ),
           ),
         ],

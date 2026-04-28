@@ -369,7 +369,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                           onPressed: () {
                                             Navigator.of(context).pop();
                                             if (!mounted) return;
-                                            setState(() => _step = 4);
+                                            setState(() => _step = 5);
                                           },
                                           style: FilledButton.styleFrom(
                                             backgroundColor:
@@ -712,6 +712,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                           onTap: _step == 5 ? _showConfirmDialog : _onContinue,
                           child: Center(
                             child: Text(
+                              _step == 3 ? 'Qualcuno Disponibile' :
                               _step == 5
                                   ? 'Conferma la prenotazione'
                                   : 'Continuare',
@@ -854,8 +855,15 @@ class _Step4Divider extends StatelessWidget {
   }
 }
 
-class _Step4MonthlyRecurrence extends StatelessWidget {
+class _Step4MonthlyRecurrence extends StatefulWidget {
   const _Step4MonthlyRecurrence();
+
+  @override
+  State<_Step4MonthlyRecurrence> createState() => _Step4MonthlyRecurrenceState();
+}
+
+class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
+  bool _waitlist = false;
 
   @override
   Widget build(BuildContext context) {
@@ -937,7 +945,61 @@ class _Step4MonthlyRecurrence extends StatelessWidget {
         const SizedBox(height: 12),
         row('Giovedì 9 aprile 2026, ore 10:00'),
 
-        row('Giovedì 16 aprile 2026, ore 10:00'),
+        Column(
+          children: [
+            row('Giovedì 16 aprile 2026, ore 10:00', withPill: false),
+            Padding(
+              padding: const EdgeInsets.only(left: 2, right: 2, bottom: 6),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 16,
+                    color: Color(0xFFE24B4B),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Nessun barbiere disponibile',
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFFE24B4B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            InkWell(
+              onTap: () => setState(() => _waitlist = !_waitlist),
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      _waitlist
+                          ? 'assets/icons/checked_box.svg'
+                          : 'assets/icons/non_checked_box.svg',
+                      width: 20,
+                      color: Color(0xFFFFFFFF),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      "Tienimi in lista d'attesa",
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFFDDDDDD),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
 
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1685,10 +1747,9 @@ class _Step3RecurringToggle extends StatelessWidget {
         children: [
           value
               ? SvgPicture.asset('assets/icons/checked_box.svg', width: 24)
-              : Icon(
-                  Icons.check_box_outline_blank_rounded,
-                  color: Color(0xFFDDDDDD),
-                  size: 24,
+              : SvgPicture.asset(
+                  'assets/icons/non_checked_box.svg',
+                  width: 24,
                 ),
           const SizedBox(width: 10),
           Text(

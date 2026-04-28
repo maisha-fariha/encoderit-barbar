@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../routes/app_pages.dart';
 
@@ -31,9 +33,23 @@ class _ContactPageState extends State<ContactPage> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final w = media.size.width;
-    final hPad = w >= 900 ? 24.0 : 18.0;
-    final maxWidth = w >= 900 ? 560.0 : 520.0;
+    final hPad = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 20,
+      medium: 24,
+      large: 28,
+    );
+    final maxWidth = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 520,
+      large: 680,
+    );
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -43,117 +59,100 @@ class _ContactPageState extends State<ContactPage> {
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 140 + media.padding.bottom),
+              padding: EdgeInsets.only(bottom: 70 + media.padding.bottom),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      InkResponse(
-                        radius: 24,
-                        onTap: () => Get.back(),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white,
-                          size: 18,
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 0),
+                    child: Row(
+                      children: [
+                        InkResponse(
+                          radius: 24,
+                          onTap: () => Get.back(),
+                          child: SvgPicture.asset(
+                            'assets/icons/back_button.svg',
+                            width: 18 * fontScale,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Contattaci',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _MapPreviewCard(),
-                  const SizedBox(height: 14),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2B2B2B),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          blurRadius: 18,
-                          offset: const Offset(0, 10),
+                        const SizedBox(width: 10),
+                         Text(
+                          'Contattaci',
+                          style: GoogleFonts.inter(
+                            color: Color(0xFFFFFFFF),
+                            fontSize: 18 * fontScale,
+                            fontWeight: FontWeight.w700,
+                            height: 1.5,
+                          ),
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 10),
+                    child: _MapPreviewCard(),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Color(0xFF242424),
+                      borderRadius: BorderRadius.only(topRight: Radius.circular(30), topLeft: Radius.circular(30)),
+                    ),
+                    padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const _SectionHeader(icon: Icons.location_on_outlined, title: 'Indirizzo'),
-                        const SizedBox(height: 10),
-                        const Text(
+                        const _SectionHeader(icon: 'assets/icons/location.svg', title: 'Indirizzo'),
+                        const SizedBox(height: 15),
+                        const _InsetDividerLine(),
+                        const SizedBox(height: 15),
+                        Text(
                           'P.za della Signoria,\n50122 Firenze FI,\nItalia',
-                          style: TextStyle(
-                            color: Color(0xFFEDEDED),
-                            fontSize: 13,
-                            height: 1.25,
-                            fontWeight: FontWeight.w700,
+                          style: GoogleFonts.inter(
+                            color: Color(0xFFFFFFFF),
+                            fontSize: 14 * fontScale,
+                            height: 1.5,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        const _InsetDividerLine(),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 15),
                         const _SectionHeader(
-                          icon: Icons.info_outline_rounded,
+                          icon: 'assets/icons/information.svg',
                           title: 'Informazioni di collegamento',
                         ),
-                        const SizedBox(height: 14),
-                        const _InfoRow(icon: Icons.phone_rounded, value: '+390552768325'),
-                        const SizedBox(height: 12),
-                        const _InfoRow(icon: Icons.mail_rounded, value: 'yourmail@mail.com'),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 15),
+                        const _InsetDividerLine(),
+                        const SizedBox(height: 15),
+                        const _InfoRow(icon: 'assets/icons/phone.svg', value: '+390552768325'),
+                        const SizedBox(height: 15),
+                        const _InfoRow(icon: 'assets/icons/mail.svg', value: 'yourmail@mail.com'),
+                        const SizedBox(height: 40),
                         Container(
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Color(0xFF0B0B0B),
-                                Color(0xFF111111),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(color: const Color(0xFF1F1F1F), width: 1),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.55),
-                                blurRadius: 30,
-                                offset: const Offset(0, 18),
-                              ),
-                            ],
+                            color: Color(0xFF000000),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                          padding: const EdgeInsets.fromLTRB(25, 20, 25, 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(
                                 children: [
-                                  const Icon(
-                                    Icons.work_outline_rounded,
-                                    color: Color(0xFFB7B7B7),
-                                    size: 18,
+                                   SvgPicture.asset(
+                                    'assets/icons/contact.svg',
+                                    width: 20,
                                   ),
                                   const SizedBox(width: 10),
-                                  const Text(
+                                   Text(
                                     'Contattaci',
-                                    style: TextStyle(
-                                      color: Color(0xFFB7B7B7),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.1,
+                                    style: GoogleFonts.inter(
+                                      color: Color(0xFFFFFFFF).withValues(alpha: 0.60),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.5,
                                     ),
                                   ),
-                                  const Spacer(),
                                 ],
                               ),
                               const SizedBox(height: 12),
@@ -181,24 +180,24 @@ class _ContactPageState extends State<ContactPage> {
                                 hint: 'Scrivi qualcosa...',
                                 maxLines: 4,
                               ),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 30),
                               SizedBox(
                                 height: 54,
                                 child: Material(
-                                  color: const Color(0xFFF2F2F2),
+                                  color: Color(0xFFEEEEEE),
                                   elevation: 0,
-                                  shadowColor: Colors.black.withValues(alpha: 0.35),
-                                  borderRadius: BorderRadius.circular(28),
+                                  borderRadius: BorderRadius.circular(30),
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(28),
+                                    borderRadius: BorderRadius.circular(30),
                                     onTap: () => FocusScope.of(context).unfocus(),
-                                    child: const Center(
+                                    child: Center(
                                       child: Text(
                                         'Invia il tuo messaggio',
-                                        style: TextStyle(
-                                          color: Color(0xFF0B0B0B),
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w900,
+                                        style: GoogleFonts.inter(
+                                          color: Color(0xFF000000),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1.5,
                                         ),
                                       ),
                                     ),
@@ -274,79 +273,79 @@ class _MapPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: SizedBox(
-        height: 140,
+        height: 182,
         child: Stack(
           fit: StackFit.expand,
           children: [
             Image.asset(
-              'assets/images/onboarding_1.png',
+              'assets/images/map.png',
               fit: BoxFit.cover,
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.40),
               colorBlendMode: BlendMode.darken,
             ),
-            Positioned(
-              left: 10,
-              top: 10,
-              child: Container(
-                width: 230,
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.94),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Palazzo Vecchio',
-                      style: TextStyle(
-                        color: Color(0xFF1A1A1A),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'P.za della Signoria, 50122...',
-                      style: TextStyle(
-                        color: Color(0xFF3A3A3A),
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.star_rounded, color: Color(0xFF1A1A1A), size: 14),
-                        SizedBox(width: 4),
-                        Text(
-                          '4.7',
-                          style: TextStyle(
-                            color: Color(0xFF1A1A1A),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          '(21.80)',
-                          style: TextStyle(
-                            color: Color(0xFF4A4A4A),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const Center(
-              child: Icon(Icons.location_pin, color: Color(0xFFD83A3A), size: 34),
-            ),
+            // Positioned(
+            //   left: 10,
+            //   top: 10,
+            //   child: Container(
+            //     width: 230,
+            //     padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            //     decoration: BoxDecoration(
+            //       color: Colors.white.withValues(alpha: 0.94),
+            //       borderRadius: BorderRadius.circular(12),
+            //     ),
+            //     child: const Column(
+            //       crossAxisAlignment: CrossAxisAlignment.start,
+            //       children: [
+            //         Text(
+            //           'Palazzo Vecchio',
+            //           style: TextStyle(
+            //             color: Color(0xFF1A1A1A),
+            //             fontSize: 13,
+            //             fontWeight: FontWeight.w800,
+            //           ),
+            //         ),
+            //         SizedBox(height: 2),
+            //         Text(
+            //           'P.za della Signoria, 50122...',
+            //           style: TextStyle(
+            //             color: Color(0xFF3A3A3A),
+            //             fontSize: 11.5,
+            //             fontWeight: FontWeight.w600,
+            //           ),
+            //         ),
+            //         SizedBox(height: 4),
+            //         Row(
+            //           children: [
+            //             Icon(Icons.star_rounded, color: Color(0xFF1A1A1A), size: 14),
+            //             SizedBox(width: 4),
+            //             Text(
+            //               '4.7',
+            //               style: TextStyle(
+            //                 color: Color(0xFF1A1A1A),
+            //                 fontSize: 11.5,
+            //                 fontWeight: FontWeight.w700,
+            //               ),
+            //             ),
+            //             SizedBox(width: 6),
+            //             Text(
+            //               '(21.80)',
+            //               style: TextStyle(
+            //                 color: Color(0xFF4A4A4A),
+            //                 fontSize: 11.5,
+            //                 fontWeight: FontWeight.w600,
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
+            // const Center(
+            //   child: Icon(Icons.location_pin, color: Color(0xFFD83A3A), size: 34),
+            // ),
           ],
         ),
       ),
@@ -371,23 +370,26 @@ class _InputBox extends StatelessWidget {
     return TextField(
       controller: controller,
       maxLines: maxLines,
-      style: const TextStyle(
+      style: GoogleFonts.inter(
         color: Colors.white,
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        height: 1,
       ),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(
-          color: Color(0xFF6F6F6F),
-          fontWeight: FontWeight.w600,
+        hintStyle: GoogleFonts.inter(
+          color: Color(0xFFFFFFFF).withValues(alpha: 0.4),
+          fontWeight: FontWeight.w500,
+          fontSize: 16,
+          height: 1,
         ),
         filled: true,
-        fillColor: const Color(0xFF151515),
+        fillColor: Color(0xFFFFFFFF).withValues(alpha: 0.08),
         contentPadding: EdgeInsets.fromLTRB(16, isMultiline ? 14 : 16, 16, isMultiline ? 14 : 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2B2B2B), width: 1),
+          borderSide: BorderSide(color: Color(0xFFFFFFFF).withValues(alpha: 0.15), width: 1),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -405,22 +407,22 @@ class _InputBox extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.icon, required this.title});
 
-  final IconData icon;
+  final String icon;
   final String title;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFFB7B7B7), size: 18),
+        SvgPicture.asset(icon, width: 20),
         const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFFB7B7B7),
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.1,
+          style: GoogleFonts.inter(
+            color: Color(0xFFFFFFFF).withValues(alpha: 0.6),
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            height: 1.5,
           ),
         ),
       ],
@@ -438,7 +440,7 @@ class _InsetDividerLine extends StatelessWidget {
       padding: const EdgeInsets.only(left: 2),
       child: Container(
         height: 1,
-        color: darker ? const Color(0xFF1E1E1E) : const Color(0xFF3A3A3A),
+        color: Color(0xFF797979).withValues(alpha: 0.30),
       ),
     );
   }
@@ -447,22 +449,23 @@ class _InsetDividerLine extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   const _InfoRow({required this.icon, required this.value});
 
-  final IconData icon;
+  final String icon;
   final String value;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: const Color(0xFFB7B7B7), size: 18),
+        SvgPicture.asset(icon, width: 16),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              color: Color(0xFFEDEDED),
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+            style: GoogleFonts.inter(
+              color: Color(0xFFFFFFFF),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
             ),
           ),
         ),
@@ -479,11 +482,11 @@ class _FormLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        color: Color(0xFFEDEDED),
-        fontSize: 12,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 0.15,
+      style: TextStyle(
+        color: Color(0xFFDDDDDD),
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        height: 1.5,
       ),
     );
   }
