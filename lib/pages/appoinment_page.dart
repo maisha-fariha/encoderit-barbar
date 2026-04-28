@@ -369,7 +369,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                           onPressed: () {
                                             Navigator.of(context).pop();
                                             if (!mounted) return;
-                                            setState(() => _step = 4);
+                                            setState(() => _step = 5);
                                           },
                                           style: FilledButton.styleFrom(
                                             backgroundColor:
@@ -712,6 +712,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                           onTap: _step == 5 ? _showConfirmDialog : _onContinue,
                           child: Center(
                             child: Text(
+                              _step == 3 ? 'Qualcuno Disponibile' :
                               _step == 5
                                   ? 'Conferma la prenotazione'
                                   : 'Continuare',
