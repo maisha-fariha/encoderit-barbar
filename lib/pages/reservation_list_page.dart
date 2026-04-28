@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -93,8 +94,23 @@ class _ReservationListPageState extends State<ReservationListPage> {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
-    final hPad = isWide ? 28.0 : 18.0;
+    final hPad = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 18,
+      medium: 22,
+      large: 28,
+    );
+    final contentMaxWidth = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: double.infinity,
+      large: 980,
+    );
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     final list = _tab == 0
         ? _upcoming
         : _tab == 1
@@ -109,104 +125,123 @@ class _ReservationListPageState extends State<ReservationListPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Get.back(),
-                    icon: SvgPicture.asset('assets/icons/back_button.svg', width: 20,),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Elenco prenotazioni',
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFFFFFFF),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(hPad, 15, hPad, 15),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(40),
-                        border: Border.all(
-                          color: const Color(0xFF242424),
-                          width: 1,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: contentMaxWidth),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 8),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Get.back(),
+                        icon: SvgPicture.asset(
+                          'assets/icons/back_button.svg',
+                          width: 20 * fontScale,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color:  Color(0xFF000000).withValues(alpha: 0.15),
-                            blurRadius: 4,
-                            offset: const Offset(0, 0),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Elenco prenotazioni',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFFFFFFF),
+                          fontSize: 18 * fontScale,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 15, hPad, 15),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: ResponsiveHelper.getResponsiveValue<double>(
+                          context,
+                          small: double.infinity,
+                          large: 560,
+                        ),
+                      ),
+                      child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(40),
+                            border: Border.all(
+                              color: const Color(0xFF242424),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    const Color(0xFF000000).withValues(alpha: 0.15),
+                                blurRadius: 4,
+                                offset: const Offset(0, 0),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          children: [
-                            _TopPill(
-                              label: 'Prossimamente',
-                              count: '3',
-                              selected: _tab == 0,
-                              onTap: () => setState(() => _tab = 0),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
+                              children: [
+                                _TopPill(
+                                  label: 'Prossimamente',
+                                  count: '3',
+                                  selected: _tab == 0,
+                                  onTap: () => setState(() => _tab = 0),
+                                ),
+                                const SizedBox(width: 10),
+                                _TopPill(
+                                  label: 'Completato',
+                                  count: '25',
+                                  selected: _tab == 1,
+                                  onTap: () => setState(() => _tab = 1),
+                                ),
+                                const SizedBox(width: 10),
+                                _TopPill(
+                                  label: 'Annullata',
+                                  count: '2',
+                                  selected: _tab == 2,
+                                  onTap: () => setState(() => _tab = 2),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 10),
-                            _TopPill(
-                              label: 'Completato',
-                              count: '25',
-                              selected: _tab == 1,
-                              onTap: () => setState(() => _tab = 1),
-                            ),
-                            const SizedBox(width: 10),
-                            _TopPill(
-                              label: 'Annullata',
-                              count: '2',
-                              selected: _tab == 2,
-                              onTap: () => setState(() => _tab = 2),
-                            ),
-                          ],
-                        ),
+                          ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.separated(
-                padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 120 + pad.bottom),
-                itemCount: list.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 14),
-                itemBuilder: (context, i) {
-                  final item = list[i];
-                  final expanded = _expandedIndex == i;
-                  return _ReservationCard(
-                    item: item,
-                    expanded: expanded,
-                    mode: mode,
-                    onTap: () => setState(
-                      () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    padding: EdgeInsets.fromLTRB(
+                      hPad,
+                      0,
+                      hPad,
+                      120 + pad.bottom,
                     ),
-                  );
-                },
-              ),
+                    itemCount: list.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 14),
+                    itemBuilder: (context, i) {
+                      final item = list[i];
+                      final expanded = _expandedIndex == i;
+                      return _ReservationCard(
+                        item: item,
+                        expanded: expanded,
+                        mode: mode,
+                        onTap: () => setState(
+                          () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -454,6 +489,12 @@ class _ReservationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     final statusLabel = switch (mode) {
       _ReservationMode.upcoming => 'Confermato',
       _ReservationMode.completed => 'Completato',
@@ -497,7 +538,7 @@ class _ReservationCard extends StatelessWidget {
                           item.title,
                           style: GoogleFonts.inter(
                             color: const Color(0xFFFFFFFF),
-                            fontSize: 18,
+                            fontSize: 18 * fontScale,
                             fontWeight: FontWeight.w600,
                             height: 1.5,
                           ),
@@ -507,7 +548,7 @@ class _ReservationCard extends StatelessWidget {
                           '${item.subtitle}  •  ${item.dateText}',
                           style: GoogleFonts.inter(
                             color: const Color(0xFFDDDDDD),
-                            fontSize: 13,
+                            fontSize: 13 * fontScale,
                             fontWeight: FontWeight.w500,
                             height: 1.5,
                           ),
@@ -517,7 +558,7 @@ class _ReservationCard extends StatelessWidget {
                           item.price,
                           style: GoogleFonts.inter(
                             color: const Color(0xFFFFFFFF),
-                            fontSize: 16,
+                            fontSize: 16 * fontScale,
                             fontWeight: FontWeight.w700,
                             height: 1.5,
                           ),
@@ -644,6 +685,12 @@ class _ReservationRecurrence extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -656,7 +703,7 @@ class _ReservationRecurrence extends StatelessWidget {
               'Ricorrenza mensile',
               style: GoogleFonts.inter(
                 color: const Color(0xFFFFFFFF),
-                fontSize: 16,
+                fontSize: 16 * fontScale,
                 fontWeight: FontWeight.w700,
                 height: 1.5,
               ),
@@ -693,6 +740,12 @@ class _RecurrenceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
       child: Row(
@@ -706,7 +759,7 @@ class _RecurrenceRow extends StatelessWidget {
                   text,
                   style: GoogleFonts.inter(
                     color: const Color(0xFFEEEEEE),
-                    fontSize: 14,
+                    fontSize: 14 * fontScale,
                     fontWeight: FontWeight.w500,
                     height: 1.5,
                   ),
@@ -723,7 +776,7 @@ class _RecurrenceRow extends StatelessWidget {
                     pillText,
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
-                      fontSize: 14,
+                      fontSize: 14 * fontScale,
                       fontWeight: FontWeight.w500,
                       height: 1.5,
                     ),
@@ -755,6 +808,12 @@ class _RecurrenceAltRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
       child: Row(
@@ -768,7 +827,7 @@ class _RecurrenceAltRow extends StatelessWidget {
                   text,
                   style: GoogleFonts.inter(
                     color: const Color(0xFFEEEEEE),
-                    fontSize: 14,
+                    fontSize: 14 * fontScale,
                     fontWeight: FontWeight.w500,
                     height: 1.5,
                   ),
@@ -789,7 +848,7 @@ class _RecurrenceAltRow extends StatelessWidget {
                     altText,
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
-                      fontSize: 14,
+                      fontSize: 14 * fontScale,
                       fontWeight: FontWeight.w500,
                       height: 1.5,
                     ),
