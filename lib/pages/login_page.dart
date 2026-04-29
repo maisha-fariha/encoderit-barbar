@@ -47,7 +47,6 @@ class _LoginPageState extends State<LoginPage> {
 
   void _submitLogin() {
     FocusScope.of(context).unfocus();
-    if (!(_formKey.currentState?.validate() ?? false)) return;
     final auth = Get.find<AuthController>();
     auth.login(_email.text.trim(), _password.text);
   }

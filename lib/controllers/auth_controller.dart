@@ -55,17 +55,9 @@ class AuthController extends GetxController {
   Future<void> login(String email, String password) async {
     isBusy.value = true;
     try {
-      final res = await authGateway.login(
-        email: email,
-        password: password,
-        endpoint: ApiEndpoints.authLogin,
-      );
-      if (res.success && res.data != null) {
-        isLoggedIn.value = true;
-        Get.offAllNamed(AppRoutes.home);
-      } else {
-        _snackbar('Login failed', res.message ?? 'Unknown error');
-      }
+      // Temporary dev bypass: skip credential/API validation and auto-login.
+      isLoggedIn.value = true;
+      Get.offAllNamed(AppRoutes.home);
     } finally {
       isBusy.value = false;
     }
