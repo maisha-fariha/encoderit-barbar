@@ -626,12 +626,53 @@ class _ReservationCard extends StatelessWidget {
                   children: const [
                     _HomeDivider(),
                     _ReservationRecurrence(),
+                    SizedBox(height: 12),
+                    _HomeDivider(),
+                    SizedBox(height: 12),
+                    _ReservaTime(),
                   ],
                 ),
               ),
             ),
         ],
       ),
+    );
+  }
+}
+
+class _ReservaTime extends StatelessWidget {
+  const _ReservaTime();
+
+  @override
+  Widget build(BuildContext context) {
+    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 1.0,
+      medium: 1.08,
+      large: 1.22,
+    );
+    return Row(
+      children: [
+        Text(
+          'Quante prenotazioni',
+          style: GoogleFonts.inter(
+            color: const Color(0xFFDDDDDD),
+            fontSize: 16 * fontScale,
+            fontWeight: FontWeight.w600,
+            height: 1.5,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          '5 volte',
+          style: GoogleFonts.inter(
+            color: const Color(0xFFFFFFFF),
+            fontSize: 16 * fontScale,
+            fontWeight: FontWeight.w700,
+            height: 1.5,
+          ),
+        )
+      ]
     );
   }
 }
