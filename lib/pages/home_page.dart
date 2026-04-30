@@ -397,7 +397,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                         ),
                         SizedBox(width: 10),
                         Text(
-                          'Ricorrenza mensile',
+                          'Ogni 4 Settimane',
                           style: GoogleFonts.inter(
                             color: Color(0xFFFFFFFF),
                             fontSize: 16 * fontScale,
@@ -434,6 +434,35 @@ class _UpcomingAccordionItem extends StatelessWidget {
                     child: _RecurrenceRow(
                       text: 'Giovedì 30 aprile 2026, ore 10:00',
                       pillText: 'con Marcus Silva',
+                    ),
+                  ),
+                  SizedBox(height: 15),
+                  _HomeDivider(),
+                  SizedBox(height: 15),
+                  Padding(
+                    padding: EdgeInsets.only(left: 16, right: 16, bottom: 30),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Quante prenotazioni',
+                          style: GoogleFonts.inter(
+                            color: Color(0xFFDDDDDD),
+                            fontSize: 16 * fontScale,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
+                          ),
+                        ),
+                        Spacer(),
+                        Text(
+                          '5 volte',
+                          style: GoogleFonts.inter(
+                            color: Color(0xFFFFFFFF),
+                            fontSize: 16 * fontScale,
+                            fontWeight: FontWeight.w700,
+                            height: 1.5,
+                          ),
+                        )
+                      ]
                     ),
                   ),
                 ],
