@@ -20,7 +20,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final isLarge = ResponsiveHelper.isLargeDevice(context);
-    final pad = MediaQuery.paddingOf(context);
     final hPad = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 16,
@@ -41,17 +40,20 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: SingleChildScrollView(
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        toolbarHeight: 86,
+        flexibleSpace: SafeArea(
+          bottom: false,
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: contentMaxWidth),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
-                    child: Row(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                child: Row(
                   children: [
                     Container(
                       width: 50,
@@ -66,15 +68,15 @@ class _HomePageState extends State<HomePage> {
                       child: CircleAvatar(
                         radius: 22,
                         backgroundColor: const Color(0xFF2B2B2B),
-                        backgroundImage: const AssetImage(
-                          'assets/images/profile.jpg',
-                        ),
+                        backgroundImage:
+                            const AssetImage('assets/images/profile.jpg'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             'Leonardo',
@@ -99,6 +101,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           '30',
@@ -122,61 +125,71 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-                  ),
-                  const SizedBox(height: 30),
-                  Container(
-                    padding: EdgeInsets.all(isLarge ? 34 : 30),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF242424),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _UpcomingCard(
-                          expandedIndex: _expandedIndex,
-                          onToggle: (i) => setState(
-                            () => _expandedIndex = _expandedIndex == i ? -1 : i,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          height: 54,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEEEEEE),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: FilledButton(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                              onPressed: () {},
-                              child: Text(
-                                'Prenotazione di un servizio',
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFF000000),
-                                  fontSize: 16 * fontScale,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                ],
               ),
+            ),
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: contentMaxWidth),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 30),
+                Container(
+                  padding: EdgeInsets.all(isLarge ? 34 : 30),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF242424),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _UpcomingCard(
+                        expandedIndex: _expandedIndex,
+                        onToggle: (i) => setState(
+                          () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 54,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEEEEE),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                            onPressed: () {},
+                            child: Text(
+                              'Prenotazione di un servizio',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFF000000),
+                                fontSize: 16 * fontScale,
+                                fontWeight: FontWeight.w600,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+              ],
             ),
           ),
         ),

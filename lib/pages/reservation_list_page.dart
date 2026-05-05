@@ -124,123 +124,136 @@ class _ReservationListPageState extends State<ReservationListPage> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: contentMaxWidth),
-            child: Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 8),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Get.back(),
-                        icon: SvgPicture.asset(
-                          'assets/icons/back_button.svg',
-                          width: 20 * fontScale,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Elenco prenotazioni',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFFFFFFF),
-                          fontSize: 18 * fontScale,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(hPad, 15, hPad, 15),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: ResponsiveHelper.getResponsiveValue<double>(
-                          context,
-                          small: double.infinity,
-                          large: 560,
-                        ),
-                      ),
-                      child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(40),
-                            border: Border.all(
-                              color: const Color(0xFF242424),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    const Color(0xFF000000).withValues(alpha: 0.15),
-                                blurRadius: 4,
-                                offset: const Offset(0, 0),
-                              ),
-                            ],
-                          ),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            child: Row(
-                              children: [
-                                _TopPill(
-                                  label: 'Prossimamente',
-                                  count: '3',
-                                  selected: _tab == 0,
-                                  onTap: () => setState(() => _tab = 0),
-                                ),
-                                const SizedBox(width: 10),
-                                _TopPill(
-                                  label: 'Completato',
-                                  count: '25',
-                                  selected: _tab == 1,
-                                  onTap: () => setState(() => _tab = 1),
-                                ),
-                                const SizedBox(width: 10),
-                                _TopPill(
-                                  label: 'Annullata',
-                                  count: '2',
-                                  selected: _tab == 2,
-                                  onTap: () => setState(() => _tab = 2),
-                                ),
-                              ],
-                            ),
-                          ),
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        toolbarHeight: 72,
+        flexibleSpace: SafeArea(
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: contentMaxWidth),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 0),
+                child: Row(
+                  children: [
+                    InkResponse(
+                      radius: 24,
+                      onTap: () => Get.back(),
+                      child: SvgPicture.asset(
+                        'assets/icons/back_button.svg',
+                        width: 18 * fontScale,
                       ),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: ListView.separated(
-                    padding: EdgeInsets.fromLTRB(
-                      hPad,
-                      0,
-                      hPad,
-                      120 + pad.bottom,
+                    const SizedBox(width: 10),
+                    Text(
+                      'Elenco prenotazioni',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFFFFFFFF),
+                        fontSize: 18 * fontScale,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    itemCount: list.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 14),
-                    itemBuilder: (context, i) {
-                      final item = list[i];
-                      final expanded = _expandedIndex == i;
-                      return _ReservationCard(
-                        item: item,
-                        expanded: expanded,
-                        mode: mode,
-                        onTap: () => setState(
-                          () => _expandedIndex = _expandedIndex == i ? -1 : i,
-                        ),
-                      );
-                    },
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
+          ),
+        ),
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: contentMaxWidth),
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 15, hPad, 15),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: ResponsiveHelper.getResponsiveValue<double>(
+                        context,
+                        small: double.infinity,
+                        large: 560,
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(40),
+                        border: Border.all(
+                          color: const Color(0xFF242424),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF000000).withValues(alpha: 0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 0),
+                          ),
+                        ],
+                      ),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          children: [
+                            _TopPill(
+                              label: 'Prossimamente',
+                              count: '3',
+                              selected: _tab == 0,
+                              onTap: () => setState(() => _tab = 0),
+                            ),
+                            const SizedBox(width: 10),
+                            _TopPill(
+                              label: 'Completato',
+                              count: '25',
+                              selected: _tab == 1,
+                              onTap: () => setState(() => _tab = 1),
+                            ),
+                            const SizedBox(width: 10),
+                            _TopPill(
+                              label: 'Annullata',
+                              count: '2',
+                              selected: _tab == 2,
+                              onTap: () => setState(() => _tab = 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  padding: EdgeInsets.fromLTRB(
+                    hPad,
+                    0,
+                    hPad,
+                    120 + pad.bottom,
+                  ),
+                  itemCount: list.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 14),
+                  itemBuilder: (context, i) {
+                    final item = list[i];
+                    final expanded = _expandedIndex == i;
+                    return _ReservationCard(
+                      item: item,
+                      expanded: expanded,
+                      mode: mode,
+                      onTap: () => setState(
+                        () => _expandedIndex = _expandedIndex == i ? -1 : i,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -45,39 +45,56 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth,),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 70 + media.padding.bottom),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
-                    child: Row(
-                      children: [
-                        InkResponse(
-                          radius: 30,
-                          onTap: () => Get.back(),
-                          child: SvgPicture.asset('assets/icons/back_button.svg', width: 20, height: 20),
-                        ),
-                        const SizedBox(width: 10),
-                         Text(
-                          'Profilo',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 18 * fontScale,
-                            fontWeight: FontWeight.w700,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        toolbarHeight: 68,
+        flexibleSpace: SafeArea(
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                child: Row(
+                  children: [
+                    InkResponse(
+                      radius: 30,
+                      onTap: () => Get.back(),
+                      child: SvgPicture.asset(
+                        'assets/icons/back_button.svg',
+                        width: 20,
+                        height: 20,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 18),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Profilo',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 18 * fontScale,
+                        fontWeight: FontWeight.w700,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(bottom: 70 + media.padding.bottom),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 18),
                   Center(
                     child: Stack(
                       clipBehavior: Clip.none,
@@ -214,7 +231,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
               ),
-            ),
           ),
         ),
       ),
