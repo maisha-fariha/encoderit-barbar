@@ -48,6 +48,9 @@ class EncoderitBarbarApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          // Match main screens (black scaffolds) so route transitions never flash white.
+          scaffoldBackgroundColor: Colors.black,
+          canvasColor: Colors.black,
           appBarTheme: const AppBarTheme(
             systemOverlayStyle: _statusBarStyle,
           ),

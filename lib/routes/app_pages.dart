@@ -52,18 +52,26 @@ class AppPages {
     GetPage(
       name: AppRoutes.home,
       page: () => const HomePage(),
+      transition: Transition.noTransition,
+      transitionDuration: Duration.zero,
     ),
     GetPage(
       name: AppRoutes.reservations,
       page: () => const ReservationListPage(),
+      transition: Transition.noTransition,
+      transitionDuration: Duration.zero,
     ),
     GetPage(
       name: AppRoutes.profile,
       page: () => const ProfilePage(),
+      transition: Transition.noTransition,
+      transitionDuration: Duration.zero,
     ),
     GetPage(
       name: AppRoutes.contact,
       page: () => const ContactPage(),
+      transition: Transition.noTransition,
+      transitionDuration: Duration.zero,
     ),
   ];
 }
