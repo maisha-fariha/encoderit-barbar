@@ -8,13 +8,11 @@ import '../pages/contact_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/reservation_list_page.dart';
 import '../pages/register_page.dart';
-import '../pages/splash_page.dart';
 
 
 class AppRoutes {
   AppRoutes._();
 
-  static const splash = '/';
   static const onboarding = '/onboarding';
   static const appoinment = '/appoinment';
   static const home = '/home';
@@ -29,10 +27,6 @@ class AppPages {
   AppPages._();
 
   static final routes = <GetPage>[
-    GetPage(
-      name: AppRoutes.splash,
-      page: () => const SplashPage(),
-    ),
     GetPage(
       name: AppRoutes.onboarding,
       page: () => const OnboardingPage(),
