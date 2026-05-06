@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:gems_core/gems_core.dart';
 
 import 'routes/app_pages.dart';
-import 'services/app_services.dart';
-import 'controllers/auth_controller.dart';
 
 const _statusBarStyle = SystemUiOverlayStyle(
   statusBarColor: Colors.transparent,
@@ -18,20 +15,6 @@ Future<void> main() async {
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(_statusBarStyle);
-
-  final appServices = AppServices();
-  await appServices.initialize(
-    environmentMode: EnvironmentMode.development,
-    appConfig: AppConfig(
-      apiBaseUrl: 'https://reqres.in/api',
-      enableLogging: true,
-      apiTimeout: const Duration(seconds: 30),
-    ),
-  );
-
-  final auth = AppServices.getIt<AuthController>();
-  Get.put(auth, permanent: true);
-  await auth.bootstrap();
 
   runApp(const EncoderitBarbarApp());
 }
@@ -57,9 +40,13 @@ class EncoderitBarbarApp extends StatelessWidget {
         ),
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _statusBarStyle,
-          child: child ?? const SizedBox.shrink(),
+          // Ensures there's never a white flash behind the first route.
+          child: ColoredBox(
+            color: Colors.black,
+            child: child ?? const SizedBox.shrink(),
+          ),
         ),
-        initialRoute: AppRoutes.splash,
+        initialRoute: AppRoutes.onboarding,
         getPages: AppPages.routes,
         debugShowCheckedModeBanner: false,
       ),
