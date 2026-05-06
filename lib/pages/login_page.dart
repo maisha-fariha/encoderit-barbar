@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../gen/l10n/app_localizations.dart';
 
 import '../controllers/auth_controller.dart';
 import '../routes/app_pages.dart';
@@ -33,15 +34,17 @@ class _LoginPageState extends State<LoginPage> {
 
   String? _validateEmail(String? value) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Inserisci la tua email';
-    if (!_looksLikeEmail(v)) return 'Email non valida';
+    final l10n = AppLocalizations.of(context)!;
+    if (v.isEmpty) return l10n.enterYourEmail;
+    if (!_looksLikeEmail(v)) return l10n.invalidEmail;
     return null;
   }
 
   String? _validatePassword(String? value) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Inserisci la password';
-    if (v.length < 6) return 'Almeno 6 caratteri';
+    final l10n = AppLocalizations.of(context)!;
+    if (v.isEmpty) return l10n.enterPassword;
+    if (v.length < 6) return l10n.minChars6;
     return null;
   }
 
@@ -63,6 +66,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -118,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 18),
                             Text(
-                              'Accedi al tuo account',
+                              l10n.loginTitle,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.inter(
                                 color: Colors.white,
@@ -129,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              'Bentornato! Inserisci i tuoi dati.',
+                              l10n.loginSubtitle,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.inter(
                                 color: Colors.white.withValues(alpha: 0.50),
@@ -148,7 +152,7 @@ class _LoginPageState extends State<LoginPage> {
                                   children: [
                                 _GlassTextField(
                                   controller: _email,
-                                  hintText: 'yourmail@mail.com',
+                                  hintText: l10n.emailHint,
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.next,
                                   validator: _validateEmail,
@@ -156,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                                 const SizedBox(height: 16),
                                 _GlassTextField(
                                   controller: _password,
-                                  hintText: 'Password',
+                                  hintText: l10n.passwordHint,
                                   obscureText: _obscure,
                                   textInputAction: TextInputAction.done,
                                   validator: _validatePassword,
@@ -183,7 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                                   child: Padding(
                                     padding: const EdgeInsets.only(right: 6),
                                     child: Text(
-                                      'Ha dimenticato la password',
+                                      l10n.forgotPassword,
                                       style: GoogleFonts.inter(
                                         color: Color(0xFF797979),
                                         fontWeight: FontWeight.w500,
@@ -200,7 +204,7 @@ class _LoginPageState extends State<LoginPage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      'Non hai un account? ',
+                                      l10n.dontHaveAccount,
                                       style: GoogleFonts.inter(
                                         color: Color(0xFF797979),
                                         fontWeight: FontWeight.w400,
@@ -221,7 +225,7 @@ class _LoginPageState extends State<LoginPage> {
                                         foregroundColor: Colors.white,
                                       ),
                                       child: Text(
-                                        'Iscrizione',
+                                        l10n.signUp,
                                         style: GoogleFonts.inter(
                                           color: Color(0xFFDDDDDD),
                                           fontWeight: FontWeight.w400,
@@ -283,7 +287,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              'Bentornato! Inserisci i tuoi dati.',
+                              l10n.loginSubtitle,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.inter(
                                 color: Colors.white.withValues(alpha: 0.50),
@@ -303,7 +307,7 @@ class _LoginPageState extends State<LoginPage> {
                                   children: [
                                   _GlassTextField(
                                     controller: _email,
-                                    hintText: 'yourmail@mail.com',
+                                  hintText: l10n.emailHint,
                                     keyboardType: TextInputType.emailAddress,
                                     textInputAction: TextInputAction.next,
                                     validator: _validateEmail,
@@ -311,7 +315,7 @@ class _LoginPageState extends State<LoginPage> {
                                   const SizedBox(height: 16),
                                   _GlassTextField(
                                     controller: _password,
-                                    hintText: 'Password',
+                                  hintText: l10n.passwordHint,
                                     obscureText: _obscure,
                                     textInputAction: TextInputAction.done,
                                     validator: _validatePassword,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../gen/l10n/app_localizations.dart';
 
 import '../controllers/auth_controller.dart';
 import '../routes/app_pages.dart';
@@ -38,15 +39,17 @@ class _RegisterPageState extends State<RegisterPage> {
 
   String? _validateName(String? value) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Inserisci nome e cognome';
-    if (v.length < 2) return 'Almeno 2 caratteri';
+    final l10n = AppLocalizations.of(context)!;
+    if (v.isEmpty) return l10n.enterFullName;
+    if (v.length < 2) return l10n.minChars2;
     return null;
   }
 
   String? _validateEmail(String? value) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Inserisci la tua email';
-    if (!_looksLikeEmail(v)) return 'Email non valida';
+    final l10n = AppLocalizations.of(context)!;
+    if (v.isEmpty) return l10n.enterYourEmail;
+    if (!_looksLikeEmail(v)) return l10n.invalidEmail;
     return null;
   }
 
@@ -54,25 +57,27 @@ class _RegisterPageState extends State<RegisterPage> {
     final v = value?.trim() ?? '';
     if (v.isEmpty) return null;
     final digits = RegExp(r'\d').allMatches(v).length;
-    if (digits < 8) return 'Numero non valido';
+    if (digits < 8) return AppLocalizations.of(context)!.invalidNumber;
     return null;
   }
 
   String? _validatePassword(String? value) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Inserisci la password';
-    if (v.length < 6) return 'Almeno 6 caratteri';
+    final l10n = AppLocalizations.of(context)!;
+    if (v.isEmpty) return l10n.enterPassword;
+    if (v.length < 6) return l10n.minChars6;
     return null;
   }
 
   void _showTermsSnack() {
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         backgroundColor: const Color(0xFFE8E8E8),
         content: Text(
-          'Accetta politica sulla riservatezza e termini di servizio',
+          l10n.acceptPrivacyAndTermsSnack,
           style: GoogleFonts.inter(
             color: const Color(0xFF0B0B0B),
             fontSize: 14,
@@ -102,8 +107,9 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _registerButton() {
     return Obx(() {
       final auth = Get.find<AuthController>();
+      final l10n = AppLocalizations.of(context)!;
       return _PrimaryButton(
-        label: 'Creare un account',
+        label: l10n.registerTitle,
         onPressed: auth.isBusy.value ? null : _submitRegister,
       );
     });
@@ -112,6 +118,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -178,7 +185,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               SizedBox(height: isWide ? 18 : 30),
                               Text(
-                                'Creare un account',
+                                l10n.registerTitle,
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.inter(
                                   color: Colors.white,
@@ -189,7 +196,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               const SizedBox(height: 10),
                               Text(
-                                'Unisciti a noi ed esplora nuove possibilità!',
+                                l10n.registerSubtitle,
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.inter(
                                   color: Colors.white.withValues(alpha: 0.50),
@@ -215,14 +222,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                     children: [
                                     _GlassTextField(
                                       controller: _name,
-                                      hintText: 'Nome e cognome',
+                                      hintText: l10n.fullNameHint,
                                       textInputAction: TextInputAction.next,
                                       validator: _validateName,
                                     ),
                                     const SizedBox(height: 16),
                                     _GlassTextField(
                                       controller: _email,
-                                      hintText: 'tuaemail@mail.com',
+                                      hintText: l10n.emailHint,
                                       keyboardType: TextInputType.emailAddress,
                                       textInputAction: TextInputAction.next,
                                       validator: _validateEmail,
@@ -230,7 +237,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     const SizedBox(height: 16),
                                     _GlassTextField(
                                       controller: _phone,
-                                      hintText: '+39 333 12 4564',
+                                      hintText: l10n.phoneHint,
                                       keyboardType: TextInputType.phone,
                                       textInputAction: TextInputAction.next,
                                       validator: _validatePhone,
@@ -238,7 +245,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     const SizedBox(height: 16),
                                     _GlassTextField(
                                       controller: _password,
-                                      hintText: 'Password',
+                                      hintText: l10n.passwordHint,
                                       obscureText: _obscure,
                                       textInputAction: TextInputAction.done,
                                       validator: _validatePassword,
@@ -290,25 +297,26 @@ class _RegisterPageState extends State<RegisterPage> {
                                                 fontWeight: FontWeight.w400,
                                                 height: 1.3,
                                               ),
-                                              children: const [
-                                                TextSpan(text: 'Accetto il '),
-                                                TextSpan(
-                                                  text:
-                                                      'politica sulla riservatezza',
-                                                  style: TextStyle(
-                                                    decoration:
-                                                        TextDecoration.underline,
-                                                  ),
-                                                ),
-                                                TextSpan(text: ' e '),
-                                                TextSpan(
-                                                  text: 'Termini di servizio',
-                                                  style: TextStyle(
-                                                    decoration:
-                                                        TextDecoration.underline,
-                                                  ),
-                                                ),
-                                              ],
+                                          children: [
+                                            TextSpan(
+                                              text: l10n.acceptThe,
+                                            ),
+                                            TextSpan(
+                                              text: l10n.privacyPolicy,
+                                              style: const TextStyle(
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text: l10n.and,
+                                            ),
+                                            TextSpan(
+                                              text: l10n.termsOfService,
+                                              style: const TextStyle(
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                            ),
+                                          ],
                                             ),
                                           ),
                                         ),
@@ -319,7 +327,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          'Hai già un account? ',
+                                          l10n.alreadyHaveAccount,
                                           style: GoogleFonts.inter(
                                             color: const Color(0xFF797979),
                                             fontWeight: FontWeight.w400,

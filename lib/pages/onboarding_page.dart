@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../gen/l10n/app_localizations.dart';
 
 import '../routes/app_pages.dart';
 
@@ -21,7 +22,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final _items = const <_OnboardingItem>[
     _OnboardingItem(
       imageAsset: 'assets/images/onboarding_1.png',
-      title: 'Salone di bellezza e barbiere\nPrenotare è facile',
+      title: 'onboardingTitle',
       body:
           'Lorem Ipsum è semplicemente un testo fittizio\n'
           'del settore della stampa e della composizione.\n'
@@ -29,7 +30,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     ),
     _OnboardingItem(
       imageAsset: 'assets/images/onboarding_1.png',
-      title: 'Salone di bellezza e barbiere\nPrenotare è facile',
+      title: 'onboardingTitle',
       body:
           'Lorem Ipsum è semplicemente un testo fittizio\n'
           'del settore della stampa e della composizione.\n'
@@ -37,7 +38,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     ),
     _OnboardingItem(
       imageAsset: 'assets/images/onboarding_1.png',
-      title: 'Salone di bellezza e barbiere\nPrenotare è facile',
+      title: 'onboardingTitle',
       body:
           'Lorem Ipsum è semplicemente un testo fittizio\n'
           'del settore della stampa e della composizione.\n'
@@ -70,6 +71,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
     final size = MediaQuery.sizeOf(context);
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -89,7 +91,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       padding:
                           const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                       child: Text(
-                        'Saltare',
+                        l10n.skip,
                         style: GoogleFonts.inter(
                           color: const Color(0xFF8E8E8E),
                           fontSize: 14,
@@ -112,7 +114,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: buttonMaxWidth),
                       child: _PrimaryButton(
-                        label: 'Continuare',
+                        label: l10n.continueLabel,
                         onPressed: () => Get.toNamed(AppRoutes.appoinment),
                       ),
                     ),
@@ -123,7 +125,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Hai già un account? ',
+                      l10n.alreadyHaveAccount,
                       style: GoogleFonts.inter(
                         color: const Color(0xFF8E8E8E),
                         fontWeight: FontWeight.w500,
@@ -139,7 +141,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         foregroundColor: Colors.white,
                       ),
                       child: Text(
-                        'Accedi',
+                        l10n.signIn,
                         style: GoogleFonts.inter(
                           color: const Color(0xFFE7E7E7),
                           fontWeight: FontWeight.w600,
@@ -194,6 +196,7 @@ class _OnboardingSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: LayoutBuilder(
@@ -237,7 +240,11 @@ class _OnboardingSlide extends StatelessWidget {
                 ),
               ),
               SizedBox(height: isShort ? 16 : 26),
-              Text(item.title, textAlign: TextAlign.center, style: titleStyle),
+              Text(
+                item.title == 'onboardingTitle' ? l10n.onboardingTitle : item.title,
+                textAlign: TextAlign.center,
+                style: titleStyle,
+              ),
               SizedBox(height: isShort ? 10 : 16),
               Flexible(
                 child: Text(
