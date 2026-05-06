@@ -35,8 +35,8 @@ class _ContactPageState extends State<ContactPage> {
     final media = MediaQuery.of(context);
     final hPad = ResponsiveHelper.getResponsiveValue<double>(
       context,
-      small: 20,
-      medium: 24,
+      small: 18,
+      medium: 22,
       large: 28,
     );
     final maxWidth = ResponsiveHelper.getResponsiveValue<double>(
@@ -53,42 +53,55 @@ class _ContactPageState extends State<ContactPage> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: 70 + media.padding.bottom),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 0),
-                    child: Row(
-                      children: [
-                        InkResponse(
-                          radius: 24,
-                          onTap: () => Get.back(),
-                          child: SvgPicture.asset(
-                            'assets/icons/back_button.svg',
-                            width: 18 * fontScale,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                         Text(
-                          'Contattaci',
-                          style: GoogleFonts.inter(
-                            color: Color(0xFFFFFFFF),
-                            fontSize: 18 * fontScale,
-                            fontWeight: FontWeight.w700,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        toolbarHeight: 68,
+        flexibleSpace: SafeArea(
+          bottom: false,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 0),
+                child: Row(
+                  children: [
+                    InkResponse(
+                      radius: 24,
+                      onTap: () => Get.back(),
+                      child: SvgPicture.asset(
+                        'assets/icons/back_button.svg',
+                        width: 18 * fontScale,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Contattaci',
+                      style: GoogleFonts.inter(
+                        color: Color(0xFFFFFFFF),
+                        fontSize: 18 * fontScale,
+                        fontWeight: FontWeight.w700,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(bottom: 70 + media.padding.bottom),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 16),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 10),
                     child: _MapPreviewCard(),
@@ -212,7 +225,6 @@ class _ContactPageState extends State<ContactPage> {
                   ),
                 ],
               ),
-            ),
           ),
         ),
       ),
