@@ -174,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed: () => Get.toNamed(AppRoutes.appoinment),
                             child: Text(
                                 l10n.serviceBooking,
                               style: GoogleFonts.inter(
@@ -216,7 +216,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         child: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () => Get.toNamed(AppRoutes.appoinment),
           backgroundColor: Colors.transparent,
           elevation: 0,
           shape: const CircleBorder(),

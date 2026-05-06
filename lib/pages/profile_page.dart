@@ -310,7 +310,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
         child: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () => Get.toNamed(AppRoutes.appoinment),
           backgroundColor: Colors.transparent,
           elevation: 0,
           shape: const CircleBorder(),

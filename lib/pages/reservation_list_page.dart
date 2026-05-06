@@ -283,7 +283,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           ],
         ),
         child: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () => Get.toNamed(AppRoutes.appoinment),
           backgroundColor: Colors.transparent,
           elevation: 0,
           shape: const CircleBorder(),
