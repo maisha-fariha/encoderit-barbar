@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../gen/l10n/app_localizations.dart';
 
 import '../routes/app_pages.dart';
 
@@ -42,6 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
       small: 150,
       large: 180,
     );
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -71,12 +73,62 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Profilo',
+                      l10n.profile,
                       style: GoogleFonts.inter(
                         color: Colors.white,
                         fontSize: 18 * fontScale,
                         fontWeight: FontWeight.w700,
                         height: 1.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFFFF).withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFFFFFFF).withValues(alpha: 0.18),
+                          width: 1,
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(3),
+                      child: Builder(
+                        builder: (context) {
+                          final locale = Get.locale ?? Localizations.localeOf(context);
+                          final isEn = locale.languageCode == 'en';
+                          return ToggleButtons(
+                            isSelected: [isEn, !isEn],
+                            onPressed: (index) {
+                              final next = index == 0 ? const Locale('en') : const Locale('it');
+                              Get.updateLocale(next);
+                              setState(() {});
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            selectedBorderColor: Colors.transparent,
+                            borderColor: Colors.transparent,
+                            fillColor: const Color(0xFFFFFFFF).withValues(alpha: 0.14),
+                            selectedColor: const Color(0xFFFFFFFF),
+                            color: const Color(0xFFFFFFFF).withValues(alpha: 0.70),
+                            constraints: BoxConstraints(
+                              minHeight: 32,
+                              minWidth: ResponsiveHelper.getResponsiveValue<double>(
+                                context,
+                                small: 46,
+                                large: 54,
+                              ),
+                            ),
+                            textStyle: GoogleFonts.inter(
+                              fontSize: 12 * fontScale,
+                              fontWeight: FontWeight.w800,
+                              height: 1,
+                              letterSpacing: 0.4,
+                            ),
+                            children: const [
+                              Text('EN'),
+                              Text('IT'),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -148,50 +200,50 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const _FieldLabel('Nome'),
+                        _FieldLabel(l10n.nameLabel),
                         const SizedBox(height: 8),
                         const _TextFieldBox(text: 'Leonardo'),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Cognome'),
+                        _FieldLabel(l10n.lastNameLabel),
                         const SizedBox(height: 8),
                         const _TextFieldBox(text: 'Rossi'),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Data di nascita'),
+                        _FieldLabel(l10n.dateOfBirthLabel),
                         const SizedBox(height: 8),
                         const _TextFieldBox(text: '16 Agosto 1988', trailing: Icons.calendar_today_outlined),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Numero di Telefono'),
+                        _FieldLabel(l10n.phoneNumberLabel),
                         const SizedBox(height: 8),
                         const _TextFieldBox(text: '+390552768325'),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Email'),
+                        _FieldLabel(l10n.emailLabel),
                         const SizedBox(height: 8),
                         const _TextFieldBox(text: 'yourmail@mail.com', muted: true),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Indirizzo'),
+                        _FieldLabel(l10n.address),
                         const SizedBox(height: 8),
                         const _TextFieldBox(
                           text: 'P.za della Signoria,\n50122 Firenze FI,\nItalia',
                           lines: 3,
                         ),
                         const SizedBox(height: 14),
-                        const _FieldLabel('CAP (zip code)'),
+                        _FieldLabel(l10n.zipCodeLabel),
                         const SizedBox(height: 8),
                         const _TextFieldBox(text: '50122'),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Comune'),
+                        _FieldLabel(l10n.cityLabel),
                         const SizedBox(height: 8),
                         const _SelectFieldBox(text: 'Milan (Milano)'),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Provincia'),
+                        _FieldLabel(l10n.provinceLabel),
                         const SizedBox(height: 8),
                         const _SelectFieldBox(text: 'Lombardy'),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Nazione'),
+                        _FieldLabel(l10n.countryLabel),
                         const SizedBox(height: 8),
                         const _SelectFieldBox(text: 'Italia'),
                         const SizedBox(height: 14),
-                        const _FieldLabel('Password'),
+                        _FieldLabel(l10n.passwordHint),
                         const SizedBox(height: 8),
                         _PasswordFieldBox(
                           obscure: _obscure,
@@ -215,7 +267,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ),
                               onPressed: () => Get.offAllNamed(AppRoutes.login),
                               child:  Text(
-                                'Logout',
+                                l10n.logout,
                                 style: GoogleFonts.inter(
                                   color: Color(0xFF000000),
                                   fontSize: 16 * fontScale,
@@ -310,14 +362,14 @@ class _BottomNavBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _NavItem(
-                    label: 'Casa',
+                    label: AppLocalizations.of(context)!.home,
                     activeAsset: 'assets/icons/home_active.svg',
                     inactiveAsset: 'assets/icons/home_inactive.svg',
                     selected: currentIndex == 0,
                     onTap: () => onTap(0),
                   ),
                   _NavItem(
-                    label: 'Prenotazione',
+                    label: AppLocalizations.of(context)!.reservations,
                     activeAsset: 'assets/icons/reservation_active.svg',
                     inactiveAsset: 'assets/icons/reservation_inactive.svg',
                     selected: currentIndex == 1,
@@ -325,14 +377,14 @@ class _BottomNavBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 58),
                   _NavItem(
-                    label: 'Profilo',
+                    label: AppLocalizations.of(context)!.profile,
                     activeAsset: 'assets/icons/profile_active.svg',
                     inactiveAsset: 'assets/icons/profile_inactive.svg',
                     selected: currentIndex == 3,
                     onTap: () => onTap(3),
                   ),
                   _NavItem(
-                    label: 'Contatto',
+                    label: AppLocalizations.of(context)!.contactUs,
                     activeAsset: 'assets/icons/contact_active.svg',
                     inactiveAsset: 'assets/icons/contact_inactive.svg',
                     selected: currentIndex == 4,
@@ -539,6 +591,7 @@ class _PasswordFieldBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final fontScale = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 1.0,
@@ -557,7 +610,7 @@ class _PasswordFieldBox extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              obscure ? '******' : 'password',
+              obscure ? '******' : l10n.passwordHint,
               style: GoogleFonts.inter(
                 color: Color(0xFFFFFFFF),
                 fontSize: 16 * fontScale,

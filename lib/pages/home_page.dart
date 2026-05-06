@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../gen/l10n/app_localizations.dart';
 
 import '../routes/app_pages.dart';
 
@@ -37,6 +38,7 @@ class _HomePageState extends State<HomePage> {
       medium: 1.12,
       large: 1.28,
     );
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -89,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'ID n.: 5630',
+                            l10n.idNumber('5630'),
                             style: GoogleFonts.inter(
                               color: const Color(0xFFDDDDDD),
                               fontSize: 14 * fontScale,
@@ -114,7 +116,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Prenotazioni',
+                            l10n.bookings,
                           style: GoogleFonts.inter(
                             color: const Color(0xFFDDDDDD),
                             fontSize: 14 * fontScale,
@@ -174,7 +176,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                             onPressed: () {},
                             child: Text(
-                              'Prenotazione di un servizio',
+                                l10n.serviceBooking,
                               style: GoogleFonts.inter(
                                 color: const Color(0xFF000000),
                                 fontSize: 16 * fontScale,
@@ -254,6 +256,7 @@ class _UpcomingCard extends StatelessWidget {
       medium: 1.08,
       large: 1.22,
     );
+    final l10n = AppLocalizations.of(context)!;
     final items = const <_UpcomingItem>[
       _UpcomingItem(
         title: 'Taglio di capelli',
@@ -282,7 +285,7 @@ class _UpcomingCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Prossimo appuntamento',
+          l10n.nextAppointment,
           style: GoogleFonts.inter(
             color: const Color(0xFFEEEEEE),
             fontSize: 18 * fontScale,
@@ -321,6 +324,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final fontScale = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 1.0,
@@ -410,7 +414,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                         ),
                         SizedBox(width: 10),
                         Text(
-                          'Ogni 4 Settimane',
+                          l10n.every4Weeks,
                           style: GoogleFonts.inter(
                             color: Color(0xFFFFFFFF),
                             fontSize: 16 * fontScale,
@@ -457,7 +461,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                     child: Row(
                       children: [
                         Text(
-                          'Quante prenotazioni',
+                          l10n.howManyBookings,
                           style: GoogleFonts.inter(
                             color: Color(0xFFDDDDDD),
                             fontSize: 16 * fontScale,
@@ -467,7 +471,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                         ),
                         Spacer(),
                         Text(
-                          '5 volte',
+                          l10n.fiveTimes,
                           style: GoogleFonts.inter(
                             color: Color(0xFFFFFFFF),
                             fontSize: 16 * fontScale,
@@ -681,14 +685,14 @@ class _BottomNavBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _NavItem(
-                    label: 'Casa',
+                    label: AppLocalizations.of(context)!.home,
                     activeAsset: 'assets/icons/home_active.svg',
                     inactiveAsset: 'assets/icons/home_inactive.svg',
                     selected: currentIndex == 0,
                     onTap: () => onTap(0),
                   ),
                   _NavItem(
-                    label: 'Prenotazione',
+                    label: AppLocalizations.of(context)!.reservations,
                     activeAsset: 'assets/icons/reservation_active.svg',
                     inactiveAsset: 'assets/icons/reservation_inactive.svg',
                     selected: currentIndex == 1,
@@ -696,14 +700,14 @@ class _BottomNavBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 58),
                   _NavItem(
-                    label: 'Profilo',
+                    label: AppLocalizations.of(context)!.profile,
                     activeAsset: 'assets/icons/profile_active.svg',
                     inactiveAsset: 'assets/icons/profile_inactive.svg',
                     selected: currentIndex == 3,
                     onTap: () => onTap(3),
                   ),
                   _NavItem(
-                    label: 'Contatto',
+                    label: AppLocalizations.of(context)!.contactUs,
                     activeAsset: 'assets/icons/contact_active.svg',
                     inactiveAsset: 'assets/icons/contact_inactive.svg',
                     selected: currentIndex == 4,

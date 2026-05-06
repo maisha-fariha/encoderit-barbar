@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../gen/l10n/app_localizations.dart';
 
 class AppoinmentPage extends StatefulWidget {
   const AppoinmentPage({super.key});
@@ -303,7 +304,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 ),
                                 const SizedBox(height: 22),
                                 Text(
-                                  'Sei sicuro?',
+                                  AppLocalizations.of(context)!.areYouSure,
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.inter(
                                     color: const Color(0xFFDDDDDD),
@@ -314,8 +315,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 ),
                                 const SizedBox(height: 14),
                                 Text(
-                                  'Questa azione non può essere annullata.\n'
-                                  'Conferma se desideri procedere.',
+                                  AppLocalizations.of(context)!.actionCannotBeUndone,
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.inter(
                                     color: const Color(0xFFDDDDDD),
@@ -348,7 +348,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                             child: FittedBox(
                                               fit: BoxFit.scaleDown,
                                               child: Text(
-                                                'Cancellare',
+                                                AppLocalizations.of(context)!.cancelAction,
                                                 style: GoogleFonts.inter(
                                                   color: const Color(0xFF797979),
                                                   fontSize: 16,
@@ -384,7 +384,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                           child: FittedBox(
                                             fit: BoxFit.scaleDown,
                                             child: Text(
-                                              'Confermare',
+                                              AppLocalizations.of(context)!.confirmAction,
                                               style: GoogleFonts.inter(
                                                 color: const Color(0xFF242424),
                                                 fontSize: 16,
@@ -417,6 +417,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
+    final l10n = AppLocalizations.of(context)!;
     final isWide = MediaQuery.sizeOf(context).width >= 600;
     final scale = ResponsiveHelper.getResponsiveValue<double>(
       context,
@@ -443,7 +444,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Prenota un appuntamento',
+                      l10n.bookAppointment,
                       style: GoogleFonts.inter(
                         color: Colors.white,
                         fontSize: 18 * scale,
@@ -481,14 +482,14 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                 children: [
                   Text(
                     _step == 1
-                        ? 'Scegli il tuo barbiere'
+                        ? l10n.stepChooseBarber
                         : _step == 2
-                        ? 'Seleziona il servizio'
+                        ? l10n.stepSelectService
                         : _step == 3
-                        ? 'Seleziona il barbiere'
+                        ? l10n.stepSelectBarber
                         : _step == 4
-                        ? 'Scegli una data'
-                        : 'Riepilogo della prenotazione',
+                        ? l10n.stepChooseDate
+                        : l10n.stepBookingSummary,
                     style: GoogleFonts.inter(
                       color: Color(0xFFEEEEEE),
                       fontSize: 16 * scale,
@@ -498,7 +499,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                   ),
                   const Spacer(),
                   Text(
-                    'Fase $_step di 5',
+                    l10n.phaseOf(_step, 5),
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
                       fontSize: 12 * scale,
@@ -625,11 +626,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 const SizedBox(height: 15),
                                 if (_recurringEnabled)
                                   _Step3RecurringOptions(
-                                    options: const [
-                                      'Ogni giovedi',
-                                      'Ogni 2 settimane',
-                                      'Ogni 3 settimane',
-                                      'Ogni 4 settimane',
+                                    options: [
+                                      l10n.everyThursday,
+                                      l10n.every2Weeks,
+                                      l10n.every3Weeks,
+                                      l10n.every4Weeks,
                                     ],
                                     selectedIndex: _recurringIndex,
                                     onSelect: (i) =>
@@ -637,11 +638,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                   ),
                                 const SizedBox(height: 15),
                                 _Step3MonthlySummary(
-                                  intervalLabel: const [
-                                    'Ogni giovedi',
-                                    'Ogni 2 settimane',
-                                    'Ogni 3 settimane',
-                                    'Ogni 4 settimane',
+                                  intervalLabel: [
+                                    l10n.everyThursday,
+                                    l10n.every2Weeks,
+                                    l10n.every3Weeks,
+                                    l10n.every4Weeks,
                                   ][_recurringIndex.clamp(0, 3)],
                                 ),
                                 const SizedBox(height: 15),
@@ -727,10 +728,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                           onTap: _step == 5 ? _showConfirmDialog : _onContinue,
                           child: Center(
                             child: Text(
-                              _step == 3 ? 'Qualcuno Disponibile' :
+                              _step == 3 ? l10n.someoneAvailable :
                               _step == 5
-                                  ? 'Conferma la prenotazione'
-                                  : 'Continuare',
+                                  ? l10n.confirmBooking
+                                  : l10n.continueLabel,
                               style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontSize: 16 * scale,
@@ -765,6 +766,7 @@ class _Step4SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(30, 25, 30, 25),
       decoration: BoxDecoration(
@@ -782,13 +784,13 @@ class _Step4SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Step4KeyValueRow(label: 'Servizio', value: service.title),
+          _Step4KeyValueRow(label: l10n.service, value: service.title),
           const SizedBox(height: 14),
-          _Step4KeyValueRow(label: 'Barbiera', value: barber.name),
+          _Step4KeyValueRow(label: l10n.barber, value: barber.name),
           const SizedBox(height: 14),
-          const _Step4KeyValueRow(label: 'Data', value: 'Gio, Aprile 09'),
+          _Step4KeyValueRow(label: l10n.date, value: 'Gio, Aprile 09'),
           const SizedBox(height: 14),
-          _Step4KeyValueRow(label: 'Tempo', value: '$time AM'),
+          _Step4KeyValueRow(label: l10n.time, value: '$time AM'),
           const SizedBox(height: 18),
           const _Step4Divider(),
           const SizedBox(height: 20),
@@ -802,7 +804,7 @@ class _Step4SummaryCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Totale',
+                l10n.total,
                 style: GoogleFonts.inter(
                   color: const Color(0xFFFFFFFF),
                   fontSize: 18,
@@ -833,10 +835,11 @@ class _Step4ReservationTime extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Row(
       children: [
         Text(
-          'Quante prenotazioni',
+          l10n.howManyBookings,
           style: GoogleFonts.inter(
             color: const Color(0xFFDDDDDD),
             fontSize: 16,
@@ -846,7 +849,7 @@ class _Step4ReservationTime extends StatelessWidget {
         ),
         const Spacer(),
         Text(
-          '5 volte',
+          l10n.fiveTimes,
           style: GoogleFonts.inter(
             color: const Color(0xFFFFFFFF),
             fontSize: 16,
@@ -916,6 +919,7 @@ class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     Widget row(String text, { bool withPill = true}) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 15),
@@ -981,7 +985,7 @@ class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
             ),
             const SizedBox(width: 10),
             Text(
-              'Ogni 4 settimane',
+              AppLocalizations.of(context)!.every4Weeks,
               style: GoogleFonts.inter(
                 color: const Color(0xFFFFFFFF),
                 fontSize: 16,
@@ -1008,7 +1012,7 @@ class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Nessun barbiere disponibile',
+                    l10n.noBarberAvailable,
                     style: GoogleFonts.inter(
                       color: const Color(0xFFE24B4B),
                       fontSize: 13,
@@ -1038,7 +1042,7 @@ class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      "Tienimi in lista d'attesa",
+                      l10n.waitlistMe,
                       style: GoogleFonts.inter(
                         color: const Color(0xFFDDDDDD),
                         fontSize: 13,
@@ -1233,6 +1237,7 @@ class _ShopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
     final title = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
     final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
@@ -1323,7 +1328,7 @@ class _ShopCard extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    'Selezionare',
+                    l10n.select,
                     style: GoogleFonts.inter(
                       color: const Color(0xFF797979),
                       fontSize: 14 * scale,
@@ -1353,6 +1358,7 @@ class _BarberCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
     final name = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
     final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
@@ -1451,7 +1457,7 @@ class _BarberCard extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    'Selezionare',
+                    l10n.select,
                     style: GoogleFonts.inter(
                       color: const Color(0xFF797979),
                       fontSize: 14 * scale,
@@ -1521,6 +1527,7 @@ class _Step3CalendarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Disabled times to match the reference screenshot styling.
     final disabled = <int>{6, 14, 16}; // 12:00, 14:30, 17:00
     return Container(
@@ -1621,7 +1628,7 @@ class _Step3CalendarCard extends StatelessWidget {
           ),
           const SizedBox(height: 25),
           Text(
-            'Seleziona la fascia oraria che preferisci',
+            l10n.selectPreferredTime,
             style: GoogleFonts.inter(
               color: const Color(0xFFDDDDDD),
               fontSize: 15,
@@ -1796,6 +1803,7 @@ class _Step3RecurringToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return InkWell(
       onTap: () => onChanged(!value),
       child: Row(
@@ -1808,7 +1816,7 @@ class _Step3RecurringToggle extends StatelessWidget {
                 ),
           const SizedBox(width: 10),
           Text(
-            'Appuntamenti ricorrenti',
+            l10n.recurringAppointments,
             style: GoogleFonts.inter(
               color: const Color(0xFFFFFFFF),
               fontSize: 16,
@@ -1835,6 +1843,7 @@ class _Step3RecurringOptions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: Container(
@@ -1852,7 +1861,7 @@ class _Step3RecurringOptions extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Intervallo appuntamenti ricorrenti',
+                    l10n.recurringIntervalTitle,
                     style: GoogleFonts.inter(
                       color: const Color(0xFFFFFFFF),
                       fontSize: 18,
@@ -1909,6 +1918,7 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const lines = [
       'Giovedì 9 aprile 2026, ore 10:00',
       'Giovedì 16 aprile 2026, ore 10:00',
@@ -2023,7 +2033,7 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Nessun barbiere disponibile',
+                      l10n.noBarberAvailable,
                       style: GoogleFonts.inter(
                         color: const Color(0xFFEF4444),
                         fontSize: 13,
@@ -2049,7 +2059,7 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          "Tienimi in lista d'attesa",
+                          l10n.waitlistMe,
                           style: GoogleFonts.inter(
                             color: const Color(0xFFDDDDDD),
                             fontSize: 13,
@@ -2114,6 +2124,7 @@ class _Step4HowManyDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(30, 20, 30, 20),
       decoration: BoxDecoration(
@@ -2125,7 +2136,7 @@ class _Step4HowManyDropdown extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'Quante prenotazioni',
+              l10n.howManyBookings,
               style: GoogleFonts.inter(
                 color: const Color(0xFF797979),
                 fontSize: 16,

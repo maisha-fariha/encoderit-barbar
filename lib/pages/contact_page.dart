@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../gen/l10n/app_localizations.dart';
 
 import '../routes/app_pages.dart';
 
@@ -50,6 +51,7 @@ class _ContactPageState extends State<ContactPage> {
       medium: 1.08,
       large: 1.22,
     );
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -78,7 +80,7 @@ class _ContactPageState extends State<ContactPage> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Contattaci',
+                      l10n.contactUs,
                       style: GoogleFonts.inter(
                         color: Color(0xFFFFFFFF),
                         fontSize: 18 * fontScale,
@@ -116,7 +118,10 @@ class _ContactPageState extends State<ContactPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const _SectionHeader(icon: 'assets/icons/location.svg', title: 'Indirizzo'),
+                        _SectionHeader(
+                          icon: 'assets/icons/location.svg',
+                          title: l10n.address,
+                        ),
                         const SizedBox(height: 15),
                         const _InsetDividerLine(),
                         const SizedBox(height: 15),
@@ -130,9 +135,9 @@ class _ContactPageState extends State<ContactPage> {
                           ),
                         ),
                         const SizedBox(height: 15),
-                        const _SectionHeader(
+                        _SectionHeader(
                           icon: 'assets/icons/information.svg',
-                          title: 'Informazioni di collegamento',
+                          title: l10n.connectionInfo,
                         ),
                         const SizedBox(height: 15),
                         const _InsetDividerLine(),
@@ -157,8 +162,8 @@ class _ContactPageState extends State<ContactPage> {
                                     width: 20,
                                   ),
                                   const SizedBox(width: 10),
-                                   Text(
-                                    'Contattaci',
+                                  Text(
+                                    l10n.contactUs,
                                     style: GoogleFonts.inter(
                                       color: Color(0xFFFFFFFF).withValues(alpha: 0.60),
                                       fontSize: 16,
@@ -171,26 +176,26 @@ class _ContactPageState extends State<ContactPage> {
                               const SizedBox(height: 12),
                               const _InsetDividerLine(darker: true),
                               const SizedBox(height: 16),
-                              const _FormLabel('Nome'),
+                              _FormLabel(l10n.nameLabel),
                               const SizedBox(height: 8),
-                              _InputBox(controller: _name, hint: 'Inserisci il tuo nome'),
+                              _InputBox(controller: _name, hint: l10n.enterYourName),
                               const SizedBox(height: 14),
-                              const _FormLabel('E-mail'),
+                              _FormLabel(l10n.emailLabel),
                               const SizedBox(height: 8),
-                              _InputBox(controller: _email, hint: 'Inserisci la tua email'),
+                              _InputBox(controller: _email, hint: l10n.enterYourEmail),
                               const SizedBox(height: 14),
-                              const _FormLabel('Soggetta'),
+                              _FormLabel(l10n.subjectLabel),
                               const SizedBox(height: 8),
                               _InputBox(
                                 controller: _subject,
-                                hint: 'Inserisci il tuo argomento',
+                                hint: l10n.enterYourSubject,
                               ),
                               const SizedBox(height: 14),
-                              const _FormLabel('Massaggio'),
+                              _FormLabel(l10n.messageLabel),
                               const SizedBox(height: 8),
                               _InputBox(
                                 controller: _message,
-                                hint: 'Scrivi qualcosa...',
+                                hint: l10n.writeSomethingHint,
                                 maxLines: 4,
                               ),
                               const SizedBox(height: 30),
@@ -205,7 +210,7 @@ class _ContactPageState extends State<ContactPage> {
                                     onTap: () => FocusScope.of(context).unfocus(),
                                     child: Center(
                                       child: Text(
-                                        'Invia il tuo messaggio',
+                                        l10n.sendYourMessage,
                                         style: GoogleFonts.inter(
                                           color: Color(0xFF000000),
                                           fontSize: 16,
@@ -527,14 +532,14 @@ class _BottomNavBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _NavItem(
-                    label: 'Casa',
+                    label: AppLocalizations.of(context)!.home,
                     activeAsset: 'assets/icons/home_active.svg',
                     inactiveAsset: 'assets/icons/home_inactive.svg',
                     selected: currentIndex == 0,
                     onTap: () => onTap(0),
                   ),
                   _NavItem(
-                    label: 'Prenotazione',
+                    label: AppLocalizations.of(context)!.reservations,
                     activeAsset: 'assets/icons/reservation_active.svg',
                     inactiveAsset: 'assets/icons/reservation_inactive.svg',
                     selected: currentIndex == 1,
@@ -542,14 +547,14 @@ class _BottomNavBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 58),
                   _NavItem(
-                    label: 'Profilo',
+                    label: AppLocalizations.of(context)!.profile,
                     activeAsset: 'assets/icons/profile_active.svg',
                     inactiveAsset: 'assets/icons/profile_inactive.svg',
                     selected: currentIndex == 3,
                     onTap: () => onTap(3),
                   ),
                   _NavItem(
-                    label: 'Contatto',
+                    label: AppLocalizations.of(context)!.contactUs,
                     activeAsset: 'assets/icons/contact_active.svg',
                     inactiveAsset: 'assets/icons/contact_inactive.svg',
                     selected: currentIndex == 4,

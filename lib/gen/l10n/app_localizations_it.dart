@@ -1,0 +1,293 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Italian (`it`).
+class AppLocalizationsIt extends AppLocalizations {
+  AppLocalizationsIt([String locale = 'it']) : super(locale);
+
+  @override
+  String get home => 'Casa';
+
+  @override
+  String get skip => 'Saltare';
+
+  @override
+  String get continueLabel => 'Continuare';
+
+  @override
+  String get alreadyHaveAccount => 'Hai già un account? ';
+
+  @override
+  String get signIn => 'Accedi';
+
+  @override
+  String get logIn => 'Accedi';
+
+  @override
+  String get signUp => 'Iscrizione';
+
+  @override
+  String get loginTitle => 'Accedi al tuo account';
+
+  @override
+  String get loginSubtitle => 'Bentornato! Inserisci i tuoi dati.';
+
+  @override
+  String get forgotPassword => 'Ha dimenticato la password';
+
+  @override
+  String get dontHaveAccount => 'Non hai un account? ';
+
+  @override
+  String get registerTitle => 'Creare un account';
+
+  @override
+  String get registerSubtitle => 'Unisciti a noi ed esplora nuove possibilità!';
+
+  @override
+  String get fullNameHint => 'Nome e cognome';
+
+  @override
+  String get emailHint => 'tuaemail@mail.com';
+
+  @override
+  String get phoneHint => '+39 333 12 4564';
+
+  @override
+  String get passwordHint => 'Password';
+
+  @override
+  String get recurring => 'Ricorrente';
+
+  @override
+  String get service => 'Servizio';
+
+  @override
+  String get barber => 'Barbiere';
+
+  @override
+  String get date => 'Data';
+
+  @override
+  String get time => 'Tempo';
+
+  @override
+  String get total => 'Totale';
+
+  @override
+  String get address => 'Indirizzo';
+
+  @override
+  String get connectionInfo => 'Informazioni di collegamento';
+
+  @override
+  String get acceptThe => 'Accetto il ';
+
+  @override
+  String get and => ' e ';
+
+  @override
+  String get privacyPolicy => 'politica sulla riservatezza';
+
+  @override
+  String get termsOfService => 'Termini di servizio';
+
+  @override
+  String get acceptPrivacyAndTermsSnack =>
+      'Accetta politica sulla riservatezza e termini di servizio';
+
+  @override
+  String get onboardingTitle =>
+      'Salone di bellezza e barbiere\\nPrenotare è facile';
+
+  @override
+  String get enterFullName => 'Inserisci nome e cognome';
+
+  @override
+  String get enterYourEmail => 'Inserisci la tua email';
+
+  @override
+  String get enterPassword => 'Inserisci la password';
+
+  @override
+  String get minChars2 => 'Almeno 2 caratteri';
+
+  @override
+  String get minChars6 => 'Almeno 6 caratteri';
+
+  @override
+  String get enterYourName => 'Inserisci il tuo nome';
+
+  @override
+  String get enterYourSubject => 'Inserisci il tuo argomento';
+
+  @override
+  String get nameLabel => 'Nome';
+
+  @override
+  String get lastNameLabel => 'Cognome';
+
+  @override
+  String get dateOfBirthLabel => 'Data di nascita';
+
+  @override
+  String get phoneNumberLabel => 'Numero di telefono';
+
+  @override
+  String get zipCodeLabel => 'CAP';
+
+  @override
+  String get cityLabel => 'Comune';
+
+  @override
+  String get provinceLabel => 'Provincia';
+
+  @override
+  String get countryLabel => 'Nazione';
+
+  @override
+  String get emailLabel => 'E-mail';
+
+  @override
+  String get subjectLabel => 'Soggetto';
+
+  @override
+  String get messageLabel => 'Messaggio';
+
+  @override
+  String get writeSomethingHint => 'Scrivi qualcosa...';
+
+  @override
+  String get invalidEmail => 'Email non valida';
+
+  @override
+  String get invalidNumber => 'Numero non valido';
+
+  @override
+  String get bookAppointment => 'Prenota un appuntamento';
+
+  @override
+  String get stepChooseBarber => 'Scegli il tuo barbiere';
+
+  @override
+  String get stepSelectService => 'Seleziona il servizio';
+
+  @override
+  String get stepSelectBarber => 'Seleziona il barbiere';
+
+  @override
+  String get stepChooseDate => 'Scegli una data';
+
+  @override
+  String get stepBookingSummary => 'Riepilogo della prenotazione';
+
+  @override
+  String phaseOf(Object step, Object total) {
+    return 'Fase $step di $total';
+  }
+
+  @override
+  String get someoneAvailable => 'Qualcuno disponibile';
+
+  @override
+  String get confirmBooking => 'Conferma la prenotazione';
+
+  @override
+  String get areYouSure => 'Sei sicuro?';
+
+  @override
+  String get actionCannotBeUndone =>
+      'Questa azione non può essere annullata.\\nConferma se desideri procedere.';
+
+  @override
+  String get cancelAction => 'Cancellare';
+
+  @override
+  String get confirmAction => 'Confermare';
+
+  @override
+  String get everyThursday => 'Ogni giovedì';
+
+  @override
+  String get every2Weeks => 'Ogni 2 settimane';
+
+  @override
+  String get every3Weeks => 'Ogni 3 settimane';
+
+  @override
+  String get every4Weeks => 'Ogni 4 settimane';
+
+  @override
+  String get howManyBookings => 'Quante prenotazioni';
+
+  @override
+  String get fiveTimes => '5 volte';
+
+  @override
+  String get select => 'Selezionare';
+
+  @override
+  String get noBarberAvailable => 'Nessun barbiere disponibile';
+
+  @override
+  String get waitlistMe => 'Tienimi in lista d\'attesa';
+
+  @override
+  String get selectPreferredTime => 'Seleziona la fascia oraria che preferisci';
+
+  @override
+  String get recurringAppointments => 'Appuntamenti ricorrenti';
+
+  @override
+  String get recurringIntervalTitle => 'Intervallo appuntamenti ricorrenti';
+
+  @override
+  String get nextAppointment => 'Prossimo appuntamento';
+
+  @override
+  String idNumber(Object id) {
+    return 'ID n.: $id';
+  }
+
+  @override
+  String get profile => 'Profilo';
+
+  @override
+  String get contactUs => 'Contattaci';
+
+  @override
+  String get reservationListTitle => 'Elenco prenotazioni';
+
+  @override
+  String get reservations => 'Prenotazioni';
+
+  @override
+  String get bookings => 'Prenotazioni';
+
+  @override
+  String get serviceBooking => 'Prenotazione di un servizio';
+
+  @override
+  String get upcoming => 'Prossimamente';
+
+  @override
+  String get confirmed => 'Confermato';
+
+  @override
+  String get completed => 'Completato';
+
+  @override
+  String get cancelled => 'Annullata';
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get sendYourMessage => 'Invia il tuo messaggio';
+
+  @override
+  String get barberAndHairConcept => 'Barber and Hair Concept';
+}

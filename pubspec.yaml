@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   cupertino_icons: ^1.0.8
 
@@ -26,6 +28,7 @@ dependencies:
   connectivity_plus: ^5.0.2
   google_fonts: ^8.0.2
   flutter_svg: ^2.2.4
+  intl: ^0.20.2
 
   freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0
@@ -41,6 +44,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/images/

@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../gen/l10n/app_localizations.dart';
 
 import '../routes/app_pages.dart';
 
@@ -111,6 +112,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       medium: 1.08,
       large: 1.22,
     );
+    final l10n = AppLocalizations.of(context)!;
     final list = _tab == 0
         ? _upcoming
         : _tab == 1
@@ -149,7 +151,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Elenco prenotazioni',
+                      l10n.reservationListTitle,
                       style: GoogleFonts.inter(
                         color: const Color(0xFFFFFFFF),
                         fontSize: 18 * fontScale,
@@ -202,21 +204,21 @@ class _ReservationListPageState extends State<ReservationListPage> {
                         child: Row(
                           children: [
                             _TopPill(
-                              label: 'Prossimamente',
+                              label: l10n.upcoming,
                               count: '3',
                               selected: _tab == 0,
                               onTap: () => setState(() => _tab = 0),
                             ),
                             const SizedBox(width: 10),
                             _TopPill(
-                              label: 'Completato',
+                              label: l10n.completed,
                               count: '25',
                               selected: _tab == 1,
                               onTap: () => setState(() => _tab = 1),
                             ),
                             const SizedBox(width: 10),
                             _TopPill(
-                              label: 'Annullata',
+                              label: l10n.cancelled,
                               count: '2',
                               selected: _tab == 2,
                               onTap: () => setState(() => _tab = 2),
@@ -330,14 +332,14 @@ class _BottomNavBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _NavItem(
-                    label: 'Casa',
+                    label: AppLocalizations.of(context)!.home,
                     activeAsset: 'assets/icons/home_active.svg',
                     inactiveAsset: 'assets/icons/home_inactive.svg',
                     selected: currentIndex == 0,
                     onTap: () => onTap(0),
                   ),
                   _NavItem(
-                    label: 'Prenotazione',
+                    label: AppLocalizations.of(context)!.reservations,
                     activeAsset: 'assets/icons/reservation_active.svg',
                     inactiveAsset: 'assets/icons/reservation_inactive.svg',
                     selected: currentIndex == 1,
@@ -345,14 +347,14 @@ class _BottomNavBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 58),
                   _NavItem(
-                    label: 'Profilo',
+                    label: AppLocalizations.of(context)!.profile,
                     activeAsset: 'assets/icons/profile_active.svg',
                     inactiveAsset: 'assets/icons/profile_inactive.svg',
                     selected: currentIndex == 3,
                     onTap: () => onTap(3),
                   ),
                   _NavItem(
-                    label: 'Contatto',
+                    label: AppLocalizations.of(context)!.contactUs,
                     activeAsset: 'assets/icons/contact_active.svg',
                     inactiveAsset: 'assets/icons/contact_inactive.svg',
                     selected: currentIndex == 4,
@@ -502,6 +504,7 @@ class _ReservationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final fontScale = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 1.0,
@@ -509,9 +512,9 @@ class _ReservationCard extends StatelessWidget {
       large: 1.22,
     );
     final statusLabel = switch (mode) {
-      _ReservationMode.upcoming => 'Confermato',
-      _ReservationMode.completed => 'Completato',
-      _ReservationMode.cancelled => 'Annullata',
+      _ReservationMode.upcoming => l10n.confirmed,
+      _ReservationMode.completed => l10n.completed,
+      _ReservationMode.cancelled => l10n.cancelled,
     };
     final showDelete = mode == _ReservationMode.upcoming;
     return Container(
@@ -597,7 +600,7 @@ class _ReservationCard extends StatelessWidget {
                       onTap: onTap,
                       borderRadius: BorderRadius.circular(18),
                       child: _SmallChip(
-                        label: 'Ricorrente',
+                        label: AppLocalizations.of(context)!.recurring,
                         trailing: Icon(
                           expanded
                               ? Icons.keyboard_arrow_up_rounded
@@ -658,6 +661,7 @@ class _ReservaTime extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final fontScale = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 1.0,
@@ -667,7 +671,7 @@ class _ReservaTime extends StatelessWidget {
     return Row(
       children: [
         Text(
-          'Quante prenotazioni',
+          l10n.howManyBookings,
           style: GoogleFonts.inter(
             color: const Color(0xFFDDDDDD),
             fontSize: 16 * fontScale,
@@ -677,7 +681,7 @@ class _ReservaTime extends StatelessWidget {
         ),
         const Spacer(),
         Text(
-          '5 volte',
+          l10n.fiveTimes,
           style: GoogleFonts.inter(
             color: const Color(0xFFFFFFFF),
             fontSize: 16 * fontScale,
@@ -739,6 +743,7 @@ class _ReservationRecurrence extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final fontScale = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 1.0,
@@ -754,7 +759,7 @@ class _ReservationRecurrence extends StatelessWidget {
             SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
             const SizedBox(width: 10),
             Text(
-              'Ricorrenza mensile',
+              l10n.every4Weeks,
               style: GoogleFonts.inter(
                 color: const Color(0xFFFFFFFF),
                 fontSize: 16 * fontScale,
