@@ -512,6 +512,12 @@ abstract class AppLocalizations {
   /// **'Password reset successfully'**
   String get passwordResetSuccess;
 
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
   /// No description provided for @bookAppointment.
   ///
   /// In en, this message translates to:
@@ -521,7 +527,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepChooseBarber.
   ///
   /// In en, this message translates to:
-  /// **'Choose your barber'**
+  /// **'Choose your shop'**
   String get stepChooseBarber;
 
   /// No description provided for @stepSelectService.
@@ -596,6 +602,12 @@ abstract class AppLocalizations {
   /// **'Every Thursday'**
   String get everyThursday;
 
+  /// No description provided for @everyWeekday.
+  ///
+  /// In en, this message translates to:
+  /// **'Every {day}'**
+  String everyWeekday(Object day);
+
   /// No description provided for @every2Weeks.
   ///
   /// In en, this message translates to:
@@ -625,6 +637,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'5 times'**
   String get fiveTimes;
+
+  /// No description provided for @nTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 time} other{{count} times}}'**
+  String nTimes(int count);
 
   /// No description provided for @select.
   ///

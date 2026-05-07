@@ -220,6 +220,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get passwordResetSuccess => 'Password reimpostata con successo';
 
   @override
+  String get back => 'Indietro';
+
+  @override
   String get bookAppointment => 'Prenota un appuntamento';
 
   @override
@@ -265,6 +268,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get everyThursday => 'Ogni giovedì';
 
   @override
+  String everyWeekday(Object day) {
+    return 'Ogni $day';
+  }
+
+  @override
   String get every2Weeks => 'Ogni 2 settimane';
 
   @override
@@ -278,6 +286,17 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get fiveTimes => '5 volte';
+
+  @override
+  String nTimes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count volte',
+      one: '1 volta',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get select => 'Selezionare';

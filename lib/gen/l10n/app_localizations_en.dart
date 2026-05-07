@@ -218,10 +218,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordResetSuccess => 'Password reset successfully';
 
   @override
+  String get back => 'Back';
+
+  @override
   String get bookAppointment => 'Book an appointment';
 
   @override
-  String get stepChooseBarber => 'Choose your barber';
+  String get stepChooseBarber => 'Choose your shop';
 
   @override
   String get stepSelectService => 'Select the service';
@@ -263,6 +266,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get everyThursday => 'Every Thursday';
 
   @override
+  String everyWeekday(Object day) {
+    return 'Every $day';
+  }
+
+  @override
   String get every2Weeks => 'Every 2 weeks';
 
   @override
@@ -276,6 +284,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fiveTimes => '5 times';
+
+  @override
+  String nTimes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count times',
+      one: '1 time',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get select => 'Select';

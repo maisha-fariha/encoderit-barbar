@@ -21,9 +21,22 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   int _selectedService = 0;
   int _selectedBarber = 0;
   int _selectedTime = 0;
-  DateTime _selectedDate = DateTime(2026, 4, 9);
+  DateTime _selectedDate = _today();
   bool _recurringEnabled = true;
-  int _recurringIndex = 0;
+  int _recurringIndex = -1; // -1 = nothing selected; otherwise 0..3
+  int _howManyBookings = 0; // 0 = nothing selected; otherwise 1..10
+
+  static bool _isBlockedWeekday(DateTime d) =>
+      d.weekday == DateTime.wednesday || d.weekday == DateTime.friday;
+
+  static DateTime _today() {
+    final n = DateTime.now();
+    var d = DateTime(n.year, n.month, n.day);
+    while (_isBlockedWeekday(d)) {
+      d = d.add(const Duration(days: 1));
+    }
+    return d;
+  }
   late final ShopListController _shopController;
   late final ServiceListController _serviceController;
   late final BarberListController _barberController;
@@ -186,9 +199,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       setState(() {
         _step = 4;
         _selectedTime = 0;
-        _selectedDate = DateTime(2026, 4, 9);
+        _selectedDate = _today();
         _recurringEnabled = true;
-        _recurringIndex = 0;
+        _recurringIndex = -1;
+        _howManyBookings = 0;
       });
       return;
     }
@@ -199,8 +213,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     // Next steps can be implemented later.
   }
 
-  String _monthLabelIt(DateTime date) {
-    const months = [
+  String _monthLabel(DateTime date, Locale locale) {
+    const itMonths = [
       'Gennaio',
       'Febbraio',
       'Marzo',
@@ -214,8 +228,85 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       'Novembre',
       'Dicembre',
     ];
+    const enMonths = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    final months = locale.languageCode == 'it' ? itMonths : enMonths;
     final m = months[(date.month - 1).clamp(0, 11)];
     return '$m ${date.year}';
+  }
+
+  String _weekdayName(DateTime date, Locale locale) {
+    const itDays = [
+      'lunedì',
+      'martedì',
+      'mercoledì',
+      'giovedì',
+      'venerdì',
+      'sabato',
+      'domenica',
+    ];
+    const enDays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    final list = locale.languageCode == 'it' ? itDays : enDays;
+    return list[(date.weekday - 1).clamp(0, 6)];
+  }
+
+  // e.g. "Gio, Aprile 09" (IT) or "Thu, April 09" (EN)
+  String _shortDateLabel(DateTime date, Locale locale) {
+    const itDaysShort = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+    const enDaysShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const itMonths = [
+      'Gennaio',
+      'Febbraio',
+      'Marzo',
+      'Aprile',
+      'Maggio',
+      'Giugno',
+      'Luglio',
+      'Agosto',
+      'Settembre',
+      'Ottobre',
+      'Novembre',
+      'Dicembre',
+    ];
+    const enMonths = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    final isIt = locale.languageCode == 'it';
+    final dow = (isIt ? itDaysShort : enDaysShort)[(date.weekday - 1).clamp(0, 6)];
+    final mon = (isIt ? itMonths : enMonths)[(date.month - 1).clamp(0, 11)];
+    final day = date.day.toString().padLeft(2, '0');
+    return '$dow, $mon $day';
   }
 
   Future<void> _pickStep3Date() async {
@@ -225,6 +316,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       initialDate: initial,
       firstDate: DateTime(2020, 1, 1),
       lastDate: DateTime(2035, 12, 31),
+      selectableDayPredicate: (d) => !_isBlockedWeekday(d),
       builder: (context, child) {
         final base = Theme.of(context);
         const surface = Color(0xFF242424);
@@ -855,7 +947,13 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             );
 
                             final calendar = _Step3CalendarCard(
-                              monthLabel: _monthLabelIt(_selectedDate),
+                              monthLabel: _monthLabel(
+                                _selectedDate,
+                                Localizations.localeOf(context),
+                              ),
+                              selectedDate: _selectedDate,
+                              onSelectDate: (d) =>
+                                  setState(() => _selectedDate = d),
                               selectedTimeIndex: _selectedTime,
                               times: _times,
                               onSelectTime: (i) =>
@@ -871,11 +969,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                   onChanged: (v) =>
                                       setState(() => _recurringEnabled = v),
                                 ),
-                                const SizedBox(height: 15),
-                                if (_recurringEnabled)
+                                if (_recurringEnabled) ...[
+                                  const SizedBox(height: 15),
                                   _Step3RecurringOptions(
                                     options: [
-                                      l10n.everyThursday,
+                                      l10n.everyWeekday(
+                                        _weekdayName(
+                                          _selectedDate,
+                                          Localizations.localeOf(context),
+                                        ),
+                                      ),
                                       l10n.every2Weeks,
                                       l10n.every3Weeks,
                                       l10n.every4Weeks,
@@ -884,17 +987,30 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                     onSelect: (i) =>
                                         setState(() => _recurringIndex = i),
                                   ),
-                                const SizedBox(height: 15),
-                                _Step3MonthlySummary(
-                                  intervalLabel: [
-                                    l10n.everyThursday,
-                                    l10n.every2Weeks,
-                                    l10n.every3Weeks,
-                                    l10n.every4Weeks,
-                                  ][_recurringIndex.clamp(0, 3)],
-                                ),
-                                const SizedBox(height: 15),
-                                const _Step4HowManyDropdown(),
+                                  if (_recurringIndex >= 0 &&
+                                      _howManyBookings >= 1) ...[
+                                    const SizedBox(height: 15),
+                                    _Step3MonthlySummary(
+                                      intervalLabel: [
+                                        l10n.everyWeekday(
+                                          _weekdayName(
+                                            _selectedDate,
+                                            Localizations.localeOf(context),
+                                          ),
+                                        ),
+                                        l10n.every2Weeks,
+                                        l10n.every3Weeks,
+                                        l10n.every4Weeks,
+                                      ][_recurringIndex.clamp(0, 3)],
+                                    ),
+                                  ],
+                                  const SizedBox(height: 15),
+                                  _Step4HowManyDropdown(
+                                    selectedCount: _howManyBookings,
+                                    onSelect: (n) =>
+                                        setState(() => _howManyBookings = n),
+                                  ),
+                                ],
                               ],
                             );
 
@@ -935,6 +1051,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             final isLarge = ResponsiveHelper.isLargeDevice(
                               context,
                             );
+                            final locale = Localizations.localeOf(context);
                             final selectedService =
                                 _items.isNotEmpty &&
                                     _selectedService >= 0 &&
@@ -955,10 +1072,29 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                     subtitle: '',
                                     imageAsset: 'assets/images/barbar_1.jpg',
                                   );
+                            final intervalLabels = [
+                              l10n.everyWeekday(
+                                _weekdayName(_selectedDate, locale),
+                              ),
+                              l10n.every2Weeks,
+                              l10n.every3Weeks,
+                              l10n.every4Weeks,
+                            ];
+                            final intervalLabel =
+                                _recurringIndex >= 0 && _recurringIndex < 4
+                                    ? intervalLabels[_recurringIndex]
+                                    : intervalLabels[0];
+                            final bookings = _howManyBookings >= 1
+                                ? _howManyBookings
+                                : 1;
                             final card = _Step4SummaryCard(
                               service: selectedService,
                               barber: selectedBarber,
                               time: _times[_selectedTime],
+                              dateLabel: _shortDateLabel(_selectedDate, locale),
+                              recurringEnabled: _recurringEnabled,
+                              intervalLabel: intervalLabel,
+                              bookingsCount: bookings,
                             );
                             if (!isLarge) return card;
                             return Center(
@@ -1031,11 +1167,19 @@ class _Step4SummaryCard extends StatelessWidget {
     required this.service,
     required this.barber,
     required this.time,
+    required this.dateLabel,
+    required this.recurringEnabled,
+    required this.intervalLabel,
+    required this.bookingsCount,
   });
 
   final _ServiceItem service;
   final _BarberItem barber;
   final String time;
+  final String dateLabel;
+  final bool recurringEnabled;
+  final String intervalLabel;
+  final int bookingsCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1061,19 +1205,21 @@ class _Step4SummaryCard extends StatelessWidget {
           const SizedBox(height: 14),
           _Step4KeyValueRow(label: l10n.barber, value: barber.name),
           const SizedBox(height: 14),
-          _Step4KeyValueRow(label: l10n.date, value: 'Gio, Aprile 09'),
+          _Step4KeyValueRow(label: l10n.date, value: dateLabel),
           const SizedBox(height: 14),
-          _Step4KeyValueRow(label: l10n.time, value: '$time AM'),
+          _Step4KeyValueRow(label: l10n.time, value: time),
           const SizedBox(height: 18),
-          const _Step4Divider(),
-          const SizedBox(height: 20),
-          const _Step4MonthlyRecurrence(),
-          const SizedBox(height: 25),
-          const _Step4Divider(),
-          const SizedBox(height: 20),
-          const _Step4ReservationTime(),
-          const _Step4Divider(),
-          const SizedBox(height: 20),
+          if (recurringEnabled) ...[
+            const _Step4Divider(),
+            const SizedBox(height: 20),
+            _Step4MonthlyRecurrence(intervalLabel: intervalLabel),
+            const SizedBox(height: 25),
+            const _Step4Divider(),
+            const SizedBox(height: 20),
+            _Step4ReservationTime(count: bookingsCount),
+            const _Step4Divider(),
+            const SizedBox(height: 20),
+          ],
           Row(
             children: [
               Text(
@@ -1104,7 +1250,9 @@ class _Step4SummaryCard extends StatelessWidget {
 }
 
 class _Step4ReservationTime extends StatelessWidget {
-  const _Step4ReservationTime();
+  const _Step4ReservationTime({required this.count});
+
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -1122,7 +1270,7 @@ class _Step4ReservationTime extends StatelessWidget {
         ),
         const Spacer(),
         Text(
-          l10n.fiveTimes,
+          l10n.nTimes(count),
           style: GoogleFonts.inter(
             color: const Color(0xFFFFFFFF),
             fontSize: 16,
@@ -1184,7 +1332,9 @@ class _Step4Divider extends StatelessWidget {
 }
 
 class _Step4MonthlyRecurrence extends StatefulWidget {
-  const _Step4MonthlyRecurrence();
+  const _Step4MonthlyRecurrence({required this.intervalLabel});
+
+  final String intervalLabel;
 
   @override
   State<_Step4MonthlyRecurrence> createState() =>
@@ -1255,7 +1405,7 @@ class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
             SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
             const SizedBox(width: 10),
             Text(
-              AppLocalizations.of(context)!.every4Weeks,
+              widget.intervalLabel,
               style: GoogleFonts.inter(
                 color: const Color(0xFFFFFFFF),
                 fontSize: 16,
@@ -1771,6 +1921,8 @@ class _BarberItem {
 class _Step3CalendarCard extends StatelessWidget {
   const _Step3CalendarCard({
     required this.monthLabel,
+    required this.selectedDate,
+    required this.onSelectDate,
     required this.selectedTimeIndex,
     required this.times,
     required this.onSelectTime,
@@ -1778,10 +1930,29 @@ class _Step3CalendarCard extends StatelessWidget {
   });
 
   final String monthLabel;
+  final DateTime selectedDate;
+  final ValueChanged<DateTime> onSelectDate;
   final int selectedTimeIndex;
   final List<String> times;
   final ValueChanged<int> onSelectTime;
   final VoidCallback onTapCalendar;
+
+  static String _dayShort(DateTime date, Locale locale) {
+    const itDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+    const enDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final list = locale.languageCode == 'it' ? itDays : enDays;
+    return list[(date.weekday - 1).clamp(0, 6)];
+  }
+
+  // 7-day window around the selected date: 1 day before + selected + 5 after.
+  static List<DateTime> _dayWindow(DateTime selected) {
+    final base = DateTime(selected.year, selected.month, selected.day);
+    final start = base.subtract(const Duration(days: 1));
+    return List.generate(7, (i) => start.add(Duration(days: i)));
+  }
+
+  static bool _sameDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   Widget build(BuildContext context) {
@@ -1834,57 +2005,40 @@ class _Step3CalendarCard extends StatelessWidget {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
-            child: Row(
-              children: const [
-                _DayChip(
-                  day: 'Mer',
-                  date: '08',
-                  selected: false,
-                  emphasized: false,
-                ),
-                SizedBox(width: 14),
-                _DayChip(
-                  day: 'Gio',
-                  date: '09',
-                  selected: true,
-                  emphasized: true,
-                ),
-                SizedBox(width: 14),
-                _DayChip(
-                  day: 'Ven',
-                  date: '10',
-                  selected: false,
-                  emphasized: false,
-                ),
-                SizedBox(width: 14),
-                _DayChip(
-                  day: 'Sab',
-                  date: '11',
-                  selected: false,
-                  emphasized: true,
-                ),
-                SizedBox(width: 14),
-                _DayChip(
-                  day: 'Dom',
-                  date: '12',
-                  selected: false,
-                  emphasized: true,
-                ),
-                SizedBox(width: 14),
-                _DayChip(
-                  day: 'Lun',
-                  date: '13',
-                  selected: false,
-                  emphasized: true,
-                ),
-                SizedBox(width: 14),
-                _DayChip(
-                  day: 'Mar',
-                  date: '14',
-                  selected: false,
-                  emphasized: true,
-                ),
-              ],
+            child: Builder(
+              builder: (context) {
+                final locale = Localizations.localeOf(context);
+                final days = _dayWindow(selectedDate);
+                final now = DateTime.now();
+                final today = DateTime(now.year, now.month, now.day);
+                return Row(
+                  children: [
+                    for (int i = 0; i < days.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 14),
+                      Builder(
+                        builder: (_) {
+                          final d = days[i];
+                          final isBlockedDow =
+                              d.weekday == DateTime.wednesday ||
+                                  d.weekday == DateTime.friday;
+                          final isSelectable =
+                              !d.isBefore(today) && !isBlockedDow;
+                          final isSelected = _sameDate(d, selectedDate);
+                          return _DayChip(
+                            day: _dayShort(d, locale),
+                            date: d.day.toString().padLeft(2, '0'),
+                            selected: isSelected,
+                            emphasized: isSelectable,
+                            onTap: (isSelectable && !isSelected)
+                                ? () => onSelectDate(d)
+                                : null,
+                          );
+                        },
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 25),
@@ -1962,12 +2116,14 @@ class _DayChip extends StatelessWidget {
     required this.date,
     required this.selected,
     required this.emphasized,
+    this.onTap,
   });
 
   final String day;
   final String date;
   final bool selected;
   final bool emphasized;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1997,7 +2153,7 @@ class _DayChip extends StatelessWidget {
             ],
           );
 
-    return Container(
+    final card = Container(
       width: 42,
       height: 79,
       decoration: BoxDecoration(
@@ -2051,6 +2207,16 @@ class _DayChip extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+
+    if (onTap == null) return card;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: card,
       ),
     );
   }
@@ -2139,22 +2305,34 @@ class _Step3RecurringOptions extends StatelessWidget {
                 );
               }
               final i = idx ~/ 2;
+              final isSelected = i == selectedIndex;
               return InkWell(
                 onTap: () => onSelect(i),
-                child: Container(
+                child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 18,
                   ),
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    options[i],
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFDDDDDD),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      height: 1.5,
-                    ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          options[i],
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFFDDDDDD),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check_rounded,
+                          color: Color(0xFFDDDDDD),
+                          size: 20,
+                        ),
+                    ],
                   ),
                 ),
               );
@@ -2371,37 +2549,167 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
 }
 
 class _Step4HowManyDropdown extends StatelessWidget {
-  const _Step4HowManyDropdown();
+  const _Step4HowManyDropdown({
+    required this.selectedCount,
+    required this.onSelect,
+  });
+
+  final int selectedCount; // 0 means "no selection / placeholder"
+  final ValueChanged<int> onSelect;
+
+  static const int _maxOptions = 10;
+
+  Future<void> _open(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF242424),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: const Color(0xFF185C5C),
+                  width: 2
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 10),
+                  Center(
+                    child: Container(
+                      width: 46,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFFFF).withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+                    child: Text(
+                      l10n.howManyBookings,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.55,
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: _maxOptions,
+                      separatorBuilder: (_, __) => const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: _Step3Divider(),
+                      ),
+                      itemBuilder: (_, i) {
+                        final count = i + 1;
+                        final isSelected = count == selectedCount;
+                        return InkWell(
+                          onTap: () => Navigator.of(sheetContext).pop(count),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 18,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    l10n.nTimes(count),
+                                    style: GoogleFonts.inter(
+                                      color: const Color(0xFFDDDDDD),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ),
+                                if (isSelected)
+                                  const Icon(
+                                    Icons.check_rounded,
+                                    color: Color(0xFFDDDDDD),
+                                    size: 20,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    if (picked != null && picked >= 1 && picked <= _maxOptions) {
+      onSelect(picked);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(30, 20, 30, 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF242424),
+    final hasSelection = selectedCount >= 1 && selectedCount <= _maxOptions;
+    final label = hasSelection ? l10n.nTimes(selectedCount) : l10n.howManyBookings;
+    final labelColor =
+        hasSelection ? const Color(0xFFDDDDDD) : const Color(0xFF797979);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _open(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF185C5C)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              l10n.howManyBookings,
-              style: GoogleFonts.inter(
-                color: const Color(0xFF797979),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                height: 1.5,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(30, 20, 30, 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF242424),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF185C5C)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    color: labelColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    height: 1.5,
+                  ),
+                ),
               ),
-            ),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Color(0xFF797979),
+                size: 20,
+              ),
+            ],
           ),
-          const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Color(0xFF797979),
-            size: 20,
-          ),
-        ],
+        ),
       ),
     );
   }

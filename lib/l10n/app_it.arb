@@ -69,6 +69,7 @@
   "passwordsDoNotMatch": "Le password non corrispondono",
   "resetPasswordCta": "Reimposta password",
   "passwordResetSuccess": "Password reimpostata con successo",
+  "back": "Indietro",
   "bookAppointment": "Prenota un appuntamento",
   "stepChooseBarber": "Scegli il tuo barbiere",
   "stepSelectService": "Seleziona il servizio",
@@ -89,11 +90,25 @@
   "cancelAction": "Cancellare",
   "confirmAction": "Confermare",
   "everyThursday": "Ogni giovedì",
+  "everyWeekday": "Ogni {day}",
+  "@everyWeekday": {
+    "placeholders": {
+      "day": {}
+    }
+  },
   "every2Weeks": "Ogni 2 settimane",
   "every3Weeks": "Ogni 3 settimane",
   "every4Weeks": "Ogni 4 settimane",
   "howManyBookings": "Quante prenotazioni",
   "fiveTimes": "5 volte",
+  "nTimes": "{count, plural, =1{1 volta} other{{count} volte}}",
+  "@nTimes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "select": "Selezionare",
   "noBarberAvailable": "Nessun barbiere disponibile",
   "waitlistMe": "Tienimi in lista d'attesa",
