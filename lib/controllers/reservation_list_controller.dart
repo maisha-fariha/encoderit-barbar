@@ -63,4 +63,16 @@ class ReservationListController extends BaseListController<AppointmentModel>
         .where((e) => e.status.trim().toLowerCase() == expected)
         .toList(growable: false);
   }
+
+  Future<Result<void>> deleteAppointment(String appointmentId) async {
+    final result = await repository.deleteAppointment(appointmentId);
+    result.when(
+      success: (_) {
+        items.removeWhere((e) => e.id == appointmentId);
+        update(['reservation-list']);
+      },
+      failure: (_) {},
+    );
+    return result;
+  }
 }

@@ -51,6 +51,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
     return items
         .map(
           (e) => _ReservationItem(
+            id: e.id,
             title: e.service.name.isNotEmpty ? e.service.name : 'Service',
             subtitle: e.barber.name.isNotEmpty
                 ? 'con ${e.barber.name}'
@@ -62,6 +63,47 @@ class _ReservationListPageState extends State<ReservationListPage> {
           ),
         )
         .toList(growable: false);
+  }
+
+  Future<void> _deleteReservation(_ReservationItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete appointment'),
+        content: const Text('Are you sure you want to delete this appointment?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final result = await _controller.deleteAppointment(item.id);
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.clearSnackBars();
+    result.when(
+      success: (_) => messenger.showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Appointment deleted'),
+        ),
+      ),
+      failure: (error) => messenger.showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(error.message),
+        ),
+      ),
+    );
   }
 
   String _formatDateText(DateTime? dateTime) {
@@ -296,6 +338,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
                               item: item,
                               expanded: expanded,
                               mode: mode,
+                              onDelete: () => _deleteReservation(item),
                               onTap: () => setState(
                                 () => _expandedIndex = _expandedIndex == i
                                     ? -1
@@ -546,12 +589,14 @@ class _ReservationCard extends StatelessWidget {
     required this.item,
     required this.expanded,
     required this.mode,
+    required this.onDelete,
     required this.onTap,
   });
 
   final _ReservationItem item;
   final bool expanded;
   final _ReservationMode mode;
+  final VoidCallback onDelete;
   final VoidCallback onTap;
 
   @override
@@ -669,19 +714,23 @@ class _ReservationCard extends StatelessWidget {
                 if (showDelete)
                   Padding(
                     padding: const EdgeInsets.all(5.0),
-                    child: Container(
-                      height: 36,
-                      width: 36,
-                      decoration: BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SvgPicture.asset(
-                          'assets/icons/delete.svg',
-                          width: 20,
-                          height: 20,
+                    child: InkWell(
+                      onTap: onDelete,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        height: 36,
+                        width: 36,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: SvgPicture.asset(
+                            'assets/icons/delete.svg',
+                            width: 20,
+                            height: 20,
+                          ),
                         ),
                       ),
                     ),
@@ -993,6 +1042,7 @@ class _RecurrenceAltRow extends StatelessWidget {
 
 class _ReservationItem {
   const _ReservationItem({
+    required this.id,
     required this.title,
     required this.subtitle,
     required this.dateText,
@@ -1001,6 +1051,7 @@ class _ReservationItem {
     required this.recurring,
   });
 
+  final String id;
   final String title;
   final String subtitle;
   final String dateText;
