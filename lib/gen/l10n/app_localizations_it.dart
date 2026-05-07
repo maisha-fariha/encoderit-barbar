@@ -167,6 +167,59 @@ class AppLocalizationsIt extends AppLocalizations {
   String get invalidNumber => 'Numero non valido';
 
   @override
+  String get forgotPasswordTitle => 'Ha dimenticato la password';
+
+  @override
+  String get forgotPasswordSheetSubtitle =>
+      'Inserisci la tua email e ti invieremo un codice di verifica.';
+
+  @override
+  String get sendOtp => 'Invia OTP';
+
+  @override
+  String get verifyOtpTitle => 'Verifica OTP';
+
+  @override
+  String get verifyOtpSubtitle => 'Inserisci il codice inviato alla tua email.';
+
+  @override
+  String get otpHint => 'Inserisci OTP';
+
+  @override
+  String get otpInvalid => 'OTP non valido';
+
+  @override
+  String get resendCode => 'Reinvia codice';
+
+  @override
+  String get otpResent => 'OTP reinviato';
+
+  @override
+  String get verify => 'Verificare';
+
+  @override
+  String get resetPasswordTitle => 'Reimposta password';
+
+  @override
+  String get resetPasswordSubtitle =>
+      'Crea una nuova password per il tuo account.';
+
+  @override
+  String get newPassword => 'Nuova password';
+
+  @override
+  String get confirmPassword => 'Conferma password';
+
+  @override
+  String get passwordsDoNotMatch => 'Le password non corrispondono';
+
+  @override
+  String get resetPasswordCta => 'Reimposta password';
+
+  @override
+  String get passwordResetSuccess => 'Password reimpostata con successo';
+
+  @override
   String get bookAppointment => 'Prenota un appuntamento';
 
   @override

@@ -5,6 +5,7 @@ import '../gen/l10n/app_localizations.dart';
 
 import '../controllers/auth_controller.dart';
 import '../routes/app_pages.dart';
+import '../widgets/auth_bottom_sheet.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -186,13 +187,20 @@ class _LoginPageState extends State<LoginPage> {
                                   alignment: Alignment.centerRight,
                                   child: Padding(
                                     padding: const EdgeInsets.only(right: 6),
-                                    child: Text(
-                                      l10n.forgotPassword,
-                                      style: GoogleFonts.inter(
-                                        color: Color(0xFF797979),
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 12,
-                                        height: 1,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(10),
+                                      onTap: () => AuthBottomSheet.showForgotPassword(context),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                                        child: Text(
+                                          l10n.forgotPassword,
+                                          style: GoogleFonts.inter(
+                                            color: Color(0xFF797979),
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 12,
+                                            height: 1,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -276,7 +284,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 18),
                             Text(
-                              'Accedi al tuo account',
+                              l10n.loginTitle,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.inter(
                                 color: Colors.white,
@@ -341,13 +349,20 @@ class _LoginPageState extends State<LoginPage> {
                                     alignment: Alignment.centerRight,
                                     child: Padding(
                                       padding: const EdgeInsets.only(right: 6),
-                                      child: Text(
-                                        'Ha dimenticato la password',
-                                        style: GoogleFonts.inter(
-                                          color: Color(0xFF797979),
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 12,
-                                          height: 1,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(10),
+                                        onTap: () => AuthBottomSheet.showForgotPassword(context),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                                          child: Text(
+                                            l10n.forgotPassword,
+                                            style: GoogleFonts.inter(
+                                              color: Color(0xFF797979),
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 12,
+                                              height: 1,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -359,7 +374,7 @@ class _LoginPageState extends State<LoginPage> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        'Non hai un account? ',
+                                        l10n.dontHaveAccount,
                                         style: GoogleFonts.inter(
                                           color: Color(0xFF797979),
                                           fontWeight: FontWeight.w400,
@@ -380,7 +395,7 @@ class _LoginPageState extends State<LoginPage> {
                                           foregroundColor: Colors.white,
                                         ),
                                         child: Text(
-                                          'Iscrizione',
+                                          l10n.signUp,
                                           style: GoogleFonts.inter(
                                             color: Color(0xFFDDDDDD),
                                             fontWeight: FontWeight.w400,
@@ -510,7 +525,7 @@ class _PrimaryLoginButton extends StatelessWidget {
           ),
           onPressed: onPressed,
           child: Text(
-            'Login',
+            AppLocalizations.of(context)!.logIn,
             style: GoogleFonts.inter(
               color: Color(0xFF0B0B0B),
               fontWeight: FontWeight.w600,
