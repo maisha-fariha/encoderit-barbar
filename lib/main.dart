@@ -9,6 +9,7 @@ import 'gen/l10n/app_localizations.dart';
 import 'services/app_services.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/barber_list_controller.dart';
+import 'controllers/reservation_list_controller.dart';
 import 'controllers/shop_list_controller.dart';
 import 'controllers/service_list_controller.dart';
 
@@ -42,6 +43,8 @@ Future<void> main() async {
   Get.put(serviceList, permanent: true);
   final barberList = AppServices.getIt<BarberListController>();
   Get.put(barberList, permanent: true);
+  final reservationList = AppServices.getIt<ReservationListController>();
+  Get.put(reservationList, permanent: true);
   await auth.bootstrap();
 
   final initialRoute = auth.isLoggedIn.value

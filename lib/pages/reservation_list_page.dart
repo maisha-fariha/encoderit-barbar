@@ -3,7 +3,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../controllers/reservation_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
+import '../models/appointment/appointment_model.dart';
 
 import '../routes/app_pages.dart';
 
@@ -15,82 +18,73 @@ class ReservationListPage extends StatefulWidget {
 }
 
 class _ReservationListPageState extends State<ReservationListPage> {
-  int _tab = 0; // 0 upcoming, 1 completed, 2 cancelled
+  int _tab = 0; // 0 booked, 1 completed, 2 cancelled
   int _expandedIndex = 0;
   int _navIndex = 1; // Prenotazione selected
+  late final ReservationListController _controller;
+  late final ScrollController _scrollController;
 
-  final _upcoming = const <_ReservationItem>[
-    _ReservationItem(
-      title: 'Taglio di capelli',
-      subtitle: 'con Silva',
-      dateText: '12 aprile 2026, 14:30',
-      price: '€45',
-      imageAsset: 'assets/images/barbar_1.jpg',
-      recurring: true,
-    ),
-    _ReservationItem(
-      title: 'Rifinitura della barba',
-      subtitle: 'con Rossi',
-      dateText: '12 aprile 2026, 14:30',
-      price: '€60',
-      imageAsset: 'assets/images/barbar_2.jpg',
-      recurring: false,
-    ),
-    _ReservationItem(
-      title: 'Capelli + Barba',
-      subtitle: 'con David',
-      dateText: '12 aprile 2026, 14:30',
-      price: '€30',
-      imageAsset: 'assets/images/barbar_3.jpg',
-      recurring: false,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.find<ReservationListController>();
+    _scrollController = ScrollController()..addListener(_onListScroll);
+    _controller.loadItems();
+  }
 
-  final _completed = const <_ReservationItem>[
-    _ReservationItem(
-      title: 'Taglio di capelli',
-      subtitle: 'con Silva',
-      dateText: '12 aprile 2026, 14:30',
-      price: '€45',
-      imageAsset: 'assets/images/barbar_1.jpg',
-      recurring: true,
-    ),
-    _ReservationItem(
-      title: 'Rifinitura della barba',
-      subtitle: 'con Rossi',
-      dateText: '12 aprile 2026, 14:30',
-      price: '€60',
-      imageAsset: 'assets/images/barbar_2.jpg',
-      recurring: false,
-    ),
-    _ReservationItem(
-      title: 'Capelli + Barba',
-      subtitle: 'con David',
-      dateText: '12 aprile 2026, 14:30',
-      price: '€30',
-      imageAsset: 'assets/images/barbar_3.jpg',
-      recurring: false,
-    ),
-  ];
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onListScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
 
-  final _cancelled = const <_ReservationItem>[
-    _ReservationItem(
-      title: 'Rifinitura della barba',
-      subtitle: 'con Rossi',
-      dateText: '12 aprile 2026, 14:30',
-      price: '€60',
-      imageAsset: 'assets/images/barbar_2.jpg',
-      recurring: false,
-    ),
-    _ReservationItem(
-      title: 'Capelli + Barba',
-      subtitle: 'con David',
-      dateText: '12 aprile 2026, 14:30',
-      price: '€30',
-      imageAsset: 'assets/images/barbar_3.jpg',
-      recurring: false,
-    ),
-  ];
+  void _onListScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 220) {
+      _controller.loadNextPage();
+    }
+  }
+
+  List<_ReservationItem> _mapItems(List<AppointmentModel> items) {
+    return items
+        .map(
+          (e) => _ReservationItem(
+            title: e.service.name.isNotEmpty ? e.service.name : 'Service',
+            subtitle: e.barber.name.isNotEmpty
+                ? 'con ${e.barber.name}'
+                : 'con Barber',
+            dateText: _formatDateText(e.startsAt),
+            price: '€${e.service.price.toStringAsFixed(0)}',
+            imageAsset: 'assets/images/barbar_1.jpg',
+            recurring: false,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  String _formatDateText(DateTime? dateTime) {
+    if (dateTime == null) return '';
+    const months = <String>[
+      'gennaio',
+      'febbraio',
+      'marzo',
+      'aprile',
+      'maggio',
+      'giugno',
+      'luglio',
+      'agosto',
+      'settembre',
+      'ottobre',
+      'novembre',
+      'dicembre',
+    ];
+    final d = dateTime.toLocal();
+    final month = months[(d.month - 1).clamp(0, 11)];
+    final minute = d.minute.toString().padLeft(2, '0');
+    return '${d.day} $month ${d.year}, ${d.hour}:$minute';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,16 +107,22 @@ class _ReservationListPageState extends State<ReservationListPage> {
       large: 1.22,
     );
     final l10n = AppLocalizations.of(context)!;
+    final booked = _mapItems(_controller.byStatus('booked'));
+    final completed = _mapItems(_controller.byStatus('completed'));
+    final cancelled = _mapItems(_controller.byStatus('cancelled'));
     final list = _tab == 0
-        ? _upcoming
+        ? booked
         : _tab == 1
-            ? _completed
-            : _cancelled;
+        ? completed
+        : cancelled;
     final mode = _tab == 0
-        ? _ReservationMode.upcoming
+        ? _ReservationMode.booked
         : _tab == 1
-            ? _ReservationMode.completed
-            : _ReservationMode.cancelled;
+        ? _ReservationMode.completed
+        : _ReservationMode.cancelled;
+    if (_expandedIndex >= list.length) {
+      _expandedIndex = list.isEmpty ? 0 : list.length - 1;
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -165,97 +165,148 @@ class _ReservationListPageState extends State<ReservationListPage> {
           ),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: contentMaxWidth),
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(hPad, 15, hPad, 15),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: ResponsiveHelper.getResponsiveValue<double>(
-                        context,
-                        small: double.infinity,
-                        large: 560,
-                      ),
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(40),
-                        border: Border.all(
-                          color: const Color(0xFF242424),
-                          width: 1,
+      body: GetBuilder<ReservationListController>(
+        id: 'reservation-list',
+        builder: (controller) => Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: contentMaxWidth),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 15, hPad, 15),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: ResponsiveHelper.getResponsiveValue<double>(
+                          context,
+                          small: double.infinity,
+                          large: 560,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF000000).withValues(alpha: 0.15),
-                            blurRadius: 4,
-                            offset: const Offset(0, 0),
-                          ),
-                        ],
                       ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Row(
-                          children: [
-                            _TopPill(
-                              label: l10n.upcoming,
-                              count: '3',
-                              selected: _tab == 0,
-                              onTap: () => setState(() => _tab = 0),
-                            ),
-                            const SizedBox(width: 10),
-                            _TopPill(
-                              label: l10n.completed,
-                              count: '25',
-                              selected: _tab == 1,
-                              onTap: () => setState(() => _tab = 1),
-                            ),
-                            const SizedBox(width: 10),
-                            _TopPill(
-                              label: l10n.cancelled,
-                              count: '2',
-                              selected: _tab == 2,
-                              onTap: () => setState(() => _tab = 2),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(40),
+                          border: Border.all(
+                            color: const Color(0xFF242424),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF000000,
+                              ).withValues(alpha: 0.15),
+                              blurRadius: 4,
+                              offset: const Offset(0, 0),
                             ),
                           ],
                         ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: [
+                              _TopPill(
+                                label: 'Booked',
+                                count: '${booked.length}',
+                                selected: _tab == 0,
+                                onTap: () => setState(() => _tab = 0),
+                              ),
+                              const SizedBox(width: 10),
+                              _TopPill(
+                                label: l10n.completed,
+                                count: '${completed.length}',
+                                selected: _tab == 1,
+                                onTap: () => setState(() => _tab = 1),
+                              ),
+                              const SizedBox(width: 10),
+                              _TopPill(
+                                label: l10n.cancelled,
+                                count: '${cancelled.length}',
+                                selected: _tab == 2,
+                                onTap: () => setState(() => _tab = 2),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: ListView.separated(
-                  padding: EdgeInsets.fromLTRB(
-                    hPad,
-                    0,
-                    hPad,
-                    120 + pad.bottom,
-                  ),
-                  itemCount: list.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 14),
-                  itemBuilder: (context, i) {
-                    final item = list[i];
-                    final expanded = _expandedIndex == i;
-                    return _ReservationCard(
-                      item: item,
-                      expanded: expanded,
-                      mode: mode,
-                      onTap: () => setState(
-                        () => _expandedIndex = _expandedIndex == i ? -1 : i,
-                      ),
-                    );
-                  },
+                Expanded(
+                  child: controller.isLoading.value && list.isEmpty
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFEEEEEE),
+                          ),
+                        )
+                      : controller.errorMessage.value.isNotEmpty && list.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: hPad),
+                            child: Text(
+                              controller.errorMessage.value,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFFDDDDDD),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        )
+                      : list.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No reservations found.',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFFDDDDDD),
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          controller: _scrollController,
+                          padding: EdgeInsets.fromLTRB(
+                            hPad,
+                            0,
+                            hPad,
+                            120 + pad.bottom,
+                          ),
+                          itemCount:
+                              list.length + (controller.isLoadingMore ? 1 : 0),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 14),
+                          itemBuilder: (context, i) {
+                            if (i >= list.length) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFFEEEEEE),
+                                  ),
+                                ),
+                              );
+                            }
+                            final item = list[i];
+                            final expanded = _expandedIndex == i;
+                            return _ReservationCard(
+                              item: item,
+                              expanded: expanded,
+                              mode: mode,
+                              onTap: () => setState(
+                                () => _expandedIndex = _expandedIndex == i
+                                    ? -1
+                                    : i,
+                              ),
+                            );
+                          },
+                        ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -325,9 +376,7 @@ class _BottomNavBar extends StatelessWidget {
           Positioned.fill(
             child: Container(
               padding: EdgeInsets.only(bottom: pad),
-              decoration: const BoxDecoration(
-                color: Color(0xFF1F1F1F),
-              ),
+              decoration: const BoxDecoration(color: Color(0xFF1F1F1F)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -446,7 +495,9 @@ class _TopPill extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFFFFFF) : Color(0xFFFFFFFF).withValues(alpha: 0.08),
+          color: selected
+              ? const Color(0xFFFFFFFF)
+              : Color(0xFFFFFFFF).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -466,8 +517,9 @@ class _TopPill extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
-                color:
-                    selected ? const Color(0xFF000000) : Color(0xFF000000).withValues(alpha: 0.30),
+                color: selected
+                    ? const Color(0xFF000000)
+                    : Color(0xFF000000).withValues(alpha: 0.30),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Text(
@@ -512,11 +564,11 @@ class _ReservationCard extends StatelessWidget {
       large: 1.22,
     );
     final statusLabel = switch (mode) {
-      _ReservationMode.upcoming => l10n.confirmed,
+      _ReservationMode.booked => 'Booked',
       _ReservationMode.completed => l10n.completed,
       _ReservationMode.cancelled => l10n.cancelled,
     };
-    final showDelete = mode == _ReservationMode.upcoming;
+    final showDelete = mode == _ReservationMode.booked;
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
@@ -532,124 +584,131 @@ class _ReservationCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      item.imageAsset,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    item.imageAsset,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFFFFFFFF),
-                            fontSize: 18 * fontScale,
-                            fontWeight: FontWeight.w600,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${item.subtitle}  •  ${item.dateText}',
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFFDDDDDD),
-                            fontSize: 13 * fontScale,
-                            fontWeight: FontWeight.w500,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          item.price,
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFFFFFFFF),
-                            fontSize: 16 * fontScale,
-                            fontWeight: FontWeight.w700,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15.0),
-              child: Divider(thickness: 1, color: Color(0xFF797979).withValues(alpha: 0.30)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
-              child: Row(
-                children: [
-                  _SmallChip(label: statusLabel),
-                  const Spacer(),
-                  if (item.recurring)
-                    InkWell(
-                      onTap: onTap,
-                      borderRadius: BorderRadius.circular(18),
-                      child: _SmallChip(
-                        label: AppLocalizations.of(context)!.recurring,
-                        trailing: Icon(
-                          expanded
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          size: 18,
-                          color: const Color(0xFF797979),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(width: 12),
-                  if (showDelete)
-                    Padding(
-                      padding: const EdgeInsets.all(5.0),
-                      child: Container(
-                          height: 36,
-                          width: 36,
-                          decoration: BoxDecoration(
-                            color: Color(0xFFEF4444),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: SvgPicture.asset('assets/icons/delete.svg', width: 20, height: 20,),
-                          ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 220),
-              crossFadeState: expanded && item.recurring
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              firstChild: const SizedBox.shrink(),
-              secondChild: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-                child: Column(
-                  children: const [
-                    _HomeDivider(),
-                    _ReservationRecurrence(),
-                    SizedBox(height: 12),
-                    _HomeDivider(),
-                    SizedBox(height: 12),
-                    _ReservaTime(),
-                  ],
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFFFFFFF),
+                          fontSize: 18 * fontScale,
+                          fontWeight: FontWeight.w600,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${item.subtitle}  •  ${item.dateText}',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFDDDDDD),
+                          fontSize: 13 * fontScale,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.price,
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFFFFFFF),
+                          fontSize: 16 * fontScale,
+                          fontWeight: FontWeight.w700,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15.0),
+            child: Divider(
+              thickness: 1,
+              color: Color(0xFF797979).withValues(alpha: 0.30),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+            child: Row(
+              children: [
+                _SmallChip(label: statusLabel),
+                const Spacer(),
+                if (item.recurring)
+                  InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.circular(18),
+                    child: _SmallChip(
+                      label: AppLocalizations.of(context)!.recurring,
+                      trailing: Icon(
+                        expanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: const Color(0xFF797979),
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 12),
+                if (showDelete)
+                  Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Container(
+                      height: 36,
+                      width: 36,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SvgPicture.asset(
+                          'assets/icons/delete.svg',
+                          width: 20,
+                          height: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 220),
+            crossFadeState: expanded && item.recurring
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Column(
+                children: const [
+                  _HomeDivider(),
+                  _ReservationRecurrence(),
+                  SizedBox(height: 12),
+                  _HomeDivider(),
+                  SizedBox(height: 12),
+                  _ReservaTime(),
+                ],
               ),
             ),
+          ),
         ],
       ),
     );
@@ -688,8 +747,8 @@ class _ReservaTime extends StatelessWidget {
             fontWeight: FontWeight.w700,
             height: 1.5,
           ),
-        )
-      ]
+        ),
+      ],
     );
   }
 }
@@ -720,10 +779,7 @@ class _SmallChip extends StatelessWidget {
               height: 1.5,
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 6),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: 6), trailing!],
         ],
       ),
     );
@@ -825,10 +881,12 @@ class _RecurrenceRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color:  Color(0xFF797979).withValues(alpha: 0.20),
+                    color: Color(0xFF797979).withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -893,8 +951,10 @@ class _RecurrenceAltRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Color(0xFF797979).withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(10),
@@ -949,5 +1009,4 @@ class _ReservationItem {
   final bool recurring;
 }
 
-enum _ReservationMode { upcoming, completed, cancelled }
-
+enum _ReservationMode { booked, completed, cancelled }
