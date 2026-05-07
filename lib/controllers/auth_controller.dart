@@ -199,8 +199,11 @@ class AuthController extends GetxController {
   }
 
   Future<void> logout() async {
+    isBusy.value = true;
     await authGateway.logout();
+    authGateway.apiService.setAuthToken(null);
     isLoggedIn.value = false;
+    isBusy.value = false;
     Get.offAllNamed(AppRoutes.login);
   }
 

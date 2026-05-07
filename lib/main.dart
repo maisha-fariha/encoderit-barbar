@@ -44,11 +44,16 @@ Future<void> main() async {
   Get.put(barberList, permanent: true);
   await auth.bootstrap();
 
-  runApp(const EncoderitBarbarApp());
+  final initialRoute = auth.isLoggedIn.value
+      ? AppRoutes.home
+      : AppRoutes.onboarding;
+  runApp(EncoderitBarbarApp(initialRoute: initialRoute));
 }
 
 class EncoderitBarbarApp extends StatelessWidget {
-  const EncoderitBarbarApp({super.key});
+  const EncoderitBarbarApp({super.key, required this.initialRoute});
+
+  final String initialRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +86,7 @@ class EncoderitBarbarApp extends StatelessWidget {
             child: child ?? const SizedBox.shrink(),
           ),
         ),
-        initialRoute: AppRoutes.onboarding,
+        initialRoute: initialRoute,
         getPages: AppPages.routes,
         debugShowCheckedModeBanner: false,
       ),
