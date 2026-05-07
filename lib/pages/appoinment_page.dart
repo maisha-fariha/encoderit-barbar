@@ -213,6 +213,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     // Next steps can be implemented later.
   }
 
+  void _onBack() {
+    if (_step <= 1) return;
+    setState(() => _step -= 1);
+  }
+
   String _monthLabel(DateTime date, Locale locale) {
     const itMonths = [
       'Gennaio',
@@ -1121,36 +1126,65 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                       large: 560,
                     ),
                   ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 58,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF242424),
-                        borderRadius: BorderRadius.circular(32),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(32),
-                          onTap: _step == 5 ? _showConfirmDialog : _onContinue,
-                          child: Center(
-                            child: Text(
-                              _step == 3
-                                  ? l10n.someoneAvailable
-                                  : _step == 5
-                                  ? l10n.confirmBooking
-                                  : l10n.continueLabel,
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 16 * scale,
-                                fontWeight: FontWeight.w600,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        height: 58,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF242424),
+                            borderRadius: BorderRadius.circular(32),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(32),
+                              onTap: _step == 5 ? _showConfirmDialog : _onContinue,
+                              child: Center(
+                                child: Text(
+                                  _step == 3
+                                      ? l10n.someoneAvailable
+                                      : _step == 5
+                                      ? l10n.confirmBooking
+                                      : l10n.continueLabel,
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 16 * scale,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
+                      if (_step > 1) ...[
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: OutlinedButton(
+                            onPressed: _onBack,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFF5A5A5A)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(28),
+                              ),
+                            ),
+                            child: Text(
+                              'Back',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFFE5E5E5),
+                                fontSize: 15 * scale,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
