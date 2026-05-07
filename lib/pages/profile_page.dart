@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
@@ -6,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../gen/l10n/app_localizations.dart';
 
 import '../routes/app_pages.dart';
+import '../services/profile_avatar_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -17,6 +20,165 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   bool _obscure = true;
   int _navIndex = 3; // Profilo selected
+
+  ProfileAvatarService? get _avatarSvc =>
+      Get.isRegistered<ProfileAvatarService>()
+          ? Get.find<ProfileAvatarService>()
+          : null;
+
+  Future<void> _openAvatarPicker() async {
+    final l10n = AppLocalizations.of(context)!;
+    final svc = _avatarSvc;
+    if (svc == null) return;
+
+    final source = await showModalBottomSheet<_AvatarPickSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.65),
+      isScrollControlled: true,
+      builder: (sheetCtx) {
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF242424),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color(0xFFFFFFFF).withValues(alpha: 0.10),
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFFFF).withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    l10n.changeProfilePhoto,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _AvatarSheetTile(
+                    icon: Icons.photo_camera_outlined,
+                    label: l10n.takePhoto,
+                    onTap: () =>
+                        Navigator.of(sheetCtx).pop(_AvatarPickSource.camera),
+                  ),
+                  const SizedBox(height: 8),
+                  _AvatarSheetTile(
+                    icon: Icons.photo_library_outlined,
+                    label: l10n.chooseFromGallery,
+                    onTap: () =>
+                        Navigator.of(sheetCtx).pop(_AvatarPickSource.gallery),
+                  ),
+                  const SizedBox(height: 14),
+                  TextButton(
+                    onPressed: () => Navigator.of(sheetCtx).pop(),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFDDDDDD),
+                    ),
+                    child: Text(
+                      l10n.cancel,
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFFDDDDDD),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (source == null) return;
+
+    final result = source == _AvatarPickSource.camera
+        ? await svc.pickFromCamera()
+        : await svc.pickFromGallery();
+
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+
+    if (result.isCancelled) return;
+
+    if (result.isSuccess) {
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFE8E8E8),
+          content: Text(
+            l10n.photoSavedOffline,
+            style: const TextStyle(
+              color: Color(0xFF0B0B0B),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    final errMsg = _avatarErrorMessage(l10n, result.error);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFFE8E8E8),
+        content: Text(
+          errMsg,
+          style: const TextStyle(
+            color: Color(0xFFB91C1C),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  String _avatarErrorMessage(AppLocalizations l10n, AvatarPickError? err) {
+    switch (err) {
+      case AvatarPickError.cameraPermissionDenied:
+        return l10n.cameraPermissionDenied;
+      case AvatarPickError.galleryPermissionDenied:
+        return l10n.galleryPermissionDenied;
+      case AvatarPickError.cameraUnavailable:
+        return l10n.cameraUnavailable;
+      case AvatarPickError.missingPlugin:
+        return l10n.pickerNotInstalled;
+      case AvatarPickError.noUser:
+        return l10n.notSignedIn;
+      case AvatarPickError.saveFailed:
+      case AvatarPickError.unknown:
+      case null:
+        return l10n.photoPickError;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,46 +310,10 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 const SizedBox(height: 18),
                   Center(
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: avatarSize,
-                          height: avatarSize,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: const Color(0xFFDDDDDD), width: 2),
-                            image:  DecorationImage(
-                              image: const AssetImage('assets/images/profile.jpg'),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 5,
-                          bottom: 5,
-                          child: Container(
-                            width: ResponsiveHelper.getResponsiveValue<double>(
-                              context,
-                              small: 34,
-                              large: 40,
-                            ),
-                            height: ResponsiveHelper.getResponsiveValue<double>(
-                              context,
-                              small: 34,
-                              large: 40,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF797979).withValues(alpha: 0.50),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: SvgPicture.asset('assets/icons/edit.svg', width: 20),
-                            )
-                          ),
-                        ),
-                      ],
+                    child: _ProfileAvatar(
+                      size: avatarSize,
+                      service: _avatarSvc,
+                      onTapEdit: _openAvatarPicker,
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -250,6 +376,38 @@ class _ProfilePageState extends State<ProfilePage> {
                           onToggle: () => setState(() => _obscure = !_obscure),
                         ),
                         const SizedBox(height: 30),
+                        SizedBox(
+                          height: 48,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFFFFFF).withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white)
+                            ),
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              onPressed: () {
+                                FocusScope.of(context).unfocus();
+                              },
+                              child: Text(
+                                l10n.update,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 16 * fontScale,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         SizedBox(
                           height: 48,
                           child: DecoratedBox(
@@ -334,6 +492,174 @@ class _ProfilePageState extends State<ProfilePage> {
             Get.toNamed(AppRoutes.contact);
           }
         },
+      ),
+    );
+  }
+}
+
+enum _AvatarPickSource { camera, gallery }
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({
+    required this.size,
+    required this.service,
+    required this.onTapEdit,
+  });
+
+  final double size;
+  final ProfileAvatarService? service;
+  final VoidCallback onTapEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final badgeSize = ResponsiveHelper.getResponsiveValue<double>(
+      context,
+      small: 34,
+      large: 40,
+    );
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        SizedBox(
+          width: size,
+          height: size,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFDDDDDD), width: 2),
+              ),
+              child: service == null
+                  ? const _FallbackAvatar()
+                  : ValueListenableBuilder<int>(
+                      valueListenable: service!.revision,
+                      builder: (context, _, child) {
+                        return FutureBuilder<File?>(
+                          future: service!.currentAvatarFile(),
+                          builder: (context, snapshot) {
+                            final file = snapshot.data;
+                            if (file == null) return const _FallbackAvatar();
+                            return Image.file(
+                              file,
+                              key: ValueKey(
+                                file.path + file.lengthSync().toString(),
+                              ),
+                              fit: BoxFit.cover,
+                              gaplessPlayback: true,
+                              errorBuilder: (context, error, stack) =>
+                                  const _FallbackAvatar(),
+                            );
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ),
+        ),
+        Positioned(
+          right: 5,
+          bottom: 5,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTapEdit,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: badgeSize,
+                height: badgeSize,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF797979).withValues(alpha: 0.50),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: SvgPicture.asset(
+                    'assets/icons/edit.svg',
+                    width: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FallbackAvatar extends StatelessWidget {
+  const _FallbackAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/images/profile.jpg',
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stack) => Container(
+        color: const Color(0xFF1A1A1A),
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.person_rounded,
+          size: 64,
+          color: Color(0xFF797979),
+        ),
+      ),
+    );
+  }
+}
+
+class _AvatarSheetTile extends StatelessWidget {
+  const _AvatarSheetTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFFFF).withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.10),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 22),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF797979),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

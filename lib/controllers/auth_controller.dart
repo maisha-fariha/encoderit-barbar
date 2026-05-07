@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../auth/app_auth_gateway.dart';
 import '../routes/app_pages.dart';
+import '../services/profile_avatar_service.dart';
 import '../utils/api_endpoints.dart';
 
 class AuthController extends GetxController {
@@ -126,6 +127,7 @@ class AuthController extends GetxController {
       if (res.success && res.data != null) {
         isLoggedIn.value = true;
         _snackbar('Welcome back', 'Login successful');
+        await _notifyAvatarServiceAuthChanged();
         Get.offAllNamed(AppRoutes.home);
         return;
       }
@@ -195,6 +197,8 @@ class AuthController extends GetxController {
   void completeRegistrationAfterOtp() {
     isLoggedIn.value = true;
     _snackbar('Welcome', 'Account verified successfully');
+    // ignore: discarded_futures
+    _notifyAvatarServiceAuthChanged();
     Get.offAllNamed(AppRoutes.home);
   }
 
@@ -204,7 +208,16 @@ class AuthController extends GetxController {
     authGateway.apiService.setAuthToken(null);
     isLoggedIn.value = false;
     isBusy.value = false;
+    await _notifyAvatarServiceAuthChanged();
     Get.offAllNamed(AppRoutes.login);
+  }
+
+  Future<void> _notifyAvatarServiceAuthChanged() async {
+    try {
+      if (Get.isRegistered<ProfileAvatarService>()) {
+        await Get.find<ProfileAvatarService>().onAuthChanged();
+      }
+    } catch (_) {}
   }
 
   /// Request OTP for password reset (verification_method = otp).

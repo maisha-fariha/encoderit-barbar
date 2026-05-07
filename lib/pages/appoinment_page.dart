@@ -270,6 +270,67 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return list[(date.weekday - 1).clamp(0, 6)];
   }
 
+  static const List<int> _recurrenceIntervalDays = [7, 14, 21, 28];
+
+  // e.g. "Giovedì 9 aprile 2026, ore 10:00" (IT)
+  // or   "Thursday 9 April 2026, at 10:00" (EN)
+  String _bookingDateTimeLabel(DateTime date, String time, Locale locale) {
+    const itMonthsLower = [
+      'gennaio',
+      'febbraio',
+      'marzo',
+      'aprile',
+      'maggio',
+      'giugno',
+      'luglio',
+      'agosto',
+      'settembre',
+      'ottobre',
+      'novembre',
+      'dicembre',
+    ];
+    const enMonths = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    final isIt = locale.languageCode == 'it';
+    final weekday = _weekdayName(date, locale);
+    final dow = weekday.isEmpty
+        ? weekday
+        : '${weekday[0].toUpperCase()}${weekday.substring(1)}';
+    final mon = (isIt ? itMonthsLower : enMonths)[(date.month - 1).clamp(0, 11)];
+    final connector = isIt ? 'ore' : 'at';
+    return '$dow ${date.day} $mon ${date.year}, $connector $time';
+  }
+
+  List<String> _bookingDateTimeLabels(Locale locale) {
+    if (_recurringIndex < 0 || _howManyBookings < 1) return const [];
+    final intervalDays =
+        _recurrenceIntervalDays[_recurringIndex.clamp(
+          0,
+          _recurrenceIntervalDays.length - 1,
+        )];
+    final time = _times.isNotEmpty
+        ? _times[_selectedTime.clamp(0, _times.length - 1)]
+        : '';
+    final out = <String>[];
+    for (int i = 0; i < _howManyBookings; i++) {
+      final d = _selectedDate.add(Duration(days: intervalDays * i));
+      out.add(_bookingDateTimeLabel(d, time, locale));
+    }
+    return out;
+  }
+
   // e.g. "Gio, Aprile 09" (IT) or "Thu, April 09" (EN)
   String _shortDateLabel(DateTime date, Locale locale) {
     const itDaysShort = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -1002,6 +1063,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                         l10n.every3Weeks,
                                         l10n.every4Weeks,
                                       ][_recurringIndex.clamp(0, 3)],
+                                      dateLabels: _bookingDateTimeLabels(
+                                        Localizations.localeOf(context),
+                                      ),
                                     ),
                                   ],
                                   const SizedBox(height: 15),
@@ -2345,8 +2409,12 @@ class _Step3RecurringOptions extends StatelessWidget {
 }
 
 class _Step3MonthlySummary extends StatefulWidget {
-  const _Step3MonthlySummary({required this.intervalLabel});
+  const _Step3MonthlySummary({
+    required this.intervalLabel,
+    required this.dateLabels,
+  });
   final String intervalLabel;
+  final List<String> dateLabels;
 
   @override
   State<_Step3MonthlySummary> createState() => _Step3MonthlySummaryState();
@@ -2355,47 +2423,149 @@ class _Step3MonthlySummary extends StatefulWidget {
 class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
   bool _waitlist = false;
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    const lines = [
-      'Giovedì 9 aprile 2026, ore 10:00',
-      'Giovedì 16 aprile 2026, ore 10:00',
-      'Giovedì 23 aprile 2026, ore 10:00',
-      'Giovedì 30 aprile 2026, ore 10:00',
-    ];
-
-    Widget entry({required String text, required Widget inner}) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    text,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFDDDDDD),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      height: 1.5,
-                    ),
+  Widget _entry({required String text, required Widget inner}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  text,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFDDDDDD),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
                   ),
-                  const SizedBox(height: 10),
-                  inner,
-                ],
+                ),
+                const SizedBox(height: 10),
+                inner,
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Icon(Icons.close_rounded, size: 16, color: Color(0xFF797979)),
+        ],
+      ),
+    );
+  }
+
+  Widget _withBarberPill(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF797979).withValues(alpha: 0.20),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          color: const Color(0xFFDDDDDD),
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _alternativeBarberPill(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF797979).withValues(alpha: 0.20),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFEF4444), width: 1),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.inter(
+          color: const Color(0xFFDDDDDD),
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _warningWithWaitlist(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              size: 16,
+              color: Color(0xFFEF4444),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              l10n.noBarberAvailable,
+              style: GoogleFonts.inter(
+                color: const Color(0xFFEF4444),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
               ),
             ),
-            const SizedBox(width: 12),
-            const Icon(Icons.close_rounded, size: 16, color: Color(0xFF797979)),
           ],
         ),
-      );
-    }
+        const SizedBox(height: 10),
+        InkWell(
+          onTap: () => setState(() => _waitlist = !_waitlist),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              children: [
+                SvgPicture.asset(
+                  _waitlist
+                      ? 'assets/icons/checked_box.svg'
+                      : 'assets/icons/non_checked_box.svg',
+                  width: 18,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  l10n.waitlistMe,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFDDDDDD),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
+  Widget _innerForCycle(int cycleIndex, BuildContext context) {
+    switch (cycleIndex % 4) {
+      case 0:
+        return _withBarberPill('con Marcus Silva');
+      case 1:
+        return _warningWithWaitlist(context);
+      case 2:
+        return _alternativeBarberPill('Barbiere alternativo con James\nMartinez');
+      case 3:
+      default:
+        return _withBarberPill('con Marcus Silva');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = widget.dateLabels;
     return Container(
       padding: const EdgeInsets.fromLTRB(30, 27, 30, 30),
       decoration: BoxDecoration(
@@ -2417,131 +2587,22 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
             children: [
               SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
               const SizedBox(width: 10),
-              Text(
-                widget.intervalLabel,
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFFFFFFF),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  height: 1.5,
+              Expanded(
+                child: Text(
+                  widget.intervalLabel,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFFFFFFF),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          entry(
-            text: lines[0],
-            inner: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Color(0xFF797979).withValues(alpha: 0.20),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                'con Marcus Silva',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFDDDDDD),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ),
-          entry(
-            text: lines[1],
-            inner: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.error_outline_rounded,
-                      size: 16,
-                      color: Color(0xFFEF4444),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n.noBarberAvailable,
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFFEF4444),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                InkWell(
-                  onTap: () => setState(() => _waitlist = !_waitlist),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      children: [
-                        SvgPicture.asset(
-                          _waitlist
-                              ? 'assets/icons/checked_box.svg'
-                              : 'assets/icons/non_checked_box.svg',
-                          width: 18,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          l10n.waitlistMe,
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFFDDDDDD),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          entry(
-            text: lines[2],
-            inner: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Color(0xFF797979).withValues(alpha: 0.20),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFEF4444), width: 1),
-              ),
-              child: Text(
-                'Barbiere alternativo con James\nMartinez',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFDDDDDD),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ),
-          entry(
-            text: lines[3],
-            inner: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Color(0xFF797979).withValues(alpha: 0.20),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                'con Marcus Silva',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFDDDDDD),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
-                ),
-              ),
-            ),
-          ),
+          for (int i = 0; i < lines.length; i++)
+            _entry(text: lines[i], inner: _innerForCycle(i, context)),
         ],
       ),
     );

@@ -758,6 +758,84 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logout;
 
+  /// No description provided for @update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get update;
+
+  /// No description provided for @changeProfilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change profile photo'**
+  String get changeProfilePhoto;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get takePhoto;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get chooseFromGallery;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @photoSavedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved. It will sync when you\'re online.'**
+  String get photoSavedOffline;
+
+  /// No description provided for @photoSyncedOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo synced.'**
+  String get photoSyncedOnline;
+
+  /// No description provided for @photoPickError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not access the selected image.'**
+  String get photoPickError;
+
+  /// No description provided for @cameraPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera permission was denied. Enable it in Settings to take a photo.'**
+  String get cameraPermissionDenied;
+
+  /// No description provided for @galleryPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo library permission was denied. Enable it in Settings to choose a photo.'**
+  String get galleryPermissionDenied;
+
+  /// No description provided for @cameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera is not available on this device or simulator.'**
+  String get cameraUnavailable;
+
+  /// No description provided for @pickerNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Picker not installed. Please fully restart the app after adding the plugin.'**
+  String get pickerNotInstalled;
+
+  /// No description provided for @notSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be signed in to set a profile photo.'**
+  String get notSignedIn;
+
   /// No description provided for @sendYourMessage.
   ///
   /// In en, this message translates to:

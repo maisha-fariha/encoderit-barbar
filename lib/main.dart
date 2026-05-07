@@ -3,10 +3,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:gems_core/gems_core.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'routes/app_pages.dart';
 import 'gen/l10n/app_localizations.dart';
 import 'services/app_services.dart';
+import 'services/profile_avatar_service.dart';
+import 'auth/app_auth_gateway.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/barber_list_controller.dart';
 import 'controllers/shop_list_controller.dart';
@@ -42,7 +46,17 @@ Future<void> main() async {
   Get.put(serviceList, permanent: true);
   final barberList = AppServices.getIt<BarberListController>();
   Get.put(barberList, permanent: true);
+
+  final avatarService = ProfileAvatarService(
+    gateway: AppServices.getIt<AppAuthGateway>(),
+    connectivity: AppServices.getIt<Connectivity>(),
+    prefs: AppServices.getIt<SharedPreferences>(),
+  );
+  await avatarService.initialize();
+  Get.put(avatarService, permanent: true);
+
   await auth.bootstrap();
+  await avatarService.onAuthChanged();
 
   final initialRoute = auth.isLoggedIn.value
       ? AppRoutes.home

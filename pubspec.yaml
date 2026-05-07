@@ -34,6 +34,11 @@ dependencies:
   json_annotation: ^4.9.0
   bcrypt: ^1.2.0
 
+  image_picker: ^1.1.2
+  path_provider: ^2.1.4
+  path: ^1.9.0
+  dio: ^5.4.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
