@@ -7,10 +7,7 @@ import '../routes/app_pages.dart';
 import '../utils/api_endpoints.dart';
 
 class AuthController extends GetxController {
-  AuthController({
-    required this.authGateway,
-    required this.connectivity,
-  });
+  AuthController({required this.authGateway, required this.connectivity});
 
   final AppAuthGateway authGateway;
   final Connectivity connectivity;
@@ -55,9 +52,18 @@ class AuthController extends GetxController {
   Future<void> login(String email, String password) async {
     isBusy.value = true;
     try {
-      // Temporary dev bypass: skip credential/API validation and auto-login.
-      isLoggedIn.value = true;
-      Get.offAllNamed(AppRoutes.home);
+      final res = await authGateway.login(
+        email: email,
+        password: password,
+        endpoint: ApiEndpoints.authLogin,
+      );
+      if (res.success && res.data != null) {
+        isLoggedIn.value = true;
+        _snackbar('Welcome back', 'Login successful');
+        Get.offAllNamed(AppRoutes.home);
+        return;
+      }
+      _snackbar('Login failed', res.message ?? 'Invalid email or password');
     } finally {
       isBusy.value = false;
     }
@@ -75,7 +81,8 @@ class AuthController extends GetxController {
         data: {
           'email': email,
           'password': password,
-          if (fullName != null && fullName.trim().isNotEmpty) 'name': fullName.trim(),
+          if (fullName != null && fullName.trim().isNotEmpty)
+            'name': fullName.trim(),
           if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
         },
         endpoint: ApiEndpoints.authRegister,

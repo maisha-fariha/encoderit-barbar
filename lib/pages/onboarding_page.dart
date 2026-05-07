@@ -88,8 +88,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     onTap: () => Get.offNamed(AppRoutes.register),
                     behavior: HitTestBehavior.opaque,
                     child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 6,
+                      ),
                       child: Text(
                         l10n.skip,
                         style: GoogleFonts.inter(
@@ -115,7 +117,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       constraints: BoxConstraints(maxWidth: buttonMaxWidth),
                       child: _PrimaryButton(
                         label: l10n.continueLabel,
-                        onPressed: () => Get.toNamed(AppRoutes.appoinment),
+                        onPressed: () => Get.toNamed(AppRoutes.register),
                       ),
                     ),
                   ),
@@ -157,8 +159,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
             // Always scroll-safe to eliminate any RenderFlex overflow on edge cases.
             final pageViewHeight =
-                (constraints.maxHeight * (isWide ? 0.64 : 0.60))
-                    .clamp(280.0, isWide ? 620.0 : 520.0);
+                (constraints.maxHeight * (isWide ? 0.64 : 0.60)).clamp(
+                  280.0,
+                  isWide ? 620.0 : 520.0,
+                );
 
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -205,7 +209,10 @@ class _OnboardingSlide extends StatelessWidget {
           final isShort = h < 520;
 
           // Cap image height to avoid overflow on landscape/tablets.
-          final maxImageHeight = (isShort ? h * 0.58 : h * 0.64).clamp(200.0, 520.0);
+          final maxImageHeight = (isShort ? h * 0.58 : h * 0.64).clamp(
+            200.0,
+            520.0,
+          );
 
           final titleStyle = GoogleFonts.inter(
             color: Colors.white,
@@ -227,7 +234,9 @@ class _OnboardingSlide extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     // Large screens: allow a bit wider slide content.
-                    maxWidth: MediaQuery.sizeOf(context).width >= 600 ? 520 : double.infinity,
+                    maxWidth: MediaQuery.sizeOf(context).width >= 600
+                        ? 520
+                        : double.infinity,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(26),
@@ -241,7 +250,9 @@ class _OnboardingSlide extends StatelessWidget {
               ),
               SizedBox(height: isShort ? 16 : 26),
               Text(
-                item.title == 'onboardingTitle' ? l10n.onboardingTitle : item.title,
+                item.title == 'onboardingTitle'
+                    ? l10n.onboardingTitle
+                    : item.title,
                 textAlign: TextAlign.center,
                 style: titleStyle,
               ),
@@ -280,9 +291,7 @@ class _PageIndicator extends StatelessWidget {
           height: 10,
           width: active ? 42 : 10,
           decoration: BoxDecoration(
-            color: active
-                ? const Color(0xFFDDDDDD)
-                : Color(0xFF242424),
+            color: active ? const Color(0xFFDDDDDD) : Color(0xFF242424),
             borderRadius: BorderRadius.circular(99),
           ),
         );

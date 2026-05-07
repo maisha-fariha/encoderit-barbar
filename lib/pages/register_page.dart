@@ -110,6 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final l10n = AppLocalizations.of(context)!;
       return _PrimaryButton(
         label: l10n.registerTitle,
+        isLoading: auth.isBusy.value,
         onPressed: auth.isBusy.value ? null : _submitRegister,
       );
     });
@@ -154,12 +155,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 final topPad = isShort
                     ? 24.0
                     : isWide
-                        ? 32.0
-                        : 80.0;
+                    ? 32.0
+                    : 80.0;
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Padding(
                       padding: EdgeInsets.only(top: topPad),
                       child: Center(
@@ -208,8 +211,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 height: isShort
                                     ? 28
                                     : isWide
-                                        ? 28
-                                        : 50,
+                                    ? 28
+                                    : 50,
                               ),
                               Padding(
                                 padding: EdgeInsets.symmetric(
@@ -218,147 +221,160 @@ class _RegisterPageState extends State<RegisterPage> {
                                 child: Form(
                                   key: _formKey,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
-                                    _GlassTextField(
-                                      controller: _name,
-                                      hintText: l10n.fullNameHint,
-                                      textInputAction: TextInputAction.next,
-                                      validator: _validateName,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _GlassTextField(
-                                      controller: _email,
-                                      hintText: l10n.emailHint,
-                                      keyboardType: TextInputType.emailAddress,
-                                      textInputAction: TextInputAction.next,
-                                      validator: _validateEmail,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _GlassTextField(
-                                      controller: _phone,
-                                      hintText: l10n.phoneHint,
-                                      keyboardType: TextInputType.phone,
-                                      textInputAction: TextInputAction.next,
-                                      validator: _validatePhone,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    _GlassTextField(
-                                      controller: _password,
-                                      hintText: l10n.passwordHint,
-                                      obscureText: _obscure,
-                                      textInputAction: TextInputAction.done,
-                                      validator: _validatePassword,
-                                      suffix: Padding(
-                                        padding: const EdgeInsets.only(right: 6),
-                                        child: IconButton(
-                                          onPressed: () => setState(
-                                            () => _obscure = !_obscure,
+                                      _GlassTextField(
+                                        controller: _name,
+                                        hintText: l10n.fullNameHint,
+                                        textInputAction: TextInputAction.next,
+                                        validator: _validateName,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _GlassTextField(
+                                        controller: _email,
+                                        hintText: l10n.emailHint,
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        textInputAction: TextInputAction.next,
+                                        validator: _validateEmail,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _GlassTextField(
+                                        controller: _phone,
+                                        hintText: l10n.phoneHint,
+                                        keyboardType: TextInputType.phone,
+                                        textInputAction: TextInputAction.next,
+                                        validator: _validatePhone,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      _GlassTextField(
+                                        controller: _password,
+                                        hintText: l10n.passwordHint,
+                                        obscureText: _obscure,
+                                        textInputAction: TextInputAction.done,
+                                        validator: _validatePassword,
+                                        suffix: Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 6,
                                           ),
-                                          icon: Icon(
-                                            _obscure
-                                                ? Icons.visibility_outlined
-                                                : Icons.visibility_off_outlined,
-                                            color:
-                                                Colors.white.withValues(alpha: 0.55),
-                                            size: 20,
+                                          child: IconButton(
+                                            onPressed: () => setState(
+                                              () => _obscure = !_obscure,
+                                            ),
+                                            icon: Icon(
+                                              _obscure
+                                                  ? Icons.visibility_outlined
+                                                  : Icons
+                                                        .visibility_off_outlined,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.55,
+                                              ),
+                                              size: 20,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 30),
-                                    _registerButton(),
-                                    const SizedBox(height: 24),
-                                    Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                        InkResponse(
-                                          onTap: () => setState(
-                                            () => _accepted = !_accepted,
+                                      const SizedBox(height: 30),
+                                      _registerButton(),
+                                      const SizedBox(height: 24),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          InkResponse(
+                                            onTap: () => setState(
+                                              () => _accepted = !_accepted,
+                                            ),
+                                            radius: 20,
+                                            child: Icon(
+                                              _accepted
+                                                  ? Icons.check_circle
+                                                  : Icons
+                                                        .radio_button_unchecked,
+                                              size: 18,
+                                              color: _accepted
+                                                  ? const Color(0xFFECECEC)
+                                                  : const Color(0xFF797979),
+                                            ),
                                           ),
-                                          radius: 20,
-                                          child: Icon(
-                                            _accepted
-                                                ? Icons.check_circle
-                                                : Icons.radio_button_unchecked,
-                                            size: 18,
-                                            color: _accepted
-                                                ? const Color(0xFFECECEC)
-                                                : const Color(0xFF797979),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: RichText(
-                                            text: TextSpan(
-                                              style: GoogleFonts.inter(
-                                                color: const Color(0xFF797979),
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w400,
-                                                height: 1.3,
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: RichText(
+                                              text: TextSpan(
+                                                style: GoogleFonts.inter(
+                                                  color: const Color(
+                                                    0xFF797979,
+                                                  ),
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w400,
+                                                  height: 1.3,
+                                                ),
+                                                children: [
+                                                  TextSpan(
+                                                    text: l10n.acceptThe,
+                                                  ),
+                                                  TextSpan(
+                                                    text: l10n.privacyPolicy,
+                                                    style: const TextStyle(
+                                                      decoration: TextDecoration
+                                                          .underline,
+                                                    ),
+                                                  ),
+                                                  TextSpan(text: l10n.and),
+                                                  TextSpan(
+                                                    text: l10n.termsOfService,
+                                                    style: const TextStyle(
+                                                      decoration: TextDecoration
+                                                          .underline,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                          children: [
-                                            TextSpan(
-                                              text: l10n.acceptThe,
-                                            ),
-                                            TextSpan(
-                                              text: l10n.privacyPolicy,
-                                              style: const TextStyle(
-                                                decoration: TextDecoration.underline,
-                                              ),
-                                            ),
-                                            TextSpan(
-                                              text: l10n.and,
-                                            ),
-                                            TextSpan(
-                                              text: l10n.termsOfService,
-                                              style: const TextStyle(
-                                                decoration: TextDecoration.underline,
-                                              ),
-                                            ),
-                                          ],
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 18),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          l10n.alreadyHaveAccount,
-                                          style: GoogleFonts.inter(
-                                            color: const Color(0xFF797979),
-                                            fontWeight: FontWeight.w400,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Get.offNamed(AppRoutes.login),
-                                          style: TextButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 0,
-                                            ),
-                                            minimumSize: Size.zero,
-                                            tapTargetSize: MaterialTapTargetSize
-                                                .shrinkWrap,
-                                            foregroundColor: Colors.white,
-                                          ),
-                                          child: Text(
-                                            'Login',
+                                        ],
+                                      ),
+                                      const SizedBox(height: 18),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            l10n.alreadyHaveAccount,
                                             style: GoogleFonts.inter(
-                                              color: const Color(0xFFDDDDDD),
+                                              color: const Color(0xFF797979),
                                               fontWeight: FontWeight.w400,
                                               fontSize: 14,
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 8 + pad.bottom),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Get.offNamed(AppRoutes.login),
+                                            style: TextButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 6,
+                                                    vertical: 0,
+                                                  ),
+                                              minimumSize: Size.zero,
+                                              tapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            child: Text(
+                                              'Login',
+                                              style: GoogleFonts.inter(
+                                                color: const Color(0xFFDDDDDD),
+                                                fontWeight: FontWeight.w400,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 8 + pad.bottom),
                                     ],
                                   ),
                                 ),
@@ -430,7 +446,10 @@ class _GlassTextField extends StatelessWidget {
             fontWeight: FontWeight.w400,
             fontSize: 14,
           ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
           errorStyle: GoogleFonts.inter(
             color: const Color(0xFFFF8A8A),
             fontSize: 12,
@@ -453,10 +472,12 @@ class _PrimaryButton extends StatelessWidget {
   const _PrimaryButton({
     required this.label,
     required this.onPressed,
+    required this.isLoading,
   });
 
   final String label;
   final VoidCallback? onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -468,10 +489,7 @@ class _PrimaryButton extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFEEEEEE),
-              Color(0xFFEEEEEE),
-            ],
+            colors: [Color(0xFFEEEEEE), Color(0xFFEEEEEE)],
           ),
           boxShadow: [
             BoxShadow(
@@ -489,15 +507,24 @@ class _PrimaryButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
             ),
           ),
-          onPressed: onPressed,
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              color: const Color(0xFF0B0B0B),
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
+          onPressed: isLoading ? null : onPressed,
+          child: isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(Color(0xFF0B0B0B)),
+                  ),
+                )
+              : Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF0B0B0B),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
         ),
       ),
     );

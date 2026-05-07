@@ -2,11 +2,11 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const authLogin = '/login';
-  static const authRegister = '/register';
+  static const authLogin = '/auth/login';
+  static const authRegister = '/auth/register';
 
-  /// List endpoint (ReqRes wraps items in `data`).
-  static const barbarList = '/users';
+  static const shops = '/shops';
+  static const barbarList = shops;
 
   /// Services list (demo: ReqRes `/products` — same `data` list pattern).
   static const barberServices = '/products';

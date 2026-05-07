@@ -50,6 +50,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _submitLogin() {
     FocusScope.of(context).unfocus();
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     final auth = Get.find<AuthController>();
     auth.login(_email.text.trim(), _password.text);
   }
@@ -58,6 +59,7 @@ class _LoginPageState extends State<LoginPage> {
     return Obx(() {
       final auth = Get.find<AuthController>();
       return _PrimaryLoginButton(
+        isLoading: auth.isBusy.value,
         onPressed: auth.isBusy.value ? null : _submitLogin,
       );
     });
@@ -102,7 +104,9 @@ class _LoginPageState extends State<LoginPage> {
                   return SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
                       child: IntrinsicHeight(
                         child: Column(
                           children: [
@@ -143,99 +147,107 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const Spacer(),
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 18),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                              ),
                               child: Form(
                                 key: _formKey,
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                _GlassTextField(
-                                  controller: _email,
-                                  hintText: l10n.emailHint,
-                                  keyboardType: TextInputType.emailAddress,
-                                  textInputAction: TextInputAction.next,
-                                  validator: _validateEmail,
-                                ),
-                                const SizedBox(height: 16),
-                                _GlassTextField(
-                                  controller: _password,
-                                  hintText: l10n.passwordHint,
-                                  obscureText: _obscure,
-                                  textInputAction: TextInputAction.done,
-                                  validator: _validatePassword,
-                                  suffix: Padding(
-                                    padding: const EdgeInsets.only(right: 6),
-                                    child: IconButton(
-                                      onPressed: () => setState(
-                                        () => _obscure = !_obscure,
-                                      ),
-                                      icon: Icon(
-                                        _obscure
-                                            ? Icons.visibility_outlined
-                                            : Icons.visibility_off_outlined,
-                                        color:
-                                            Colors.white.withValues(alpha: 0.55),
-                                        size: 20,
-                                      ),
+                                    _GlassTextField(
+                                      controller: _email,
+                                      hintText: l10n.emailHint,
+                                      keyboardType: TextInputType.emailAddress,
+                                      textInputAction: TextInputAction.next,
+                                      validator: _validateEmail,
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(right: 6),
-                                    child: Text(
-                                      l10n.forgotPassword,
-                                      style: GoogleFonts.inter(
-                                        color: Color(0xFF797979),
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 12,
-                                        height: 1,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                _loginButton(),
-                                const SizedBox(height: 24),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      l10n.dontHaveAccount,
-                                      style: GoogleFonts.inter(
-                                        color: Color(0xFF797979),
-                                        fontWeight: FontWeight.w400,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Get.toNamed(AppRoutes.register),
-                                      style: TextButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 0,
+                                    const SizedBox(height: 16),
+                                    _GlassTextField(
+                                      controller: _password,
+                                      hintText: l10n.passwordHint,
+                                      obscureText: _obscure,
+                                      textInputAction: TextInputAction.done,
+                                      validator: _validatePassword,
+                                      suffix: Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 6,
                                         ),
-                                        minimumSize: Size.zero,
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                      child: Text(
-                                        l10n.signUp,
-                                        style: GoogleFonts.inter(
-                                          color: Color(0xFFDDDDDD),
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 14,
+                                        child: IconButton(
+                                          onPressed: () => setState(
+                                            () => _obscure = !_obscure,
+                                          ),
+                                          icon: Icon(
+                                            _obscure
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.55,
+                                            ),
+                                            size: 20,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                                SizedBox(height: 10 + pad.bottom),
+                                    const SizedBox(height: 16),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 6,
+                                        ),
+                                        child: Text(
+                                          l10n.forgotPassword,
+                                          style: GoogleFonts.inter(
+                                            color: Color(0xFF797979),
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 12,
+                                            height: 1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    _loginButton(),
+                                    const SizedBox(height: 24),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          l10n.dontHaveAccount,
+                                          style: GoogleFonts.inter(
+                                            color: Color(0xFF797979),
+                                            fontWeight: FontWeight.w400,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Get.toNamed(AppRoutes.register),
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 0,
+                                            ),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                          child: Text(
+                                            l10n.signUp,
+                                            style: GoogleFonts.inter(
+                                              color: Color(0xFFDDDDDD),
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 10 + pad.bottom),
                                   ],
                                 ),
                               ),
@@ -252,7 +264,9 @@ class _LoginPageState extends State<LoginPage> {
                 return SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Center(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
@@ -303,94 +317,101 @@ class _LoginPageState extends State<LoginPage> {
                               child: Form(
                                 key: _formKey,
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                  _GlassTextField(
-                                    controller: _email,
-                                  hintText: l10n.emailHint,
-                                    keyboardType: TextInputType.emailAddress,
-                                    textInputAction: TextInputAction.next,
-                                    validator: _validateEmail,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  _GlassTextField(
-                                    controller: _password,
-                                  hintText: l10n.passwordHint,
-                                    obscureText: _obscure,
-                                    textInputAction: TextInputAction.done,
-                                    validator: _validatePassword,
-                                    suffix: Padding(
-                                      padding: const EdgeInsets.only(right: 6),
-                                      child: IconButton(
-                                        onPressed: () => setState(
-                                          () => _obscure = !_obscure,
-                                        ),
-                                        icon: Icon(
-                                          _obscure
-                                              ? Icons.visibility_outlined
-                                              : Icons.visibility_off_outlined,
-                                          color: Colors.white
-                                              .withValues(alpha: 0.55),
-                                          size: 20,
-                                        ),
-                                      ),
+                                    _GlassTextField(
+                                      controller: _email,
+                                      hintText: l10n.emailHint,
+                                      keyboardType: TextInputType.emailAddress,
+                                      textInputAction: TextInputAction.next,
+                                      validator: _validateEmail,
                                     ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(right: 6),
-                                      child: Text(
-                                        'Ha dimenticato la password',
-                                        style: GoogleFonts.inter(
-                                          color: Color(0xFF797979),
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 12,
-                                          height: 1,
+                                    const SizedBox(height: 16),
+                                    _GlassTextField(
+                                      controller: _password,
+                                      hintText: l10n.passwordHint,
+                                      obscureText: _obscure,
+                                      textInputAction: TextInputAction.done,
+                                      validator: _validatePassword,
+                                      suffix: Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 6,
                                         ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  _loginButton(),
-                                  const SizedBox(height: 24),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        'Non hai un account? ',
-                                        style: GoogleFonts.inter(
-                                          color: Color(0xFF797979),
-                                          fontWeight: FontWeight.w400,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Get.toNamed(AppRoutes.register),
-                                        style: TextButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                            vertical: 0,
+                                        child: IconButton(
+                                          onPressed: () => setState(
+                                            () => _obscure = !_obscure,
                                           ),
-                                          minimumSize: Size.zero,
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                          foregroundColor: Colors.white,
+                                          icon: Icon(
+                                            _obscure
+                                                ? Icons.visibility_outlined
+                                                : Icons.visibility_off_outlined,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.55,
+                                            ),
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 6,
                                         ),
                                         child: Text(
-                                          'Iscrizione',
+                                          'Ha dimenticato la password',
                                           style: GoogleFonts.inter(
-                                            color: Color(0xFFDDDDDD),
+                                            color: Color(0xFF797979),
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 12,
+                                            height: 1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    _loginButton(),
+                                    const SizedBox(height: 24),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Non hai un account? ',
+                                          style: GoogleFonts.inter(
+                                            color: Color(0xFF797979),
                                             fontWeight: FontWeight.w400,
                                             fontSize: 14,
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: 10 + pad.bottom),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Get.toNamed(AppRoutes.register),
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 0,
+                                            ),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                            foregroundColor: Colors.white,
+                                          ),
+                                          child: Text(
+                                            'Iscrizione',
+                                            style: GoogleFonts.inter(
+                                              color: Color(0xFFDDDDDD),
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 10 + pad.bottom),
                                   ],
                                 ),
                               ),
@@ -446,13 +467,21 @@ class _GlassTextField extends StatelessWidget {
         keyboardType: keyboardType,
         textInputAction: textInputAction,
         obscureText: obscureText,
-        style: GoogleFonts.inter(color: text, fontWeight: FontWeight.w600, fontSize: 14),
+        style: GoogleFonts.inter(
+          color: text,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
         cursorColor: Colors.white,
         autocorrect: false,
         enableSuggestions: false,
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: GoogleFonts.inter(color: hint, fontWeight: FontWeight.w400, fontSize: 14),
+          hintStyle: GoogleFonts.inter(
+            color: hint,
+            fontWeight: FontWeight.w400,
+            fontSize: 14,
+          ),
           border: InputBorder.none,
           errorStyle: GoogleFonts.inter(
             color: const Color(0xFFFF8A8A),
@@ -473,9 +502,10 @@ class _GlassTextField extends StatelessWidget {
 }
 
 class _PrimaryLoginButton extends StatelessWidget {
-  const _PrimaryLoginButton({required this.onPressed});
+  const _PrimaryLoginButton({required this.onPressed, required this.isLoading});
 
   final VoidCallback? onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -487,10 +517,7 @@ class _PrimaryLoginButton extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFEEEEEE),
-              Color(0xFFEEEEEE),
-            ],
+            colors: [Color(0xFFEEEEEE), Color(0xFFEEEEEE)],
           ),
           boxShadow: [
             BoxShadow(
@@ -508,15 +535,24 @@ class _PrimaryLoginButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
             ),
           ),
-          onPressed: onPressed,
-          child: Text(
-            'Login',
-            style: GoogleFonts.inter(
-              color: Color(0xFF0B0B0B),
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
+          onPressed: isLoading ? null : onPressed,
+          child: isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(Color(0xFF0B0B0B)),
+                  ),
+                )
+              : Text(
+                  'Login',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF0B0B0B),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
         ),
       ),
     );

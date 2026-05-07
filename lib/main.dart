@@ -8,6 +8,7 @@ import 'routes/app_pages.dart';
 import 'gen/l10n/app_localizations.dart';
 import 'services/app_services.dart';
 import 'controllers/auth_controller.dart';
+import 'controllers/shop_list_controller.dart';
 
 const _statusBarStyle = SystemUiOverlayStyle(
   statusBarColor: Colors.transparent,
@@ -26,13 +27,15 @@ Future<void> main() async {
   await appServices.initialize(
     environmentMode: EnvironmentMode.development,
     appConfig: AppConfig(
-      apiBaseUrl: 'https://reqres.in/api',
+      apiBaseUrl: 'https://iconico.encoder-test-vpn.space/api/v1',
       enableLogging: true,
       apiTimeout: const Duration(seconds: 30),
     ),
   );
   final auth = AppServices.getIt<AuthController>();
   Get.put(auth, permanent: true);
+  final shopList = AppServices.getIt<ShopListController>();
+  Get.put(shopList, permanent: true);
   await auth.bootstrap();
 
   runApp(const EncoderitBarbarApp());
@@ -53,9 +56,7 @@ class EncoderitBarbarApp extends StatelessWidget {
           // Match main screens (black scaffolds) so route transitions never flash white.
           scaffoldBackgroundColor: Colors.black,
           canvasColor: Colors.black,
-          appBarTheme: const AppBarTheme(
-            systemOverlayStyle: _statusBarStyle,
-          ),
+          appBarTheme: const AppBarTheme(systemOverlayStyle: _statusBarStyle),
         ),
         localizationsDelegates: const [
           AppLocalizations.delegate,
@@ -65,10 +66,7 @@ class EncoderitBarbarApp extends StatelessWidget {
         ],
         locale: const Locale('it'),
         fallbackLocale: const Locale('it'),
-        supportedLocales: const [
-          Locale('en'),
-          Locale('it'),
-        ],
+        supportedLocales: const [Locale('en'), Locale('it')],
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _statusBarStyle,
           // Ensures there's never a white flash behind the first route.

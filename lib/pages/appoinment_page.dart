@@ -4,6 +4,8 @@ import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../gen/l10n/app_localizations.dart';
+import '../controllers/shop_list_controller.dart';
+import '../models/shop/shop_model.dart';
 
 class AppoinmentPage extends StatefulWidget {
   const AppoinmentPage({super.key});
@@ -14,33 +16,15 @@ class AppoinmentPage extends StatefulWidget {
 
 class _AppoinmentPageState extends State<AppoinmentPage> {
   int _step = 1;
-  int _selectedShop = 0;
   int _selectedService = 0;
   int _selectedBarber = 0;
   int _selectedTime = 0;
   DateTime _selectedDate = DateTime(2026, 4, 9);
   bool _recurringEnabled = true;
   int _recurringIndex = 0;
+  late final ShopListController _shopController;
 
-  final _shops = const <_ShopItem>[
-    _ShopItem(
-      name: 'Iconico Barbar ROMA',
-      addressLine1: 'Via Roma, 15',
-      addressLine2: '20121 Milano (MI)',
-    ),
-    _ShopItem(
-      name: 'Iconico Barbar Milano',
-      addressLine1: 'Via Brodolini, 8',
-      addressLine2: '40053 Valsamoggia (BO)',
-    ),
-    _ShopItem(
-      name: 'Iconico Barbar Bologna',
-      addressLine1: 'Via Brodolini, 8',
-      addressLine2: '40053 Valsamoggia (BO)',
-    ),
-  ];
-
-  final _items = const <_ServiceItem>[
+  final _fallbackItems = const <_ServiceItem>[
     _ServiceItem(title: 'Taglio di capelli', minutes: 45, priceEuro: 45),
     _ServiceItem(title: 'Rifinitura della barba', minutes: 30, priceEuro: 30),
     _ServiceItem(title: 'Capelli + Barba', minutes: 60, priceEuro: 65),
@@ -101,8 +85,33 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     '17:30',
   ];
 
+  List<_ServiceItem> get _items {
+    final selectedServices = _shopController.selectedShopServices;
+    if (selectedServices.isEmpty) return _fallbackItems;
+    return selectedServices
+        .map(
+          (service) => _ServiceItem(
+            title: service.name,
+            minutes: service.durationMinutes,
+            priceEuro: service.price.round(),
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _shopController = Get.find<ShopListController>();
+    _shopController.loadItems();
+  }
+
   void _onContinue() {
     if (_step == 1) {
+      if (_shopController.items.isEmpty) {
+        Get.snackbar('Shops', 'No shops available right now');
+        return;
+      }
       setState(() {
         _step = 2;
         _selectedService = 0;
@@ -226,10 +235,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                 textStyle: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
-            textTheme: GoogleFonts.interTextTheme(base.textTheme).apply(
-              bodyColor: onSurface,
-              displayColor: onSurface,
-            ),
+            textTheme: GoogleFonts.interTextTheme(
+              base.textTheme,
+            ).apply(bodyColor: onSurface, displayColor: onSurface),
           ),
           child: child ?? const SizedBox.shrink(),
         );
@@ -265,7 +273,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: const Color(0xFF185C5C), width: 1),
+                        border: Border.all(
+                          color: const Color(0xFF185C5C),
+                          width: 1,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.15),
@@ -315,7 +326,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 ),
                                 const SizedBox(height: 14),
                                 Text(
-                                  AppLocalizations.of(context)!.actionCannotBeUndone,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.actionCannotBeUndone,
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.inter(
                                     color: const Color(0xFFDDDDDD),
@@ -339,18 +352,25 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                               width: 1,
                                             ),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(20),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
                                             ),
                                             backgroundColor: Colors.transparent,
                                           ),
                                           child: Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 15.0),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 15.0,
+                                            ),
                                             child: FittedBox(
                                               fit: BoxFit.scaleDown,
                                               child: Text(
-                                                AppLocalizations.of(context)!.cancelAction,
+                                                AppLocalizations.of(
+                                                  context,
+                                                )!.cancelAction,
                                                 style: GoogleFonts.inter(
-                                                  color: const Color(0xFF797979),
+                                                  color: const Color(
+                                                    0xFF797979,
+                                                  ),
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w600,
                                                   height: 1.5,
@@ -372,10 +392,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                             setState(() => _step = 5);
                                           },
                                           style: FilledButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFFEEEEEE),
-                                            foregroundColor:
-                                                const Color(0xFF242424),
+                                            backgroundColor: const Color(
+                                              0xFFEEEEEE,
+                                            ),
+                                            foregroundColor: const Color(
+                                              0xFF242424,
+                                            ),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(20),
@@ -384,7 +406,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                           child: FittedBox(
                                             fit: BoxFit.scaleDown,
                                             child: Text(
-                                              AppLocalizations.of(context)!.confirmAction,
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.confirmAction,
                                               style: GoogleFonts.inter(
                                                 color: const Color(0xFF242424),
                                                 fontSize: 16,
@@ -515,42 +539,91 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeOut,
                 child: _step == 1
-                    ? GridView.builder(
-                        key: const ValueKey('shops'),
-                        padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 18),
-                        gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount:
-                              ResponsiveHelper.getResponsiveValue<int>(
-                            context,
-                            small: 2,
-                            large: 3,
-                          ),
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio:
-                              ResponsiveHelper.getResponsiveValue<double>(
-                            context,
-                            small: 0.66,
-                            large: 0.86,
-                          ),
-                        ),
-                        itemCount: _shops.length,
-                        itemBuilder: (context, i) {
-                          final item = _shops[i];
-                          final selected = i == _selectedShop;
-                          return _ShopCard(
-                            item: item,
-                            selected: selected,
-                            onTap: () => setState(() => _selectedShop = i),
+                    ? GetBuilder<ShopListController>(
+                        id: 'shop-selection',
+                        builder: (controller) {
+                          if (controller.isLoading.value &&
+                              controller.items.isEmpty) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFEEEEEE),
+                              ),
+                            );
+                          }
+                          if (controller.errorMessage.value.isNotEmpty &&
+                              controller.items.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: hPad),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      controller.errorMessage.value,
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.inter(
+                                        color: const Color(0xFFDDDDDD),
+                                        fontSize: 14 * scale,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    FilledButton(
+                                      onPressed: controller.loadItems,
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFFEEEEEE,
+                                        ),
+                                        foregroundColor: const Color(
+                                          0xFF000000,
+                                        ),
+                                      ),
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          return GridView.builder(
+                            key: const ValueKey('shops'),
+                            padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 18),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount:
+                                      ResponsiveHelper.getResponsiveValue<int>(
+                                        context,
+                                        small: 2,
+                                        large: 3,
+                                      ),
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  childAspectRatio:
+                                      ResponsiveHelper.getResponsiveValue<
+                                        double
+                                      >(context, small: 0.66, large: 0.86),
+                                ),
+                            itemCount: controller.items.length,
+                            itemBuilder: (context, i) {
+                              final item = controller.items[i];
+                              final selected = i == controller.selectedIndex;
+                              return _ShopCard(
+                                item: item,
+                                selected: selected,
+                                onTap: () {
+                                  controller.selectShop(i);
+                                  setState(() => _selectedService = 0);
+                                },
+                              );
+                            },
                           );
                         },
                       )
                     : _step == 2
                     ? ListView.separated(
                         key: const ValueKey('services'),
-                        padding:
-                            EdgeInsets.fromLTRB(hPad + 2, 8, hPad + 2, 18),
+                        padding: EdgeInsets.fromLTRB(hPad + 2, 8, hPad + 2, 18),
                         itemCount: _items.length,
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 16),
@@ -568,23 +641,22 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     ? GridView.builder(
                         key: const ValueKey('barbers'),
                         padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
-                        gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount:
                               ResponsiveHelper.getResponsiveValue<int>(
-                            context,
-                            small: 2,
-                            large: 3,
-                          ),
+                                context,
+                                small: 2,
+                                large: 3,
+                              ),
                           mainAxisSpacing: 16,
                           crossAxisSpacing: 16,
                           // Slightly taller tiles to avoid card overflow.
                           childAspectRatio:
                               ResponsiveHelper.getResponsiveValue<double>(
-                            context,
-                            small: 0.70,
-                            large: 0.88,
-                          ),
+                                context,
+                                small: 0.70,
+                                large: 0.88,
+                              ),
                         ),
                         itemCount: _barbers.length,
                         itemBuilder: (context, i) {
@@ -603,8 +675,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                         padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 18),
                         child: Builder(
                           builder: (context) {
-                            final isLarge =
-                                ResponsiveHelper.isLargeDevice(context);
+                            final isLarge = ResponsiveHelper.isLargeDevice(
+                              context,
+                            );
 
                             final calendar = _Step3CalendarCard(
                               monthLabel: _monthLabelIt(_selectedDate),
@@ -663,7 +736,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
                             return Center(
                               child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 1100),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 1100,
+                                ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -682,8 +757,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                         padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 20),
                         child: Builder(
                           builder: (context) {
-                            final isLarge =
-                                ResponsiveHelper.isLargeDevice(context);
+                            final isLarge = ResponsiveHelper.isLargeDevice(
+                              context,
+                            );
                             final card = _Step4SummaryCard(
                               service: _items[_selectedService],
                               barber: _barbers[_selectedBarber],
@@ -692,8 +768,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             if (!isLarge) return card;
                             return Center(
                               child: ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 980),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 980,
+                                ),
                                 child: card,
                               ),
                             );
@@ -728,8 +805,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                           onTap: _step == 5 ? _showConfirmDialog : _onContinue,
                           child: Center(
                             child: Text(
-                              _step == 3 ? l10n.someoneAvailable :
-                              _step == 5
+                              _step == 3
+                                  ? l10n.someoneAvailable
+                                  : _step == 5
                                   ? l10n.confirmBooking
                                   : l10n.continueLabel,
                               style: GoogleFonts.inter(
@@ -857,7 +935,7 @@ class _Step4ReservationTime extends StatelessWidget {
             height: 1.5,
           ),
         ),
-      ]
+      ],
     );
   }
 }
@@ -903,7 +981,10 @@ class _Step4Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 1, color: Color(0xFF797979).withValues(alpha: 0.30));
+    return Container(
+      height: 1,
+      color: Color(0xFF797979).withValues(alpha: 0.30),
+    );
   }
 }
 
@@ -911,7 +992,8 @@ class _Step4MonthlyRecurrence extends StatefulWidget {
   const _Step4MonthlyRecurrence();
 
   @override
-  State<_Step4MonthlyRecurrence> createState() => _Step4MonthlyRecurrenceState();
+  State<_Step4MonthlyRecurrence> createState() =>
+      _Step4MonthlyRecurrenceState();
 }
 
 class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
@@ -920,7 +1002,7 @@ class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    Widget row(String text, { bool withPill = true}) {
+    Widget row(String text, {bool withPill = true}) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 15),
         child: Row(
@@ -964,11 +1046,7 @@ class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
               ),
             ),
             const SizedBox(width: 12),
-            Icon(
-              Icons.close_rounded,
-              size: 16,
-              color: Color(0xFF797979),
-            ),
+            Icon(Icons.close_rounded, size: 16, color: Color(0xFF797979)),
           ],
         ),
       );
@@ -979,10 +1057,7 @@ class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
       children: [
         Row(
           children: [
-            SvgPicture.asset(
-              'assets/icons/recurrence_icon.svg',
-              width: 18,
-            ),
+            SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
             const SizedBox(width: 10),
             Text(
               AppLocalizations.of(context)!.every4Weeks,
@@ -1231,7 +1306,7 @@ class _ShopCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final _ShopItem item;
+  final Shop item;
   final bool selected;
   final VoidCallback onTap;
 
@@ -1270,10 +1345,7 @@ class _ShopCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Image.asset(
-              'assets/images/shop.png',
-              width: 60,
-            ),
+            Image.asset('assets/images/shop.png', width: 60),
             const SizedBox(height: 16),
             Text(
               item.name,
@@ -1314,7 +1386,10 @@ class _ShopCard extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: SvgPicture.asset('assets/icons/checked.svg', width: 24),
+                  child: SvgPicture.asset(
+                    'assets/icons/checked.svg',
+                    width: 24,
+                  ),
                 ),
               )
             else
@@ -1486,18 +1561,6 @@ class _ServiceItem {
   final int priceEuro;
 }
 
-class _ShopItem {
-  const _ShopItem({
-    required this.name,
-    required this.addressLine1,
-    required this.addressLine2,
-  });
-
-  final String name;
-  final String addressLine1;
-  final String addressLine2;
-}
-
 class _BarberItem {
   const _BarberItem({
     required this.name,
@@ -1564,7 +1627,10 @@ class _Step3CalendarCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
                   padding: const EdgeInsets.all(4),
-                  child: SvgPicture.asset('assets/icons/calendar.svg', width: 24),
+                  child: SvgPicture.asset(
+                    'assets/icons/calendar.svg',
+                    width: 24,
+                  ),
                 ),
               ),
             ],
@@ -1615,7 +1681,7 @@ class _Step3CalendarCard extends StatelessWidget {
                   date: '13',
                   selected: false,
                   emphasized: true,
-                  ),
+                ),
                 SizedBox(width: 14),
                 _DayChip(
                   day: 'Mar',
@@ -1810,10 +1876,7 @@ class _Step3RecurringToggle extends StatelessWidget {
         children: [
           value
               ? SvgPicture.asset('assets/icons/checked_box.svg', width: 24)
-              : SvgPicture.asset(
-                  'assets/icons/non_checked_box.svg',
-                  width: 24,
-                ),
+              : SvgPicture.asset('assets/icons/non_checked_box.svg', width: 24),
           const SizedBox(width: 10),
           Text(
             l10n.recurringAppointments,
@@ -1873,31 +1936,34 @@ class _Step3RecurringOptions extends StatelessWidget {
               ),
             ),
             ...List.generate(options.length * 2 - 1, (idx) {
-            final isDivider = idx.isOdd;
-            if (isDivider) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: const _Step3Divider(),
-              );
-            }
-            final i = idx ~/ 2;
-            return InkWell(
-              onTap: () => onSelect(i),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  options[i],
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFFDDDDDD),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    height: 1.5,
+              final isDivider = idx.isOdd;
+              if (isDivider) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: const _Step3Divider(),
+                );
+              }
+              final i = idx ~/ 2;
+              return InkWell(
+                onTap: () => onSelect(i),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    options[i],
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFFDDDDDD),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                    ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
           ],
         ),
       ),
@@ -1926,10 +1992,7 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
       'Giovedì 30 aprile 2026, ore 10:00',
     ];
 
-    Widget entry({
-      required String text,
-      required Widget inner,
-    }) {
+    Widget entry({required String text, required Widget inner}) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
@@ -1954,11 +2017,7 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
               ),
             ),
             const SizedBox(width: 12),
-            const Icon(
-              Icons.close_rounded,
-              size: 16,
-              color: Color(0xFF797979),
-            ),
+            const Icon(Icons.close_rounded, size: 16, color: Color(0xFF797979)),
           ],
         ),
       );
@@ -1983,10 +2042,7 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
         children: [
           Row(
             children: [
-              SvgPicture.asset(
-                'assets/icons/recurrence_icon.svg',
-                width: 18,
-              ),
+              SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
               const SizedBox(width: 10),
               Text(
                 widget.intervalLabel,
@@ -2161,6 +2217,9 @@ class _Step3Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(height: 1, color: Color(0xFF797979).withValues(alpha: 0.30));
+    return Container(
+      height: 1,
+      color: Color(0xFF797979).withValues(alpha: 0.30),
+    );
   }
 }
