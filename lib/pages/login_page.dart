@@ -84,10 +84,13 @@ class _LoginPageState extends State<LoginPage> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
+                    Colors.black.withValues(alpha: 0.92),
                     Colors.black.withValues(alpha: 0.90),
                     Colors.black.withValues(alpha: 0.90),
                     Colors.black.withValues(alpha: 0.90),
+                    Colors.black.withValues(alpha: 0.92),
                   ],
+                  stops: const [0.0, 0.30, 0.50, 0.78, 1.0],
                 ),
               ),
             ),
@@ -157,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                                   // Keep the form lower on screen like the old layout.
                                   height: constraints.maxHeight < 700
                                       ? 140
-                                      : 220,
+                                      : 350,
                                 ),
                                 _GlassTextField(
                                   controller: _email,
@@ -324,7 +327,7 @@ class _GlassTextField extends StatelessWidget {
           ),
           border: InputBorder.none,
           errorStyle: GoogleFonts.inter(
-            color: const Color(0xFFFF8A8A),
+            color: const Color(0xFFEF4444),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -349,31 +352,25 @@ class _PrimaryLoginButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double height = 56;
+    final BorderRadius radius = BorderRadius.circular(12);
     return SizedBox(
-      height: 48,
+      height: height,
+      width: MediaQuery.of(context).size.width,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: radius,
           gradient: const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFFEEEEEE), Color(0xFFEEEEEE)],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.35),
-              blurRadius: 26,
-              offset: const Offset(0, 16),
-            ),
-          ],
         ),
         child: FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: radius),
           ),
           onPressed: isLoading ? null : onPressed,
           child: isLoading

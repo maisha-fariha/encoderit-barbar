@@ -69,8 +69,9 @@
   "passwordsDoNotMatch": "Passwords do not match",
   "resetPasswordCta": "Reset password",
   "passwordResetSuccess": "Password reset successfully",
+  "back": "Back",
   "bookAppointment": "Book an appointment",
-  "stepChooseBarber": "Choose your barber",
+  "stepChooseBarber": "Choose your shop",
   "stepSelectService": "Select the service",
   "stepSelectBarber": "Select the barber",
   "stepChooseDate": "Choose a date",
@@ -89,11 +90,25 @@
   "cancelAction": "Cancel",
   "confirmAction": "Confirm",
   "everyThursday": "Every Thursday",
+  "everyWeekday": "Every {day}",
+  "@everyWeekday": {
+    "placeholders": {
+      "day": {}
+    }
+  },
   "every2Weeks": "Every 2 weeks",
   "every3Weeks": "Every 3 weeks",
   "every4Weeks": "Every 4 weeks",
   "howManyBookings": "How many bookings",
   "fiveTimes": "5 times",
+  "nTimes": "{count, plural, =1{1 time} other{{count} times}}",
+  "@nTimes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "select": "Select",
   "noBarberAvailable": "No barber available",
   "waitlistMe": "Add me to the waitlist",
