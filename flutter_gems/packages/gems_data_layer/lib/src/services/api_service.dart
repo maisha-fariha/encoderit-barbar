@@ -27,8 +27,10 @@ class ApiService {
       InterceptorsWrapper(
         onRequest: (options, handler) {
           // Add auth token if available
-          if (_authToken != null) {
+          if (_authToken != null && _authToken!.trim().isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $_authToken';
+          } else {
+            options.headers.remove('Authorization');
           }
 
           if (config.enableLogging) {
@@ -43,15 +45,22 @@ class ApiService {
         },
         onResponse: (response, handler) {
           if (config.enableLogging) {
-            print('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+            print(
+                'RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
             print('Data: ${response.data}');
           }
           return handler.next(response);
         },
         onError: (error, handler) {
           if (config.enableLogging) {
-            print('ERROR[${error.response?.statusCode}] => PATH: ${error.requestOptions.path}');
-            print('Message: ${error.message}');
+            print(
+                'ERROR[${error.response?.statusCode}] => PATH: ${error.requestOptions.path}');
+            final data = error.response?.data;
+            if (data is Map && data['message'] != null) {
+              print('Message: ${data['message']}');
+            } else {
+              print('Message: ${error.message}');
+            }
           }
           return handler.next(error);
         },
@@ -61,7 +70,8 @@ class ApiService {
 
   /// Set authentication token
   void setAuthToken(String? token) {
-    _authToken = token;
+    final normalized = token?.trim();
+    _authToken = (normalized == null || normalized.isEmpty) ? null : normalized;
   }
 
   /// GET request
@@ -179,7 +189,8 @@ class ApiService {
   ) {
     if (response.statusCode! >= 200 && response.statusCode! < 300) {
       try {
-        final data = fromJson != null ? fromJson(response.data) : response.data as T;
+        final data =
+            fromJson != null ? fromJson(response.data) : response.data as T;
         return ApiResponse.success(
           data,
           statusCode: response.statusCode,
@@ -203,7 +214,11 @@ class ApiService {
   ApiResponse<T> _handleError<T>(dynamic error) {
     if (error is DioException) {
       final statusCode = error.response?.statusCode;
-      
+      final responseData = error.response?.data;
+      final responseMap =
+          responseData is Map ? Map<String, dynamic>.from(responseData) : null;
+      final responseErrors = responseMap?['errors'];
+
       // Handle different error types
       String message;
       if (error.type == DioExceptionType.connectionTimeout ||
@@ -213,7 +228,7 @@ class ApiService {
       } else if (error.type == DioExceptionType.connectionError) {
         message = 'Connection error. Unable to reach the server.';
       } else if (error.type == DioExceptionType.badResponse) {
-        message = error.response?.data['message'] ??
+        message = _extractApiErrorMessage(responseMap) ??
             error.message ??
             'Server error occurred';
       } else {
@@ -223,7 +238,11 @@ class ApiService {
       return ApiResponse.error(
         message,
         statusCode: statusCode ?? 500,
-        errors: error.response?.data['errors'],
+        errors: responseErrors is Map<String, dynamic>
+            ? responseErrors
+            : responseErrors is Map
+                ? Map<String, dynamic>.from(responseErrors)
+                : null,
       );
     }
 
@@ -232,5 +251,28 @@ class ApiService {
       statusCode: 500,
     );
   }
-}
 
+  String? _extractApiErrorMessage(Map<String, dynamic>? data) {
+    if (data == null) return null;
+
+    final message = data['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message.trim();
+    }
+
+    final errors = data['errors'];
+    if (errors is Map) {
+      for (final value in errors.values) {
+        if (value is List && value.isNotEmpty && value.first is String) {
+          final first = (value.first as String).trim();
+          if (first.isNotEmpty) return first;
+        }
+        if (value is String && value.trim().isNotEmpty) {
+          return value.trim();
+        }
+      }
+    }
+
+    return null;
+  }
+}

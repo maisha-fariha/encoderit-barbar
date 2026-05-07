@@ -5,6 +5,10 @@ class ApiEndpoints {
   static const authLogin = '/auth/login';
   static const authRegister = '/auth/register';
 
+  static const authVerifyOtp = '/auth/verify-otp';
+  static const authForgotPassword = '/auth/forgot-password';
+  static const authResetPassword = '/auth/reset-password';
+
   static const shops = '/shops';
   static const barbarList = shops;
 

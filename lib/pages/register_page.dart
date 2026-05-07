@@ -5,6 +5,7 @@ import '../gen/l10n/app_localizations.dart';
 
 import '../controllers/auth_controller.dart';
 import '../routes/app_pages.dart';
+import '../widgets/auth_bottom_sheet.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -88,7 +89,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _submitRegister() {
+  Future<void> _submitRegister() async {
     FocusScope.of(context).unfocus();
     if (!_accepted) {
       _showTermsSnack();
@@ -96,12 +97,23 @@ class _RegisterPageState extends State<RegisterPage> {
     }
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final auth = Get.find<AuthController>();
-    auth.register(
+    final email = _email.text.trim();
+    final res = await auth.register(
       email: _email.text.trim(),
       password: _password.text,
       fullName: _name.text.trim(),
       phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
     );
+    if (!mounted || !res.success) return;
+
+    final verified = await AuthBottomSheet.showRegisterOtpVerification(
+      context,
+      email: email,
+    );
+    if (!mounted) return;
+    if (verified == true) {
+      auth.completeRegistrationAfterOtp();
+    }
   }
 
   Widget _registerButton() {

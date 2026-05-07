@@ -188,17 +188,40 @@ class AuthService {
 
   /// Parse auth response
   AuthData _parseAuthResponse(Map<String, dynamic> data) {
+    final payload = data['data'] is Map<String, dynamic>
+        ? Map<String, dynamic>.from(data['data'] as Map<String, dynamic>)
+        : data['data'] is Map
+            ? Map<String, dynamic>.from(data['data'] as Map)
+            : data;
+
+    final userPayload = payload['user'] ??
+        payload['userData'] ??
+        data['user'] ??
+        data['userData'];
+    DateTime? expiresAt;
+    final expiresAtRaw = payload['expiresAt'] ?? data['expiresAt'];
+    final expiresInRaw = payload['expiresIn'] ?? data['expiresIn'];
+    if (expiresAtRaw is String && expiresAtRaw.isNotEmpty) {
+      try {
+        expiresAt = DateTime.parse(expiresAtRaw);
+      } catch (_) {}
+    } else if (expiresInRaw is int) {
+      expiresAt = DateTime.now().add(Duration(seconds: expiresInRaw));
+    }
+
     return AuthData(
-      accessToken: data['accessToken'] ?? data['token'] ?? '',
-      refreshToken: data['refreshToken'],
-      expiresAt: data['expiresAt'] != null
-          ? DateTime.parse(data['expiresAt'])
-          : data['expiresIn'] != null
-              ? DateTime.now().add(
-                  Duration(seconds: data['expiresIn'] as int),
-                )
+      accessToken: payload['accessToken'] ??
+          payload['token'] ??
+          data['accessToken'] ??
+          data['token'] ??
+          '',
+      refreshToken: payload['refreshToken'] ?? data['refreshToken'],
+      expiresAt: expiresAt,
+      userData: userPayload is Map<String, dynamic>
+          ? userPayload
+          : userPayload is Map
+              ? Map<String, dynamic>.from(userPayload)
               : null,
-      userData: data['user'] ?? data['userData'],
     );
   }
 
@@ -207,4 +230,3 @@ class AuthService {
     await prefs.setString(_authKey, jsonEncode(authData.toJson()));
   }
 }
-
