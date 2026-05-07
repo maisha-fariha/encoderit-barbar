@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import '../gen/l10n/app_localizations.dart';
@@ -170,8 +171,8 @@ class _AuthFlowSheetState extends State<_AuthFlowSheet> {
                     children: [
                       IconButton(
                         onPressed: _step == _AuthSheetStep.forgot ? null : _back,
-                        icon: Icon(
-                          Icons.arrow_back_rounded,
+                        icon: SvgPicture.asset(
+                          'assets/icons/back_button.svg',
                           color: _step == _AuthSheetStep.forgot
                               ? Colors.white.withValues(alpha: 0.25)
                               : Colors.white.withValues(alpha: 0.85),
