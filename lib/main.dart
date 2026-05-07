@@ -8,7 +8,9 @@ import 'routes/app_pages.dart';
 import 'gen/l10n/app_localizations.dart';
 import 'services/app_services.dart';
 import 'controllers/auth_controller.dart';
+import 'controllers/barber_list_controller.dart';
 import 'controllers/shop_list_controller.dart';
+import 'controllers/service_list_controller.dart';
 
 const _statusBarStyle = SystemUiOverlayStyle(
   statusBarColor: Colors.transparent,
@@ -36,6 +38,10 @@ Future<void> main() async {
   Get.put(auth, permanent: true);
   final shopList = AppServices.getIt<ShopListController>();
   Get.put(shopList, permanent: true);
+  final serviceList = AppServices.getIt<ServiceListController>();
+  Get.put(serviceList, permanent: true);
+  final barberList = AppServices.getIt<BarberListController>();
+  Get.put(barberList, permanent: true);
   await auth.bootstrap();
 
   runApp(const EncoderitBarbarApp());

@@ -10,6 +10,8 @@ class ApiEndpoints {
   static const authResetPassword = '/auth/reset-password';
 
   static const shops = '/shops';
+  static const services = '/services';
+  static const barbers = '/barbers';
   static const barbarList = shops;
 
   /// Services list (demo: ReqRes `/products` — same `data` list pattern).

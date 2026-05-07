@@ -3,8 +3,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../gen/l10n/app_localizations.dart';
+import '../controllers/barber_list_controller.dart';
 import '../controllers/shop_list_controller.dart';
+import '../controllers/service_list_controller.dart';
+import '../gen/l10n/app_localizations.dart';
 import '../models/shop/shop_model.dart';
 
 class AppoinmentPage extends StatefulWidget {
@@ -23,46 +25,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   bool _recurringEnabled = true;
   int _recurringIndex = 0;
   late final ShopListController _shopController;
-
-  final _fallbackItems = const <_ServiceItem>[
-    _ServiceItem(title: 'Taglio di capelli', minutes: 45, priceEuro: 45),
-    _ServiceItem(title: 'Rifinitura della barba', minutes: 30, priceEuro: 30),
-    _ServiceItem(title: 'Capelli + Barba', minutes: 60, priceEuro: 65),
-    _ServiceItem(title: 'Trattamento premium', minutes: 90, priceEuro: 120),
-    _ServiceItem(
-      title: 'Rasatura con asciugamano caldo',
-      minutes: 45,
-      priceEuro: 50,
-    ),
-    _ServiceItem(
-      title: 'Taglio di capelli per bambini',
-      minutes: 30,
-      priceEuro: 35,
-    ),
-  ];
-
-  final _barbers = const <_BarberItem>[
-    _BarberItem(
-      name: 'Marcus Silva',
-      subtitle: 'Barbiere',
-      imageAsset: 'assets/images/barbar_1.jpg',
-    ),
-    _BarberItem(
-      name: 'Alessandro Rossi',
-      subtitle: 'Specialista in sfumature',
-      imageAsset: 'assets/images/barbar_2.jpg',
-    ),
-    _BarberItem(
-      name: 'David Chen',
-      subtitle: 'Tagli classici',
-      imageAsset: 'assets/images/barbar_3.jpg',
-    ),
-    _BarberItem(
-      name: 'James Martinez',
-      subtitle: 'Esperto di barba',
-      imageAsset: 'assets/images/barbar_4.jpg',
-    ),
-  ];
+  late final ServiceListController _serviceController;
+  late final BarberListController _barberController;
 
   final _times = const <String>[
     '09:00',
@@ -86,9 +50,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   ];
 
   List<_ServiceItem> get _items {
-    final selectedServices = _shopController.selectedShopServices;
-    if (selectedServices.isEmpty) return _fallbackItems;
-    return selectedServices
+    return _serviceController.items
         .map(
           (service) => _ServiceItem(
             title: service.name,
@@ -99,17 +61,99 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         .toList();
   }
 
+  List<_BarberItem> get _barbers {
+    return _barberController.items
+        .map(
+          (barber) => _BarberItem(
+            name: barber.name,
+            subtitle: barber.phone.isNotEmpty
+                ? barber.phone
+                : (barber.email.isNotEmpty ? barber.email : 'Barber'),
+            imageAsset: 'assets/images/barbar_1.jpg',
+          ),
+        )
+        .toList();
+  }
+
   @override
   void initState() {
     super.initState();
     _shopController = Get.find<ShopListController>();
+    _serviceController = Get.find<ServiceListController>();
+    _barberController = Get.find<BarberListController>();
     _shopController.loadItems();
+    _serviceController.items.clear();
+    _barberController.items.clear();
   }
 
-  void _onContinue() {
+  String? get _selectedShopId => _shopController.selectedShop?.id;
+  String? get _selectedServiceId {
+    if (_serviceController.items.isEmpty ||
+        _selectedService < 0 ||
+        _selectedService >= _serviceController.items.length) {
+      return null;
+    }
+    return _serviceController.items[_selectedService].id;
+  }
+
+  Future<void> _loadServicesForSelectedShop() async {
+    final shopId = _selectedShopId;
+    if (shopId == null || shopId.isEmpty) return;
+    await _serviceController.loadByShop(shopId);
+    if (_selectedService >= _serviceController.items.length) {
+      _selectedService = 0;
+    }
+    _barberController.items.clear();
+    _selectedBarber = 0;
+  }
+
+  Future<void> _loadBarbersForSelection() async {
+    final shopId = _selectedShopId;
+    final serviceId = _selectedServiceId;
+    if (shopId == null ||
+        shopId.isEmpty ||
+        serviceId == null ||
+        serviceId.isEmpty) {
+      return;
+    }
+    await _barberController.loadByShopAndService(
+      shopId: shopId,
+      serviceId: serviceId,
+    );
+    if (_selectedBarber >= _barberController.items.length) {
+      _selectedBarber = 0;
+    }
+  }
+
+  void _showPageMessage(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFFE8E8E8),
+        content: Text(
+          message,
+          style: GoogleFonts.inter(
+            color: const Color(0xFF0B0B0B),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onContinue() async {
     if (_step == 1) {
       if (_shopController.items.isEmpty) {
-        Get.snackbar('Shops', 'No shops available right now');
+        _showPageMessage('No shops available right now');
+        return;
+      }
+      await _loadServicesForSelectedShop();
+      if (_serviceController.items.isEmpty) {
+        _showPageMessage('No services available for this shop');
         return;
       }
       setState(() {
@@ -119,6 +163,15 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       return;
     }
     if (_step == 2) {
+      if (_serviceController.items.isEmpty) {
+        _showPageMessage('No services available');
+        return;
+      }
+      await _loadBarbersForSelection();
+      if (_barberController.items.isEmpty) {
+        _showPageMessage('No barbers available for selected service');
+        return;
+      }
       setState(() {
         _step = 3;
         _selectedBarber = 0;
@@ -126,6 +179,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       return;
     }
     if (_step == 3) {
+      if (_barberController.items.isEmpty) {
+        _showPageMessage('No barbers available');
+        return;
+      }
       setState(() {
         _step = 4;
         _selectedTime = 0;
@@ -611,9 +668,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               return _ShopCard(
                                 item: item,
                                 selected: selected,
-                                onTap: () {
+                                onTap: () async {
                                   controller.selectShop(i);
-                                  setState(() => _selectedService = 0);
+                                  await _loadServicesForSelectedShop();
+                                  setState(() {});
                                 },
                               );
                             },
@@ -621,51 +679,168 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                         },
                       )
                     : _step == 2
-                    ? ListView.separated(
-                        key: const ValueKey('services'),
-                        padding: EdgeInsets.fromLTRB(hPad + 2, 8, hPad + 2, 18),
-                        itemCount: _items.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 16),
-                        itemBuilder: (context, i) {
-                          final item = _items[i];
-                          final selected = i == _selectedService;
-                          return _ServiceCard(
-                            item: item,
-                            selected: selected,
-                            onTap: () => setState(() => _selectedService = i),
+                    ? GetBuilder<ServiceListController>(
+                        id: 'service-selection',
+                        builder: (controller) {
+                          if (controller.isLoading.value &&
+                              controller.items.isEmpty) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFEEEEEE),
+                              ),
+                            );
+                          }
+                          if (controller.errorMessage.value.isNotEmpty &&
+                              controller.items.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: hPad),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      controller.errorMessage.value,
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.inter(
+                                        color: const Color(0xFFDDDDDD),
+                                        fontSize: 14 * scale,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    FilledButton(
+                                      onPressed: _loadServicesForSelectedShop,
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFFEEEEEE,
+                                        ),
+                                        foregroundColor: const Color(
+                                          0xFF000000,
+                                        ),
+                                      ),
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          return ListView.separated(
+                            key: const ValueKey('services'),
+                            padding: EdgeInsets.fromLTRB(
+                              hPad + 2,
+                              8,
+                              hPad + 2,
+                              18,
+                            ),
+                            itemCount: _items.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 16),
+                            itemBuilder: (context, i) {
+                              final item = _items[i];
+                              final selected = i == _selectedService;
+                              return _ServiceCard(
+                                item: item,
+                                selected: selected,
+                                onTap: () =>
+                                    setState(() => _selectedService = i),
+                              );
+                            },
                           );
                         },
                       )
                     : _step == 3
-                    ? GridView.builder(
-                        key: const ValueKey('barbers'),
-                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount:
-                              ResponsiveHelper.getResponsiveValue<int>(
-                                context,
-                                small: 2,
-                                large: 3,
+                    ? GetBuilder<BarberListController>(
+                        id: 'barber-selection',
+                        builder: (controller) {
+                          if (controller.isLoading.value &&
+                              controller.items.isEmpty) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFFEEEEEE),
                               ),
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          // Slightly taller tiles to avoid card overflow.
-                          childAspectRatio:
-                              ResponsiveHelper.getResponsiveValue<double>(
-                                context,
-                                small: 0.70,
-                                large: 0.88,
+                            );
+                          }
+                          if (controller.errorMessage.value.isNotEmpty &&
+                              controller.items.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: hPad),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      controller.errorMessage.value,
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.inter(
+                                        color: const Color(0xFFDDDDDD),
+                                        fontSize: 14 * scale,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    FilledButton(
+                                      onPressed: _loadBarbersForSelection,
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFFEEEEEE,
+                                        ),
+                                        foregroundColor: const Color(
+                                          0xFF000000,
+                                        ),
+                                      ),
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                ),
                               ),
-                        ),
-                        itemCount: _barbers.length,
-                        itemBuilder: (context, i) {
-                          final item = _barbers[i];
-                          final selected = i == _selectedBarber;
-                          return _BarberCard(
-                            item: item,
-                            selected: selected,
-                            onTap: () => setState(() => _selectedBarber = i),
+                            );
+                          }
+                          if (controller.items.isEmpty) {
+                            return Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: hPad),
+                                child: Text(
+                                  'No barber found for this service.',
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFFDDDDDD),
+                                    fontSize: 14 * scale,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return GridView.builder(
+                            key: const ValueKey('barbers'),
+                            padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 18),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount:
+                                      ResponsiveHelper.getResponsiveValue<int>(
+                                        context,
+                                        small: 2,
+                                        large: 3,
+                                      ),
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  childAspectRatio:
+                                      ResponsiveHelper.getResponsiveValue<
+                                        double
+                                      >(context, small: 0.70, large: 0.88),
+                                ),
+                            itemCount: _barbers.length,
+                            itemBuilder: (context, i) {
+                              final item = _barbers[i];
+                              final selected = i == _selectedBarber;
+                              return _BarberCard(
+                                item: item,
+                                selected: selected,
+                                onTap: () =>
+                                    setState(() => _selectedBarber = i),
+                              );
+                            },
                           );
                         },
                       )
@@ -760,9 +935,29 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             final isLarge = ResponsiveHelper.isLargeDevice(
                               context,
                             );
+                            final selectedService =
+                                _items.isNotEmpty &&
+                                    _selectedService >= 0 &&
+                                    _selectedService < _items.length
+                                ? _items[_selectedService]
+                                : const _ServiceItem(
+                                    title: 'Service',
+                                    minutes: 0,
+                                    priceEuro: 0,
+                                  );
+                            final selectedBarber =
+                                _barbers.isNotEmpty &&
+                                    _selectedBarber >= 0 &&
+                                    _selectedBarber < _barbers.length
+                                ? _barbers[_selectedBarber]
+                                : const _BarberItem(
+                                    name: 'Barber',
+                                    subtitle: '',
+                                    imageAsset: 'assets/images/barbar_1.jpg',
+                                  );
                             final card = _Step4SummaryCard(
-                              service: _items[_selectedService],
-                              barber: _barbers[_selectedBarber],
+                              service: selectedService,
+                              barber: selectedBarber,
                               time: _times[_selectedTime],
                             );
                             if (!isLarge) return card;
