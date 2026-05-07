@@ -166,6 +166,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invalidNumber => 'Invalid number';
 
   @override
+  String get forgotPasswordTitle => 'Forgot password';
+
+  @override
+  String get forgotPasswordSheetSubtitle =>
+      'Enter your email and we’ll send you a verification code.';
+
+  @override
+  String get sendOtp => 'Send OTP';
+
+  @override
+  String get verifyOtpTitle => 'Verify OTP';
+
+  @override
+  String get verifyOtpSubtitle => 'Enter the code we sent to your email.';
+
+  @override
+  String get otpHint => 'Enter OTP';
+
+  @override
+  String get otpInvalid => 'Invalid OTP';
+
+  @override
+  String get resendCode => 'Resend code';
+
+  @override
+  String get otpResent => 'OTP resent';
+
+  @override
+  String get verify => 'Verify';
+
+  @override
+  String get resetPasswordTitle => 'Reset password';
+
+  @override
+  String get resetPasswordSubtitle => 'Create a new password for your account.';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get confirmPassword => 'Confirm password';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords do not match';
+
+  @override
+  String get resetPasswordCta => 'Reset password';
+
+  @override
+  String get passwordResetSuccess => 'Password reset successfully';
+
+  @override
   String get bookAppointment => 'Book an appointment';
 
   @override
