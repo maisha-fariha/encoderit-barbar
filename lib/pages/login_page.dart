@@ -154,7 +154,10 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                                 SizedBox(
-                                  height: constraints.maxHeight < 700 ? 22 : 56,
+                                  // Keep the form lower on screen like the old layout.
+                                  height: constraints.maxHeight < 700
+                                      ? 140
+                                      : 220,
                                 ),
                                 _GlassTextField(
                                   controller: _email,
