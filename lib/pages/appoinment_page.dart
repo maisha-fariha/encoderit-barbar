@@ -2586,7 +2586,30 @@ class _Step3MonthlySummary extends StatefulWidget {
 }
 
 class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
-  bool _waitlist = false;
+  /// Per-row waitlist state, keyed by the row's date label.
+  ///
+  /// Using the date string (instead of the row index) means that removing a
+  /// row from above doesn't accidentally move a "checked" state onto a
+  /// different date when the remaining rows shift up.
+  final Set<String> _waitlistedDates = <String>{};
+
+  void _toggleWaitlistFor(String dateLabel) {
+    setState(() {
+      if (!_waitlistedDates.add(dateLabel)) {
+        _waitlistedDates.remove(dateLabel);
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _Step3MonthlySummary oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Drop state for any date labels that no longer exist (e.g. after the
+    // user removed a row or changed the recurring interval / count).
+    if (_waitlistedDates.isEmpty) return;
+    final live = widget.dateLabels.toSet();
+    _waitlistedDates.removeWhere((label) => !live.contains(label));
+  }
 
   Widget _entry({
     required int index,
@@ -2672,8 +2695,9 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
     );
   }
 
-  Widget _warningWithWaitlist(BuildContext context) {
+  Widget _warningWithWaitlist(BuildContext context, String dateLabel) {
     final l10n = AppLocalizations.of(context)!;
+    final isChecked = _waitlistedDates.contains(dateLabel);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2698,14 +2722,14 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
         ),
         const SizedBox(height: 10),
         InkWell(
-          onTap: () => setState(() => _waitlist = !_waitlist),
+          onTap: () => _toggleWaitlistFor(dateLabel),
           borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: Row(
               children: [
                 SvgPicture.asset(
-                  _waitlist
+                  isChecked
                       ? 'assets/icons/checked_box.svg'
                       : 'assets/icons/non_checked_box.svg',
                   width: 18,
@@ -2728,21 +2752,26 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
     );
   }
 
-  Widget _innerForCycle(int cycleIndex, BuildContext context) {
+  /// Builds the right-hand inner widget for a single row.
+  ///
+  /// [rowIndex] drives the visual cycle (`% 4`); [dateLabel] keys the per-row
+  /// waitlist state so each row toggles independently and survives row
+  /// removals.
+  Widget _innerForCycle(int rowIndex, String dateLabel, BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final selected = widget.selectedBarberName.trim();
     final alternative = widget.alternativeBarberName.trim();
 
-    switch (cycleIndex % 4) {
+    switch (rowIndex % 4) {
       case 0:
         return _withBarberPill(l10n.withBarberLabel(selected));
       case 1:
-        return _warningWithWaitlist(context);
+        return _warningWithWaitlist(context, dateLabel);
       case 2:
         // If we don't have an alternate barber loaded, fall back to the
         // "no barber available" warning so we never display fake data.
         if (alternative.isEmpty || alternative == selected) {
-          return _warningWithWaitlist(context);
+          return _warningWithWaitlist(context, dateLabel);
         }
         return _alternativeBarberPill(l10n.alternativeBarberLabel(alternative));
       case 3:
@@ -2776,7 +2805,11 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
         ),
         const SizedBox(height: 14),
         for (int i = 0; i < lines.length; i++)
-          _entry(index: i, text: lines[i], inner: _innerForCycle(i, context)),
+          _entry(
+            index: i,
+            text: lines[i],
+            inner: _innerForCycle(i, lines[i], context),
+          ),
       ],
     );
 
