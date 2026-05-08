@@ -146,6 +146,35 @@
   "cameraUnavailable": "La fotocamera non è disponibile su questo dispositivo o simulatore.",
   "pickerNotInstalled": "Plugin non installato. Riavvia completamente l'app dopo aver aggiunto il plugin.",
   "notSignedIn": "Devi accedere per impostare una foto profilo.",
+  "bookingSuccess": "Appuntamento prenotato con successo.",
+  "bookingGenericError": "Qualcosa è andato storto. Riprova.",
+  "withBarberLabel": "con {name}",
+  "@withBarberLabel": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "alternativeBarberLabel": "Barbiere alternativo con {name}",
+  "@alternativeBarberLabel": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "recurringSuccess": "Appuntamenti ricorrenti elaborati.",
+  "recurringMissingSelection": "Seleziona un intervallo ricorrente e il numero di prenotazioni.",
+  "recurringAllSkipped": "{count, plural, =1{Lo slot selezionato è stato saltato.} other{Tutti gli {count} slot selezionati sono stati saltati.}}",
+  "@recurringAllSkipped": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "recurringPartialSuccess": "{booked, plural, =1{1 appuntamento prenotato} other{{booked} appuntamenti prenotati}}, {skipped, plural, =1{1 saltato} other{{skipped} saltati}}.",
+  "@recurringPartialSuccess": {
+    "placeholders": {
+      "booked": { "type": "int" },
+      "skipped": { "type": "int" }
+    }
+  },
   "sendYourMessage": "Invia il tuo messaggio",
   "barberAndHairConcept": "Barber and Hair Concept"
 }

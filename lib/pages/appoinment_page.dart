@@ -3,11 +3,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../controllers/appointment_controller.dart';
 import '../controllers/barber_list_controller.dart';
+import '../controllers/reservation_list_controller.dart';
 import '../controllers/shop_list_controller.dart';
 import '../controllers/service_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
+import '../models/appointment/appointment_model.dart';
 import '../models/shop/shop_model.dart';
+import '../routes/app_pages.dart';
 
 class AppoinmentPage extends StatefulWidget {
   const AppoinmentPage({super.key});
@@ -109,6 +113,32 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return _serviceController.items[_selectedService].id;
   }
 
+  /// Display name of the barber chosen at step 3, or empty when none is loaded.
+  ///
+  /// Used by widgets that summarize earlier-step selections (e.g. the recurring
+  /// summary card on step 4 and the booking summary on step 5).
+  String get _selectedBarberName {
+    final list = _barberController.items;
+    if (list.isEmpty) return '';
+    if (_selectedBarber < 0 || _selectedBarber >= list.length) return '';
+    return list[_selectedBarber].name;
+  }
+
+  /// Best-effort alternate barber: the first barber other than the selected one.
+  ///
+  /// Returns an empty string when only one barber is available — callers should
+  /// fall back to a "no barber available" UI in that case.
+  String get _alternativeBarberName {
+    final list = _barberController.items;
+    if (list.length <= 1) return '';
+    for (int i = 0; i < list.length; i++) {
+      if (i == _selectedBarber) continue;
+      final name = list[i].name.trim();
+      if (name.isNotEmpty) return name;
+    }
+    return '';
+  }
+
   Future<void> _loadServicesForSelectedShop() async {
     final shopId = _selectedShopId;
     if (shopId == null || shopId.isEmpty) return;
@@ -156,6 +186,197 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         ),
       ),
     );
+  }
+
+  void _showErrorMessage(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFFE8E8E8),
+        content: Text(
+          message,
+          style: GoogleFonts.inter(
+            color: const Color(0xFFB91C1C),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  String _formatApiDate(DateTime d) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${d.year}-${two(d.month)}-${two(d.day)}';
+  }
+
+  /// Maps the UI's "recurring interval" selection to the API's repeat type.
+  ///
+  /// The backend currently only accepts `monthly` or `times` for
+  /// `repeat.type` (it rejects `weekly`/`daily` with
+  /// "The selected repeat.type is invalid"). Because none of the four UI
+  /// options express a single-month cadence, we send `times` for all of them
+  /// so the API just creates [_howManyBookings] appointments.
+  ///
+  /// If the backend gains support for `weekly`, return [RecurringRepeatType.weekly]
+  /// for indices 0..2 and [RecurringRepeatType.monthly] for index 3.
+  RecurringRepeatType _mapRecurringRepeatType(int recurringIndex) {
+    return RecurringRepeatType.times;
+  }
+
+  /// Confirms the booking from the dialog.
+  ///
+  /// Branches by `_recurringEnabled`:
+  /// - true  → POST `/appointments/recurring`
+  /// - false → POST `/appointments`
+  ///
+  /// Loading + disabled-buttons state is driven by the controller's reactive
+  /// [AppointmentController.isBooking].
+  Future<void> _onConfirmBookingTap(BuildContext dialogContext) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    // Validate selections / ids first so we don't fire a useless request.
+    final shopIdStr = _selectedShopId;
+    final serviceIdStr = _selectedServiceId;
+    final barbers = _barberController.items;
+    final barberIdStr =
+        (barbers.isNotEmpty &&
+            _selectedBarber >= 0 &&
+            _selectedBarber < barbers.length)
+        ? barbers[_selectedBarber].id
+        : null;
+    final shopId = int.tryParse(shopIdStr ?? '');
+    final serviceId = int.tryParse(serviceIdStr ?? '');
+    final barberId = int.tryParse(barberIdStr ?? '');
+
+    if (shopId == null || serviceId == null || barberId == null) {
+      _showErrorMessage(l10n.bookingGenericError);
+      return;
+    }
+
+    final time = (_times.isNotEmpty &&
+            _selectedTime >= 0 &&
+            _selectedTime < _times.length)
+        ? _times[_selectedTime]
+        : '';
+    if (time.isEmpty) {
+      _showErrorMessage(l10n.bookingGenericError);
+      return;
+    }
+
+    // Capture context-bound objects BEFORE awaiting so we don't trip the
+    // use_build_context_synchronously lint, and so the dialog's Navigator
+    // is still valid even if its element later unmounts.
+    final dialogNavigator = Navigator.of(dialogContext);
+    final controller = Get.find<AppointmentController>();
+
+    if (_recurringEnabled) {
+      // ── Recurring path ──────────────────────────────────────────────────
+      // Validate recurring-specific selections.
+      if (_recurringIndex < 0 || _howManyBookings < 1) {
+        _showErrorMessage(l10n.recurringMissingSelection);
+        return;
+      }
+
+      final outcome = await controller.bookRecurring(
+        shopId: shopId,
+        barberId: barberId,
+        serviceId: serviceId,
+        date: _formatApiDate(_selectedDate),
+        time: time,
+        repeatType: _mapRecurringRepeatType(_recurringIndex),
+        repeatValue: _howManyBookings,
+        notes: null,
+      );
+
+      if (!mounted) return;
+
+      if (outcome.success) {
+        // Close dialog and refresh reservations in the background.
+        if (dialogNavigator.canPop()) dialogNavigator.pop();
+
+        final result = outcome.result;
+        final bookedCount = result?.booked.length ?? 0;
+        final skippedCount = result?.skipped.length ?? 0;
+
+        String message;
+        if (bookedCount == 0 && skippedCount > 0) {
+          // API succeeded but no slot could be booked.
+          message = l10n.recurringAllSkipped(skippedCount);
+        } else if (skippedCount > 0) {
+          // Partial success: some booked, some skipped.
+          message = l10n.recurringPartialSuccess(bookedCount, skippedCount);
+        } else if (outcome.message.isNotEmpty) {
+          message = outcome.message;
+        } else {
+          message = l10n.recurringSuccess;
+        }
+        _showPageMessage(message);
+
+        // Best-effort: refresh the reservation list so the new bookings show up.
+        if (Get.isRegistered<ReservationListController>()) {
+          // ignore: discarded_futures
+          Get.find<ReservationListController>().loadItems();
+        }
+
+        if (Get.previousRoute.isNotEmpty) {
+          Get.back();
+        } else {
+          Get.offAllNamed(AppRoutes.home);
+        }
+        return;
+      }
+
+      // Recurring failure: keep dialog open, show error.
+      final errMsg = outcome.isNetworkError
+          ? l10n.bookingGenericError
+          : (outcome.message.isNotEmpty
+                ? outcome.message
+                : l10n.bookingGenericError);
+      _showErrorMessage(errMsg);
+      return;
+    }
+
+    // ── Single-appointment path ───────────────────────────────────────────
+    final outcome = await controller.bookSingle(
+      shopId: shopId,
+      barberId: barberId,
+      serviceId: serviceId,
+      date: _formatApiDate(_selectedDate),
+      time: time,
+      notes: 'First appointment',
+    );
+
+    if (!mounted) return;
+
+    if (outcome.success) {
+      if (dialogNavigator.canPop()) dialogNavigator.pop();
+      final successMsg = outcome.message.isNotEmpty
+          ? outcome.message
+          : l10n.bookingSuccess;
+      _showPageMessage(successMsg);
+      if (Get.isRegistered<ReservationListController>()) {
+        // ignore: discarded_futures
+        Get.find<ReservationListController>().loadItems();
+      }
+      if (Get.previousRoute.isNotEmpty) {
+        Get.back();
+      } else {
+        Get.offAllNamed(AppRoutes.home);
+      }
+      return;
+    }
+
+    final errMsg = outcome.isNetworkError
+        ? l10n.bookingGenericError
+        : (outcome.message.isNotEmpty
+              ? outcome.message
+              : l10n.bookingGenericError);
+    _showErrorMessage(errMsg);
   }
 
   Future<void> _onContinue() async {
@@ -466,7 +687,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   Future<void> _showConfirmDialog() async {
     await showGeneralDialog<void>(
       context: context,
-      barrierDismissible: true,
+      // While booking is in progress, prevent dismissing by tapping outside.
+      barrierDismissible: false,
       barrierLabel: 'confirm',
       barrierColor: Colors.black.withValues(alpha: 0.55),
       pageBuilder: (context, anim1, anim2) => const SizedBox.shrink(),
@@ -505,18 +727,27 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                           Positioned(
                             right: 18,
                             top: 18,
-                            child: InkWell(
-                              onTap: () => Navigator.of(context).pop(),
-                              borderRadius: BorderRadius.circular(18),
-                              child: const Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: Color(0xFF797979),
-                                  size: 32,
+                            child: Obx(() {
+                              final busy = Get.isRegistered<AppointmentController>()
+                                  ? Get.find<AppointmentController>().isBooking.value
+                                  : false;
+                              return InkWell(
+                                onTap: busy
+                                    ? null
+                                    : () => Navigator.of(context).pop(),
+                                borderRadius: BorderRadius.circular(18),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    color: busy
+                                        ? const Color(0xFF555555)
+                                        : const Color(0xFF797979),
+                                    size: 32,
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(26, 30, 26, 26),
@@ -553,90 +784,123 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 30),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 54,
-                                        child: OutlinedButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
-                                          style: OutlinedButton.styleFrom(
-                                            side: const BorderSide(
-                                              color: Color(0xFF797979),
-                                              width: 1,
+                                Obx(() {
+                                  final controller =
+                                      Get.find<AppointmentController>();
+                                  final busy = controller.isBooking.value;
+                                  return Row(
+                                    children: [
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 54,
+                                          child: OutlinedButton(
+                                            onPressed: busy
+                                                ? null
+                                                : () =>
+                                                      Navigator.of(
+                                                        context,
+                                                      ).pop(),
+                                            style: OutlinedButton.styleFrom(
+                                              side: const BorderSide(
+                                                color: Color(0xFF797979),
+                                                width: 1,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              backgroundColor:
+                                                  Colors.transparent,
                                             ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                            backgroundColor: Colors.transparent,
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 15.0,
-                                            ),
-                                            child: FittedBox(
-                                              fit: BoxFit.scaleDown,
-                                              child: Text(
-                                                AppLocalizations.of(
-                                                  context,
-                                                )!.cancelAction,
-                                                style: GoogleFonts.inter(
-                                                  color: const Color(
-                                                    0xFF797979,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 15.0,
                                                   ),
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600,
-                                                  height: 1.5,
+                                              child: FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                child: Text(
+                                                  AppLocalizations.of(
+                                                    context,
+                                                  )!.cancelAction,
+                                                  style: GoogleFonts.inter(
+                                                    color: const Color(
+                                                      0xFF797979,
+                                                    ),
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    height: 1.5,
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 18),
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 54,
-                                        child: FilledButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                            if (!mounted) return;
-                                            setState(() => _step = 5);
-                                          },
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: const Color(
-                                              0xFFEEEEEE,
-                                            ),
-                                            foregroundColor: const Color(
-                                              0xFF242424,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                            ),
-                                          ),
-                                          child: FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child: Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              )!.confirmAction,
-                                              style: GoogleFonts.inter(
-                                                color: const Color(0xFF242424),
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600,
-                                                height: 1.5,
+                                      const SizedBox(width: 18),
+                                      Expanded(
+                                        child: SizedBox(
+                                          height: 54,
+                                          child: FilledButton(
+                                            onPressed: busy
+                                                ? null
+                                                : () => _onConfirmBookingTap(
+                                                    context,
+                                                  ),
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: const Color(
+                                                0xFFEEEEEE,
                                               ),
+                                              foregroundColor: const Color(
+                                                0xFF242424,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              disabledBackgroundColor:
+                                                  const Color(0xFFCFCFCF),
+                                              disabledForegroundColor:
+                                                  const Color(0xFF242424),
                                             ),
+                                            child: busy
+                                                ? const SizedBox(
+                                                    width: 22,
+                                                    height: 22,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2.4,
+                                                          valueColor:
+                                                              AlwaysStoppedAnimation(
+                                                                Color(
+                                                                  0xFF242424,
+                                                                ),
+                                                              ),
+                                                        ),
+                                                  )
+                                                : FittedBox(
+                                                    fit: BoxFit.scaleDown,
+                                                    child: Text(
+                                                      AppLocalizations.of(
+                                                        context,
+                                                      )!.confirmAction,
+                                                      style: GoogleFonts.inter(
+                                                        color: const Color(
+                                                          0xFF242424,
+                                                        ),
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        height: 1.5,
+                                                      ),
+                                                    ),
+                                                  ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                    ],
+                                  );
+                                }),
                               ],
                             ),
                           ),
@@ -1071,6 +1335,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                       dateLabels: _bookingDateTimeLabels(
                                         Localizations.localeOf(context),
                                       ),
+                                      selectedBarberName: _selectedBarberName,
+                                      alternativeBarberName:
+                                          _alternativeBarberName,
                                     ),
                                   ],
                                   const SizedBox(height: 15),
@@ -2446,9 +2713,13 @@ class _Step3MonthlySummary extends StatefulWidget {
   const _Step3MonthlySummary({
     required this.intervalLabel,
     required this.dateLabels,
+    required this.selectedBarberName,
+    required this.alternativeBarberName,
   });
   final String intervalLabel;
   final List<String> dateLabels;
+  final String selectedBarberName;
+  final String alternativeBarberName;
 
   @override
   State<_Step3MonthlySummary> createState() => _Step3MonthlySummaryState();
@@ -2584,16 +2855,25 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
   }
 
   Widget _innerForCycle(int cycleIndex, BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final selected = widget.selectedBarberName.trim();
+    final alternative = widget.alternativeBarberName.trim();
+
     switch (cycleIndex % 4) {
       case 0:
-        return _withBarberPill('con Marcus Silva');
+        return _withBarberPill(l10n.withBarberLabel(selected));
       case 1:
         return _warningWithWaitlist(context);
       case 2:
-        return _alternativeBarberPill('Barbiere alternativo con James\nMartinez');
+        // If we don't have an alternate barber loaded, fall back to the
+        // "no barber available" warning so we never display fake data.
+        if (alternative.isEmpty || alternative == selected) {
+          return _warningWithWaitlist(context);
+        }
+        return _alternativeBarberPill(l10n.alternativeBarberLabel(alternative));
       case 3:
       default:
-        return _withBarberPill('con Marcus Silva');
+        return _withBarberPill(l10n.withBarberLabel(selected));
     }
   }
 

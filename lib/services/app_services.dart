@@ -3,6 +3,7 @@ import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get_it/get_it.dart';
 
+import '../di/appointment/appointment_di.dart';
 import '../di/auth/auth_di.dart';
 import '../di/barber_services/barber_services_di.dart';
 import '../di/barber_list/barber_list_di.dart';
@@ -44,6 +45,7 @@ class AppServices {
     await setupBarberListDomainServices();
     await setupReservationListDomainServices();
     await setupBarberServicesDomainServices();
+    await setupAppointmentDomainServices();
   }
 
   ApiService get apiService => getIt<ApiService>();

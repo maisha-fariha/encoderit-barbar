@@ -146,6 +146,35 @@
   "cameraUnavailable": "Camera is not available on this device or simulator.",
   "pickerNotInstalled": "Picker not installed. Please fully restart the app after adding the plugin.",
   "notSignedIn": "You need to be signed in to set a profile photo.",
+  "bookingSuccess": "Appointment booked successfully.",
+  "bookingGenericError": "Something went wrong. Please try again.",
+  "withBarberLabel": "with {name}",
+  "@withBarberLabel": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "alternativeBarberLabel": "Alternative barber with {name}",
+  "@alternativeBarberLabel": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "recurringSuccess": "Recurring appointments processed.",
+  "recurringMissingSelection": "Please choose a recurring interval and number of bookings.",
+  "recurringAllSkipped": "{count, plural, =1{The selected slot was skipped.} other{All {count} selected slots were skipped.}}",
+  "@recurringAllSkipped": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "recurringPartialSuccess": "{booked, plural, =1{1 appointment booked} other{{booked} appointments booked}}, {skipped, plural, =1{1 skipped} other{{skipped} skipped}}.",
+  "@recurringPartialSuccess": {
+    "placeholders": {
+      "booked": { "type": "int" },
+      "skipped": { "type": "int" }
+    }
+  },
   "sendYourMessage": "Send your message",
   "barberAndHairConcept": "Barber and Hair Concept"
 }
