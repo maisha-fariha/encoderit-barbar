@@ -6,6 +6,7 @@ import 'package:get_it/get_it.dart';
 import '../di/auth/auth_di.dart';
 import '../di/barber_services/barber_services_di.dart';
 import '../di/barber_list/barber_list_di.dart';
+import '../di/reservation_list/reservation_list_di.dart';
 import '../di/service_list/service_list_di.dart';
 import '../di/shop_list/shop_list_di.dart';
 
@@ -41,6 +42,7 @@ class AppServices {
     await setupShopListDomainServices();
     await setupServiceListDomainServices();
     await setupBarberListDomainServices();
+    await setupReservationListDomainServices();
     await setupBarberServicesDomainServices();
   }
 
