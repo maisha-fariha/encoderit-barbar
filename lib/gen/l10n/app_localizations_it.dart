@@ -358,6 +358,51 @@ class AppLocalizationsIt extends AppLocalizations {
   String get logout => 'Logout';
 
   @override
+  String get update => 'Aggiorna';
+
+  @override
+  String get changeProfilePhoto => 'Cambia foto profilo';
+
+  @override
+  String get takePhoto => 'Scatta una foto';
+
+  @override
+  String get chooseFromGallery => 'Scegli dalla galleria';
+
+  @override
+  String get cancel => 'Annulla';
+
+  @override
+  String get photoSavedOffline =>
+      'Foto salvata. Verrà sincronizzata quando sarai online.';
+
+  @override
+  String get photoSyncedOnline => 'Foto profilo sincronizzata.';
+
+  @override
+  String get photoPickError =>
+      'Impossibile accedere all\'immagine selezionata.';
+
+  @override
+  String get cameraPermissionDenied =>
+      'Permesso fotocamera negato. Abilitalo nelle Impostazioni per scattare una foto.';
+
+  @override
+  String get galleryPermissionDenied =>
+      'Permesso galleria negato. Abilitalo nelle Impostazioni per scegliere una foto.';
+
+  @override
+  String get cameraUnavailable =>
+      'La fotocamera non è disponibile su questo dispositivo o simulatore.';
+
+  @override
+  String get pickerNotInstalled =>
+      'Plugin non installato. Riavvia completamente l\'app dopo aver aggiunto il plugin.';
+
+  @override
+  String get notSignedIn => 'Devi accedere per impostare una foto profilo.';
+
+  @override
   String get sendYourMessage => 'Invia il tuo messaggio';
 
   @override

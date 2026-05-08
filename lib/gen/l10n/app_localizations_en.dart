@@ -356,6 +356,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logout => 'Logout';
 
   @override
+  String get update => 'Update';
+
+  @override
+  String get changeProfilePhoto => 'Change profile photo';
+
+  @override
+  String get takePhoto => 'Take a photo';
+
+  @override
+  String get chooseFromGallery => 'Choose from gallery';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get photoSavedOffline =>
+      'Photo saved. It will sync when you\'re online.';
+
+  @override
+  String get photoSyncedOnline => 'Profile photo synced.';
+
+  @override
+  String get photoPickError => 'Could not access the selected image.';
+
+  @override
+  String get cameraPermissionDenied =>
+      'Camera permission was denied. Enable it in Settings to take a photo.';
+
+  @override
+  String get galleryPermissionDenied =>
+      'Photo library permission was denied. Enable it in Settings to choose a photo.';
+
+  @override
+  String get cameraUnavailable =>
+      'Camera is not available on this device or simulator.';
+
+  @override
+  String get pickerNotInstalled =>
+      'Picker not installed. Please fully restart the app after adding the plugin.';
+
+  @override
+  String get notSignedIn => 'You need to be signed in to set a profile photo.';
+
+  @override
   String get sendYourMessage => 'Send your message';
 
   @override
