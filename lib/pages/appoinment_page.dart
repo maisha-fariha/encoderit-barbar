@@ -29,6 +29,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   bool _recurringEnabled = true;
   int _recurringIndex = -1; // -1 = nothing selected; otherwise 0..3
   int _howManyBookings = 0; // 0 = nothing selected; otherwise 1..10
+  List<DateTime> _recurringDates = <DateTime>[];
 
   static bool _isBlockedWeekday(DateTime d) =>
       d.weekday == DateTime.wednesday || d.weekday == DateTime.friday;
@@ -424,6 +425,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         _recurringEnabled = true;
         _recurringIndex = -1;
         _howManyBookings = 0;
+        _recurringDates = <DateTime>[];
       });
       return;
     }
@@ -498,6 +500,31 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   static const List<int> _recurrenceIntervalDays = [7, 14, 21, 28];
 
+  void _syncRecurringDates() {
+    if (!_recurringEnabled || _recurringIndex < 0 || _howManyBookings < 1) {
+      _recurringDates = <DateTime>[];
+      return;
+    }
+    final safeIndex = _recurringIndex.clamp(0, _recurrenceIntervalDays.length - 1);
+    final intervalDays = _recurrenceIntervalDays[safeIndex];
+    _recurringDates = List<DateTime>.generate(
+      _howManyBookings,
+      (i) => _selectedDate.add(Duration(days: intervalDays * i)),
+      growable: true,
+    );
+  }
+
+  void _removeRecurringDateAt(int index) {
+    if (index < 0 || index >= _recurringDates.length) return;
+    setState(() {
+      _recurringDates.removeAt(index);
+      _howManyBookings = _recurringDates.length;
+      if (_howManyBookings == 0) {
+        _recurringIndex = -1;
+      }
+    });
+  }
+
   // e.g. "Giovedì 9 aprile 2026, ore 10:00" (IT)
   // or   "Thursday 9 April 2026, at 10:00" (EN)
   String _bookingDateTimeLabel(DateTime date, String time, Locale locale) {
@@ -540,21 +567,13 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   }
 
   List<String> _bookingDateTimeLabels(Locale locale) {
-    if (_recurringIndex < 0 || _howManyBookings < 1) return const [];
-    final intervalDays =
-        _recurrenceIntervalDays[_recurringIndex.clamp(
-          0,
-          _recurrenceIntervalDays.length - 1,
-        )];
+    if (_recurringDates.isEmpty) return const [];
     final time = _times.isNotEmpty
         ? _times[_selectedTime.clamp(0, _times.length - 1)]
         : '';
-    final out = <String>[];
-    for (int i = 0; i < _howManyBookings; i++) {
-      final d = _selectedDate.add(Duration(days: intervalDays * i));
-      out.add(_bookingDateTimeLabel(d, time, locale));
-    }
-    return out;
+    return _recurringDates
+        .map((d) => _bookingDateTimeLabel(d, time, locale))
+        .toList(growable: false);
   }
 
   // e.g. "Gio, Aprile 09" (IT) or "Thu, April 09" (EN)
@@ -681,7 +700,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     );
 
     if (picked == null) return;
-    setState(() => _selectedDate = picked);
+    setState(() {
+      _selectedDate = picked;
+      _syncRecurringDates();
+    });
   }
 
   Future<void> _showConfirmDialog() async {
@@ -1282,12 +1304,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 Localizations.localeOf(context),
                               ),
                               selectedDate: _selectedDate,
-                              onSelectDate: (d) =>
-                                  setState(() => _selectedDate = d),
+                              onSelectDate: (d) => setState(() {
+                                _selectedDate = d;
+                                _syncRecurringDates();
+                              }),
                               selectedTimeIndex: _selectedTime,
                               times: _times,
-                              onSelectTime: (i) =>
-                                  setState(() => _selectedTime = i),
+                              onSelectTime: (i) => setState(() {
+                                _selectedTime = i;
+                                _syncRecurringDates();
+                              }),
                               onTapCalendar: _pickStep3Date,
                             );
 
@@ -1296,8 +1322,14 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               children: [
                                 _Step3RecurringToggle(
                                   value: _recurringEnabled,
-                                  onChanged: (v) =>
-                                      setState(() => _recurringEnabled = v),
+                                  onChanged: (v) => setState(() {
+                                    _recurringEnabled = v;
+                                    if (!v) {
+                                      _recurringIndex = -1;
+                                      _howManyBookings = 0;
+                                    }
+                                    _syncRecurringDates();
+                                  }),
                                 ),
                                 if (_recurringEnabled) ...[
                                   const SizedBox(height: 15),
@@ -1314,8 +1346,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                       l10n.every4Weeks,
                                     ],
                                     selectedIndex: _recurringIndex,
-                                    onSelect: (i) =>
-                                        setState(() => _recurringIndex = i),
+                                    onSelect: (i) => setState(() {
+                                      _recurringIndex = i;
+                                      _syncRecurringDates();
+                                    }),
                                   ),
                                   if (_recurringIndex >= 0 &&
                                       _howManyBookings >= 1) ...[
@@ -1338,13 +1372,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                       selectedBarberName: _selectedBarberName,
                                       alternativeBarberName:
                                           _alternativeBarberName,
+                                      onRemoveAt: _removeRecurringDateAt,
                                     ),
                                   ],
                                   const SizedBox(height: 15),
                                   _Step4HowManyDropdown(
                                     selectedCount: _howManyBookings,
-                                    onSelect: (n) =>
-                                        setState(() => _howManyBookings = n),
+                                    onSelect: (n) => setState(() {
+                                      _howManyBookings = n;
+                                      _syncRecurringDates();
+                                    }),
                                   ),
                                 ],
                               ],
@@ -1420,8 +1457,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 _recurringIndex >= 0 && _recurringIndex < 4
                                     ? intervalLabels[_recurringIndex]
                                     : intervalLabels[0];
-                            final bookings = _howManyBookings >= 1
-                                ? _howManyBookings
+                            final bookings = _recurringEnabled
+                                ? (_recurringDates.isNotEmpty
+                                      ? _recurringDates.length
+                                      : (_howManyBookings >= 1 ? _howManyBookings : 1))
                                 : 1;
                             final card = _Step4SummaryCard(
                               service: selectedService,
@@ -1431,6 +1470,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               recurringEnabled: _recurringEnabled,
                               intervalLabel: intervalLabel,
                               bookingsCount: bookings,
+                              dateLabels: _bookingDateTimeLabels(locale),
+                              selectedBarberName: _selectedBarberName,
+                              alternativeBarberName: _alternativeBarberName,
+                              onRemoveRecurringAt: _removeRecurringDateAt,
                             );
                             if (!isLarge) return card;
                             return Center(
@@ -1536,6 +1579,10 @@ class _Step4SummaryCard extends StatelessWidget {
     required this.recurringEnabled,
     required this.intervalLabel,
     required this.bookingsCount,
+    required this.dateLabels,
+    required this.selectedBarberName,
+    required this.alternativeBarberName,
+    required this.onRemoveRecurringAt,
   });
 
   final _ServiceItem service;
@@ -1545,10 +1592,17 @@ class _Step4SummaryCard extends StatelessWidget {
   final bool recurringEnabled;
   final String intervalLabel;
   final int bookingsCount;
+  final List<String> dateLabels;
+  final String selectedBarberName;
+  final String alternativeBarberName;
+  final ValueChanged<int> onRemoveRecurringAt;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final totalPrice = recurringEnabled
+        ? service.priceEuro * bookingsCount
+        : service.priceEuro;
     return Container(
       padding: const EdgeInsets.fromLTRB(30, 25, 30, 25),
       decoration: BoxDecoration(
@@ -1577,7 +1631,14 @@ class _Step4SummaryCard extends StatelessWidget {
           if (recurringEnabled) ...[
             const _Step4Divider(),
             const SizedBox(height: 20),
-            _Step4MonthlyRecurrence(intervalLabel: intervalLabel),
+            _Step3MonthlySummary(
+              intervalLabel: intervalLabel,
+              dateLabels: dateLabels,
+              selectedBarberName: selectedBarberName,
+              alternativeBarberName: alternativeBarberName,
+              onRemoveAt: onRemoveRecurringAt,
+              decorateContainer: false,
+            ),
             const SizedBox(height: 25),
             const _Step4Divider(),
             const SizedBox(height: 20),
@@ -1598,7 +1659,7 @@ class _Step4SummaryCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '€${service.priceEuro}',
+                '€$totalPrice',
                 style: GoogleFonts.inter(
                   color: const Color(0xFFFFFFFF),
                   fontSize: 18,
@@ -1692,211 +1753,6 @@ class _Step4Divider extends StatelessWidget {
     return Container(
       height: 1,
       color: Color(0xFF797979).withValues(alpha: 0.30),
-    );
-  }
-}
-
-class _Step4MonthlyRecurrence extends StatefulWidget {
-  const _Step4MonthlyRecurrence({required this.intervalLabel});
-
-  final String intervalLabel;
-
-  @override
-  State<_Step4MonthlyRecurrence> createState() =>
-      _Step4MonthlyRecurrenceState();
-}
-
-class _Step4MonthlyRecurrenceState extends State<_Step4MonthlyRecurrence> {
-  bool _waitlist = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    Widget row(String text, {bool withPill = true}) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    text,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFDDDDDD),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (withPill) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF797979).withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Text(
-                        'con Marcus Silva',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFDDDDDD),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(Icons.close_rounded, size: 16, color: Color(0xFF797979)),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
-            const SizedBox(width: 10),
-            Text(
-              widget.intervalLabel,
-              style: GoogleFonts.inter(
-                color: const Color(0xFFFFFFFF),
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        row('Giovedì 9 aprile 2026, ore 10:00'),
-
-        Column(
-          children: [
-            row('Giovedì 16 aprile 2026, ore 10:00', withPill: false),
-            Padding(
-              padding: const EdgeInsets.only(left: 2, right: 2, bottom: 6),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.error_outline_rounded,
-                    size: 16,
-                    color: Color(0xFFE24B4B),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.noBarberAvailable,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFE24B4B),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            InkWell(
-              onTap: () => setState(() => _waitlist = !_waitlist),
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
-                child: Row(
-                  children: [
-                    SvgPicture.asset(
-                      _waitlist
-                          ? 'assets/icons/checked_box.svg'
-                          : 'assets/icons/non_checked_box.svg',
-                      width: 20,
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFFFFFFFF),
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      l10n.waitlistMe,
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFFDDDDDD),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Giovedì 23 aprile 2026, ore 10:00',
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFFDDDDDD),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Color(0xFF797979).withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(0xFFEF4444),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        'Alternative Barber with James Martinez',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFDDDDDD),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Icon(
-                Icons.close_rounded,
-                size: 16,
-                color: Color(0xFF797979),
-              ),
-            ],
-          ),
-        ),
-        row('Giovedì 30 aprile 2026, ore 10:00'),
-      ],
     );
   }
 }
@@ -2715,11 +2571,15 @@ class _Step3MonthlySummary extends StatefulWidget {
     required this.dateLabels,
     required this.selectedBarberName,
     required this.alternativeBarberName,
+    this.onRemoveAt,
+    this.decorateContainer = true,
   });
   final String intervalLabel;
   final List<String> dateLabels;
   final String selectedBarberName;
   final String alternativeBarberName;
+  final ValueChanged<int>? onRemoveAt;
+  final bool decorateContainer;
 
   @override
   State<_Step3MonthlySummary> createState() => _Step3MonthlySummaryState();
@@ -2728,7 +2588,11 @@ class _Step3MonthlySummary extends StatefulWidget {
 class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
   bool _waitlist = false;
 
-  Widget _entry({required String text, required Widget inner}) {
+  Widget _entry({
+    required int index,
+    required String text,
+    required Widget inner,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -2753,7 +2617,17 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
             ),
           ),
           const SizedBox(width: 12),
-          const Icon(Icons.close_rounded, size: 16, color: Color(0xFF797979)),
+          InkWell(
+            onTap: widget.onRemoveAt == null ? null : () => widget.onRemoveAt!(index),
+            borderRadius: BorderRadius.circular(12),
+            child: Icon(
+              Icons.close_rounded,
+              size: 16,
+              color: widget.onRemoveAt == null
+                  ? const Color(0xFF797979)
+                  : const Color(0xFFEDEDED),
+            ),
+          ),
         ],
       ),
     );
@@ -2880,6 +2754,33 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
   @override
   Widget build(BuildContext context) {
     final lines = widget.dateLabels;
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                widget.intervalLabel,
+                style: GoogleFonts.inter(
+                  color: const Color(0xFFFFFFFF),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        for (int i = 0; i < lines.length; i++)
+          _entry(index: i, text: lines[i], inner: _innerForCycle(i, context)),
+      ],
+    );
+
+    if (!widget.decorateContainer) return content;
     return Container(
       padding: const EdgeInsets.fromLTRB(30, 27, 30, 30),
       decoration: BoxDecoration(
@@ -2894,31 +2795,7 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              SvgPicture.asset('assets/icons/recurrence_icon.svg', width: 18),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  widget.intervalLabel,
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFFFFFFFF),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          for (int i = 0; i < lines.length; i++)
-            _entry(text: lines[i], inner: _innerForCycle(i, context)),
-        ],
-      ),
+      child: content,
     );
   }
 }
