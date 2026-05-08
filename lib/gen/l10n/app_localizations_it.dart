@@ -403,6 +403,57 @@ class AppLocalizationsIt extends AppLocalizations {
   String get notSignedIn => 'Devi accedere per impostare una foto profilo.';
 
   @override
+  String get bookingSuccess => 'Appuntamento prenotato con successo.';
+
+  @override
+  String get bookingGenericError => 'Qualcosa è andato storto. Riprova.';
+
+  @override
+  String withBarberLabel(String name) {
+    return 'con $name';
+  }
+
+  @override
+  String alternativeBarberLabel(String name) {
+    return 'Barbiere alternativo con $name';
+  }
+
+  @override
+  String get recurringSuccess => 'Appuntamenti ricorrenti elaborati.';
+
+  @override
+  String get recurringMissingSelection =>
+      'Seleziona un intervallo ricorrente e il numero di prenotazioni.';
+
+  @override
+  String recurringAllSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tutti gli $count slot selezionati sono stati saltati.',
+      one: 'Lo slot selezionato è stato saltato.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurringPartialSuccess(int booked, int skipped) {
+    String _temp0 = intl.Intl.pluralLogic(
+      booked,
+      locale: localeName,
+      other: '$booked appuntamenti prenotati',
+      one: '1 appuntamento prenotato',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      skipped,
+      locale: localeName,
+      other: '$skipped saltati',
+      one: '1 saltato',
+    );
+    return '$_temp0, $_temp1.';
+  }
+
+  @override
   String get sendYourMessage => 'Invia il tuo messaggio';
 
   @override

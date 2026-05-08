@@ -400,6 +400,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notSignedIn => 'You need to be signed in to set a profile photo.';
 
   @override
+  String get bookingSuccess => 'Appointment booked successfully.';
+
+  @override
+  String get bookingGenericError => 'Something went wrong. Please try again.';
+
+  @override
+  String withBarberLabel(String name) {
+    return 'with $name';
+  }
+
+  @override
+  String alternativeBarberLabel(String name) {
+    return 'Alternative barber with $name';
+  }
+
+  @override
+  String get recurringSuccess => 'Recurring appointments processed.';
+
+  @override
+  String get recurringMissingSelection =>
+      'Please choose a recurring interval and number of bookings.';
+
+  @override
+  String recurringAllSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'All $count selected slots were skipped.',
+      one: 'The selected slot was skipped.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurringPartialSuccess(int booked, int skipped) {
+    String _temp0 = intl.Intl.pluralLogic(
+      booked,
+      locale: localeName,
+      other: '$booked appointments booked',
+      one: '1 appointment booked',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      skipped,
+      locale: localeName,
+      other: '$skipped skipped',
+      one: '1 skipped',
+    );
+    return '$_temp0, $_temp1.';
+  }
+
+  @override
   String get sendYourMessage => 'Send your message';
 
   @override

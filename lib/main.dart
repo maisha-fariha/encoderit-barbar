@@ -11,6 +11,7 @@ import 'gen/l10n/app_localizations.dart';
 import 'services/app_services.dart';
 import 'services/profile_avatar_service.dart';
 import 'auth/app_auth_gateway.dart';
+import 'controllers/appointment_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/barber_list_controller.dart';
 import 'controllers/reservation_list_controller.dart';
@@ -58,6 +59,8 @@ Future<void> main() async {
 
   final reservationList = AppServices.getIt<ReservationListController>();
   Get.put(reservationList, permanent: true);
+  final appointmentController = AppServices.getIt<AppointmentController>();
+  Get.put(appointmentController, permanent: true);
   await auth.bootstrap();
   await avatarService.onAuthChanged();
 

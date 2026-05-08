@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:gems_core/gems_core.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 
 import '../models/appointment/appointment_model.dart';
+import '../utils/api_endpoints.dart';
 
 class AppointmentPageResult {
   const AppointmentPageResult({
@@ -19,6 +21,63 @@ class AppointmentPageResult {
   final int total;
 }
 
+/// Result of a single booking attempt.
+///
+/// On success: [appointment] is non-null and [message] holds the API message.
+/// On business failure (e.g. slot already booked): [success] is false,
+/// [message] holds the user-facing reason and [errors] holds the raw API
+/// errors map.
+class BookAppointmentOutcome {
+  const BookAppointmentOutcome({
+    required this.success,
+    required this.message,
+    this.appointment,
+    this.errors,
+    this.statusCode,
+    this.isNetworkError = false,
+  });
+
+  final bool success;
+  final String message;
+  final AppointmentModel? appointment;
+  final Map<String, dynamic>? errors;
+  final int? statusCode;
+  final bool isNetworkError;
+}
+
+/// Result of a recurring booking attempt.
+///
+/// The API can return `success: true` even when some/all slots are skipped
+/// (e.g. already booked, shop on vacation). [result] carries the parsed
+/// `data` envelope so the UI can decide how to surface partial outcomes.
+class BookRecurringOutcome {
+  const BookRecurringOutcome({
+    required this.success,
+    required this.message,
+    this.result,
+    this.errors,
+    this.statusCode,
+    this.isNetworkError = false,
+  });
+
+  final bool success;
+  final String message;
+  final RecurringAppointmentResult? result;
+  final Map<String, dynamic>? errors;
+  final int? statusCode;
+  final bool isNetworkError;
+
+  /// True when the API succeeded but no actual appointments were created.
+  bool get allSlotsSkipped =>
+      success &&
+      (result?.booked.isEmpty ?? true) &&
+      (result?.skipped.isNotEmpty ?? false);
+
+  /// True when the API succeeded with at least one slot skipped.
+  bool get hasSkippedSlots =>
+      success && (result?.skipped.isNotEmpty ?? false);
+}
+
 class AppointmentRepository extends BaseRepository<AppointmentModel> {
   AppointmentRepository({
     required super.apiService,
@@ -32,9 +91,159 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
   AppointmentModel fromJson(Map<String, dynamic> json) =>
       AppointmentModel.fromJson(json);
 
+  /// POST `/appointments` — books a single (non-recurring) appointment.
+  ///
+  /// Always returns a structured [BookAppointmentOutcome]; never throws.
+  Future<BookAppointmentOutcome> bookAppointment(
+    AppointmentBookingRequest request,
+  ) async {
+    final body = request.toJson();
+    if (kDebugMode) {
+      debugPrint(
+        '[AppointmentRepository] POST ${ApiEndpoints.appointments} body=$body',
+      );
+    }
+
+    try {
+      final response = await apiService.post<dynamic>(
+        ApiEndpoints.appointments,
+        data: body,
+      );
+
+      if (kDebugMode) {
+        debugPrint(
+          '[AppointmentRepository] response success=${response.success} '
+          'status=${response.statusCode} message=${response.message}',
+        );
+      }
+
+      if (response.success) {
+        final appointment = _parseSingleAppointment(response.data);
+        return BookAppointmentOutcome(
+          success: true,
+          message: (response.message ?? '').trim(),
+          appointment: appointment,
+          statusCode: response.statusCode,
+        );
+      }
+
+      return BookAppointmentOutcome(
+        success: false,
+        message: (response.message ?? '').trim(),
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[AppointmentRepository] exception: $e\n$st');
+      }
+      return BookAppointmentOutcome(
+        success: false,
+        message: e.toString(),
+        isNetworkError: true,
+      );
+    }
+  }
+
+  /// POST `/appointments/recurring` — books a series of appointments.
+  ///
+  /// Always returns a structured [BookRecurringOutcome]; never throws.
+  /// The caller is expected to inspect [BookRecurringOutcome.hasSkippedSlots]
+  /// and surface partial outcomes appropriately.
+  Future<BookRecurringOutcome> bookRecurringAppointment(
+    RecurringAppointmentRequest request,
+  ) async {
+    final body = request.toJson();
+    if (kDebugMode) {
+      debugPrint(
+        '[AppointmentRepository] POST ${ApiEndpoints.appointmentsRecurring} '
+        'body=$body',
+      );
+    }
+
+    try {
+      final response = await apiService.post<dynamic>(
+        ApiEndpoints.appointmentsRecurring,
+        data: body,
+      );
+
+      if (kDebugMode) {
+        debugPrint(
+          '[AppointmentRepository] recurring response success=${response.success} '
+          'status=${response.statusCode} message=${response.message}',
+        );
+      }
+
+      if (response.success) {
+        final result = _parseRecurringResult(response.data);
+        return BookRecurringOutcome(
+          success: true,
+          message: (response.message ?? '').trim(),
+          result: result,
+          statusCode: response.statusCode,
+        );
+      }
+
+      return BookRecurringOutcome(
+        success: false,
+        message: (response.message ?? '').trim(),
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[AppointmentRepository] recurring exception: $e\n$st');
+      }
+      return BookRecurringOutcome(
+        success: false,
+        message: e.toString(),
+        isNetworkError: true,
+      );
+    }
+  }
+
+  RecurringAppointmentResult? _parseRecurringResult(dynamic raw) {
+    if (raw is! Map) return null;
+    final map = Map<String, dynamic>.from(raw);
+    // Handle both `{ data: { ... } }` and a direct envelope shape.
+    final inner = map['data'];
+    final source = inner is Map ? Map<String, dynamic>.from(inner) : map;
+    try {
+      return RecurringAppointmentResult.fromJson(source);
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint(
+          '[AppointmentRepository] recurring parse failed: $e\n$st (raw=$source)',
+        );
+      }
+      return null;
+    }
+  }
+
+  AppointmentModel? _parseSingleAppointment(dynamic raw) {
+    if (raw is! Map) return null;
+    final map = Map<String, dynamic>.from(raw);
+    // Handle both `{ data: { ... } }` and direct entity payloads.
+    final inner = map['data'];
+    if (inner is Map) {
+      try {
+        return AppointmentModel.fromJson(Map<String, dynamic>.from(inner));
+      } catch (_) {
+        return null;
+      }
+    }
+    try {
+      return AppointmentModel.fromJson(map);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Result<void>> deleteAppointment(String appointmentId) async {
     try {
-      final response = await apiService.delete<dynamic>('/appointments/$appointmentId');
+      final response = await apiService.delete<dynamic>(
+        '${ApiEndpoints.appointments}/$appointmentId',
+      );
       if (response.success) {
         return Result.success(null);
       }
@@ -187,11 +396,6 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
 
     final map = Map<String, dynamic>.from(raw);
 
-    // Common API envelopes:
-    // 1) { data: [ ... ] }
-    // 2) { data: { appointments: [ ... ] } }
-    // 3) { appointments: [ ... ] }
-    // 4) { result: [ ... ] } or any first list-like field
     final directData = map['data'];
     if (directData is List) return directData;
     if (directData is Map) {

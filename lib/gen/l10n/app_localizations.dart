@@ -836,6 +836,54 @@ abstract class AppLocalizations {
   /// **'You need to be signed in to set a profile photo.'**
   String get notSignedIn;
 
+  /// No description provided for @bookingSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment booked successfully.'**
+  String get bookingSuccess;
+
+  /// No description provided for @bookingGenericError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get bookingGenericError;
+
+  /// No description provided for @withBarberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'with {name}'**
+  String withBarberLabel(String name);
+
+  /// No description provided for @alternativeBarberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternative barber with {name}'**
+  String alternativeBarberLabel(String name);
+
+  /// No description provided for @recurringSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring appointments processed.'**
+  String get recurringSuccess;
+
+  /// No description provided for @recurringMissingSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Please choose a recurring interval and number of bookings.'**
+  String get recurringMissingSelection;
+
+  /// No description provided for @recurringAllSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{The selected slot was skipped.} other{All {count} selected slots were skipped.}}'**
+  String recurringAllSkipped(int count);
+
+  /// No description provided for @recurringPartialSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{booked, plural, =1{1 appointment booked} other{{booked} appointments booked}}, {skipped, plural, =1{1 skipped} other{{skipped} skipped}}.'**
+  String recurringPartialSuccess(int booked, int skipped);
+
   /// No description provided for @sendYourMessage.
   ///
   /// In en, this message translates to:
