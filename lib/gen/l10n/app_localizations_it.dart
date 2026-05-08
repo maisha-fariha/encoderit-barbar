@@ -265,6 +265,22 @@ class AppLocalizationsIt extends AppLocalizations {
   String get confirmAction => 'Confermare';
 
   @override
+  String get deleteAppointmentTitle => 'Elimina appuntamento';
+
+  @override
+  String get deleteAppointmentMessage =>
+      'Sei sicuro di voler eliminare questo appuntamento? Questa azione non può essere annullata.';
+
+  @override
+  String get noAction => 'No';
+
+  @override
+  String get yesAction => 'Sì';
+
+  @override
+  String get appointmentDeleted => 'Appuntamento eliminato';
+
+  @override
   String get everyThursday => 'Ogni giovedì';
 
   @override

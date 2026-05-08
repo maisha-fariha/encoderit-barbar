@@ -89,6 +89,11 @@
   "actionCannotBeUndone": "Questa azione non può essere annullata.\\nConferma se desideri procedere.",
   "cancelAction": "Cancellare",
   "confirmAction": "Confermare",
+  "deleteAppointmentTitle": "Elimina appuntamento",
+  "deleteAppointmentMessage": "Sei sicuro di voler eliminare questo appuntamento? Questa azione non può essere annullata.",
+  "noAction": "No",
+  "yesAction": "Sì",
+  "appointmentDeleted": "Appuntamento eliminato",
   "everyThursday": "Ogni giovedì",
   "everyWeekday": "Ogni {day}",
   "@everyWeekday": {
