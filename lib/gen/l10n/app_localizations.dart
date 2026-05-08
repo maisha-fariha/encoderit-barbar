@@ -596,6 +596,36 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get confirmAction;
 
+  /// No description provided for @deleteAppointmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete appointment'**
+  String get deleteAppointmentTitle;
+
+  /// No description provided for @deleteAppointmentMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this appointment? This action cannot be undone.'**
+  String get deleteAppointmentMessage;
+
+  /// No description provided for @noAction.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get noAction;
+
+  /// No description provided for @yesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yesAction;
+
+  /// No description provided for @appointmentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment deleted'**
+  String get appointmentDeleted;
+
   /// No description provided for @everyThursday.
   ///
   /// In en, this message translates to:
