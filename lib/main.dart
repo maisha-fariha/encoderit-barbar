@@ -15,6 +15,7 @@ import 'controllers/appointment_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/barber_list_controller.dart';
 import 'controllers/contact_controller.dart';
+import 'controllers/profile_controller.dart';
 import 'controllers/reservation_list_controller.dart';
 import 'controllers/shop_list_controller.dart';
 import 'controllers/service_list_controller.dart';
@@ -64,6 +65,8 @@ Future<void> main() async {
   Get.put(appointmentController, permanent: true);
   final contactController = AppServices.getIt<ContactController>();
   Get.put(contactController, permanent: true);
+  final profileController = AppServices.getIt<ProfileController>();
+  Get.put(profileController, permanent: true);
   await auth.bootstrap();
   await avatarService.onAuthChanged();
 

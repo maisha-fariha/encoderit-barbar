@@ -752,6 +752,30 @@ abstract class AppLocalizations {
   /// **'Your message was sent.'**
   String get contactSubmitSuccessFallback;
 
+  /// No description provided for @profileNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your first or last name.'**
+  String get profileNameRequired;
+
+  /// No description provided for @profileEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email.'**
+  String get profileEmailRequired;
+
+  /// No description provided for @profileUpdateSuccessFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated.'**
+  String get profileUpdateSuccessFallback;
+
+  /// No description provided for @profileUpdateNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update profile. Check your connection and try again.'**
+  String get profileUpdateNetworkError;
+
   /// No description provided for @reservationListTitle.
   ///
   /// In en, this message translates to:

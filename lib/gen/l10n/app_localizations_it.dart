@@ -357,6 +357,19 @@ class AppLocalizationsIt extends AppLocalizations {
   String get contactSubmitSuccessFallback => 'Messaggio inviato.';
 
   @override
+  String get profileNameRequired => 'Inserisci nome o cognome.';
+
+  @override
+  String get profileEmailRequired => 'Inserisci la tua email.';
+
+  @override
+  String get profileUpdateSuccessFallback => 'Profilo aggiornato.';
+
+  @override
+  String get profileUpdateNetworkError =>
+      'Impossibile aggiornare il profilo. Controlla la connessione e riprova.';
+
+  @override
   String get reservationListTitle => 'Elenco prenotazioni';
 
   @override

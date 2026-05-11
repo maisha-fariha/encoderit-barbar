@@ -1,13 +1,18 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../gen/l10n/app_localizations.dart';
 
+import '../controllers/profile_controller.dart';
+import '../gen/l10n/app_localizations.dart';
+import '../models/profile/profile_update_request.dart';
 import '../routes/app_pages.dart';
+import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -18,8 +23,21 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  bool _obscure = true;
   int _navIndex = 3; // Profilo selected
+
+  final _firstName = TextEditingController();
+  final _lastName = TextEditingController();
+  final _email = TextEditingController();
+  final _phone = TextEditingController();
+  final _dobCtrl = TextEditingController();
+  final _address = TextEditingController();
+  final _zip = TextEditingController();
+  final _municipality = TextEditingController();
+  final _province = TextEditingController();
+  final _country = TextEditingController();
+
+  /// Relative avatar URL from session (e.g. after upload); sent on `PUT /profile`.
+  String _avatarUrl = '';
 
   ProfileAvatarService? get _avatarSvc =>
       Get.isRegistered<ProfileAvatarService>()
@@ -159,6 +177,171 @@ class _ProfilePageState extends State<ProfilePage> {
         duration: const Duration(seconds: 4),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_loadFromSession());
+    });
+  }
+
+  @override
+  void dispose() {
+    _firstName.dispose();
+    _lastName.dispose();
+    _email.dispose();
+    _phone.dispose();
+    _dobCtrl.dispose();
+    _address.dispose();
+    _zip.dispose();
+    _municipality.dispose();
+    _province.dispose();
+    _country.dispose();
+    super.dispose();
+  }
+
+  String _stringField(Map<String, dynamic> u, List<String> keys) {
+    for (final k in keys) {
+      final v = u[k];
+      if (v is String && v.trim().isNotEmpty) return v.trim();
+    }
+    return '';
+  }
+
+  Future<void> _loadFromSession() async {
+    final auth = await AppServices.getIt<AuthService>().getStoredAuth();
+    if (!mounted) return;
+    final u = auth?.userData;
+    if (u == null) return;
+    final name = (u['name'] as String? ?? '').trim();
+    final parts = name.isEmpty ? <String>[] : name.split(RegExp(r'\s+'));
+    setState(() {
+      _firstName.text = parts.isNotEmpty ? parts.first : '';
+      _lastName.text = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      _email.text = (u['email'] as String? ?? '').trim();
+      _phone.text = (u['phone'] as String? ?? '').trim();
+      _dobCtrl.text = _stringField(u, ['dob', 'date_of_birth', 'birthday']);
+      _address.text = _stringField(u, ['address']);
+      _zip.text = _stringField(u, ['zip_code', 'zip']);
+      _municipality.text = _stringField(u, ['municipality', 'city']);
+      _province.text = _stringField(u, ['province']);
+      _country.text = _stringField(u, ['country']);
+      _avatarUrl = (u['avatar_url'] as String? ?? '').trim();
+    });
+  }
+
+  void _showSnack(String text, {required bool isError}) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFFE8E8E8),
+        content: Text(
+          text,
+          style: GoogleFonts.inter(
+            color: isError ? const Color(0xFFB91C1C) : const Color(0xFF0B0B0B),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _firstErrorString(Map<String, dynamic>? errors) {
+    if (errors == null || errors.isEmpty) return '';
+    for (final value in errors.values) {
+      if (value is List && value.isNotEmpty && value.first is String) {
+        final v = (value.first as String).trim();
+        if (v.isNotEmpty) return v;
+      }
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return '';
+  }
+
+  String _two(int n) => n.toString().padLeft(2, '0');
+
+  Future<void> _pickDob() async {
+    DateTime initial = DateTime(1990, 1, 1);
+    final raw = _dobCtrl.text.trim();
+    if (raw.isNotEmpty) {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) initial = parsed;
+    }
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _dobCtrl.text = '${picked.year}-${_two(picked.month)}-${_two(picked.day)}';
+    });
+  }
+
+  Future<void> _submitProfile() async {
+    FocusScope.of(context).unfocus();
+    final l10n = AppLocalizations.of(context)!;
+    final first = _firstName.text.trim();
+    final last = _lastName.text.trim();
+    final name = [first, last].where((s) => s.isNotEmpty).join(' ');
+    if (name.isEmpty) {
+      _showSnack(l10n.profileNameRequired, isError: true);
+      return;
+    }
+    final email = _email.text.trim();
+    if (email.isEmpty) {
+      _showSnack(l10n.profileEmailRequired, isError: true);
+      return;
+    }
+
+    final request = ProfileUpdateRequest(
+      name: name,
+      email: email,
+      phone: _phone.text.trim(),
+      avatarUrl: _avatarUrl,
+      dob: _dobCtrl.text.trim(),
+      address: _address.text.trim(),
+      zipCode: _zip.text.trim(),
+      province: _province.text.trim(),
+      municipality: _municipality.text.trim(),
+      country: _country.text.trim(),
+    );
+
+    final controller = Get.find<ProfileController>();
+    final outcome = await controller.updateProfile(request);
+    if (!mounted) return;
+
+    if (outcome.success) {
+      final msg = outcome.message.isNotEmpty
+          ? outcome.message
+          : l10n.profileUpdateSuccessFallback;
+      _showSnack(msg, isError: false);
+      await _loadFromSession();
+      if (Get.isRegistered<ProfileAvatarService>()) {
+        Get.find<ProfileAvatarService>().revision.value++;
+      }
+      return;
+    }
+
+    if (outcome.isNetworkError) {
+      _showSnack(l10n.profileUpdateNetworkError, isError: true);
+      return;
+    }
+
+    final fromErrors = _firstErrorString(outcome.errors);
+    final errMsg = outcome.message.isNotEmpty
+        ? outcome.message
+        : (fromErrors.isNotEmpty ? fromErrors : l10n.bookingGenericError);
+    _showSnack(errMsg, isError: true);
   }
 
   String _avatarErrorMessage(AppLocalizations l10n, AvatarPickError? err) {
@@ -328,85 +511,146 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         _FieldLabel(l10n.nameLabel),
                         const SizedBox(height: 8),
-                        const _TextFieldBox(text: 'Leonardo'),
+                        _ProfileTextField(
+                          controller: _firstName,
+                          hint: l10n.enterYourName,
+                          fontScale: fontScale,
+                        ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.lastNameLabel),
                         const SizedBox(height: 8),
-                        const _TextFieldBox(text: 'Rossi'),
+                        _ProfileTextField(
+                          controller: _lastName,
+                          hint: l10n.lastNameLabel,
+                          fontScale: fontScale,
+                        ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.dateOfBirthLabel),
                         const SizedBox(height: 8),
-                        const _TextFieldBox(text: '16 Agosto 1988', trailing: Icons.calendar_today_outlined),
+                        _ProfileTextField(
+                          controller: _dobCtrl,
+                          hint: 'YYYY-MM-DD',
+                          fontScale: fontScale,
+                          trailing: IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 36,
+                              minHeight: 36,
+                            ),
+                            onPressed: _pickDob,
+                            icon: Icon(
+                              Icons.calendar_today_outlined,
+                              color: const Color(0xFFB7B7B7),
+                              size: 18 * fontScale,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.phoneNumberLabel),
                         const SizedBox(height: 8),
-                        const _TextFieldBox(text: '+390552768325'),
+                        _ProfileTextField(
+                          controller: _phone,
+                          hint: l10n.phoneHint,
+                          fontScale: fontScale,
+                          keyboardType: TextInputType.phone,
+                        ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.emailLabel),
                         const SizedBox(height: 8),
-                        const _TextFieldBox(text: 'yourmail@mail.com', muted: true),
+                        _ProfileTextField(
+                          controller: _email,
+                          hint: l10n.enterYourEmail,
+                          fontScale: fontScale,
+                          keyboardType: TextInputType.emailAddress,
+                        ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.address),
                         const SizedBox(height: 8),
-                        const _TextFieldBox(
-                          text: 'P.za della Signoria,\n50122 Firenze FI,\nItalia',
-                          lines: 3,
+                        _ProfileTextField(
+                          controller: _address,
+                          hint: l10n.address,
+                          fontScale: fontScale,
+                          maxLines: 3,
                         ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.zipCodeLabel),
                         const SizedBox(height: 8),
-                        const _TextFieldBox(text: '50122'),
+                        _ProfileTextField(
+                          controller: _zip,
+                          hint: l10n.zipCodeLabel,
+                          fontScale: fontScale,
+                        ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.cityLabel),
                         const SizedBox(height: 8),
-                        const _SelectFieldBox(text: 'Milan (Milano)'),
+                        _ProfileTextField(
+                          controller: _municipality,
+                          hint: l10n.cityLabel,
+                          fontScale: fontScale,
+                        ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.provinceLabel),
                         const SizedBox(height: 8),
-                        const _SelectFieldBox(text: 'Lombardy'),
+                        _ProfileTextField(
+                          controller: _province,
+                          hint: l10n.provinceLabel,
+                          fontScale: fontScale,
+                        ),
                         const SizedBox(height: 14),
                         _FieldLabel(l10n.countryLabel),
                         const SizedBox(height: 8),
-                        const _SelectFieldBox(text: 'Italia'),
-                        const SizedBox(height: 14),
-                        _FieldLabel(l10n.passwordHint),
-                        const SizedBox(height: 8),
-                        _PasswordFieldBox(
-                          obscure: _obscure,
-                          onToggle: () => setState(() => _obscure = !_obscure),
+                        _ProfileTextField(
+                          controller: _country,
+                          hint: l10n.countryLabel,
+                          fontScale: fontScale,
                         ),
                         const SizedBox(height: 30),
-                        SizedBox(
-                          height: 48,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Color(0xFFFFFFFF).withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white)
-                            ),
-                            child: FilledButton(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
+                        Obx(() {
+                          final busy =
+                              Get.find<ProfileController>().isUpdating.value;
+                          return SizedBox(
+                            height: 48,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: busy
+                                    ? Color(0xFFFFFFFF).withValues(alpha: 0.06)
+                                    : Color(0xFFFFFFFF).withValues(alpha: 0.10),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.white),
                               ),
-                              onPressed: () {
-                                FocusScope.of(context).unfocus();
-                              },
-                              child: Text(
-                                l10n.update,
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 16 * fontScale,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
                                 ),
+                                onPressed: busy ? null : _submitProfile,
+                                child: busy
+                                    ? SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                        ),
+                                      )
+                                    : Text(
+                                        l10n.update,
+                                        style: GoogleFonts.inter(
+                                          color: Colors.white,
+                                          fontSize: 16 * fontScale,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1,
+                                        ),
+                                      ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        }),
                         const SizedBox(height: 12),
                         SizedBox(
                           height: 48,
@@ -805,155 +1049,77 @@ class _FieldLabel extends StatelessWidget {
   }
 }
 
-class _TextFieldBox extends StatelessWidget {
-  const _TextFieldBox({
-    required this.text,
+class _ProfileTextField extends StatelessWidget {
+  const _ProfileTextField({
+    required this.controller,
+    required this.hint,
+    required this.fontScale,
+    this.maxLines = 1,
+    this.keyboardType,
     this.trailing,
-    this.lines = 1,
-    this.muted = false,
   });
 
-  final String text;
-  final IconData? trailing;
-  final int lines;
-  final bool muted;
+  final TextEditingController controller;
+  final String hint;
+  final double fontScale;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
-      context,
-      small: 1.0,
-      medium: 1.08,
-      large: 1.22,
-    );
+    final isMultiline = maxLines > 1;
+    final suffix = trailing;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.fromLTRB(
-        16,
-        (lines > 1 ? 14 : 15) * fontScale,
-        16,
-        (lines > 1 ? 14 : 15) * fontScale,
+        12,
+        (isMultiline ? 6 : 2) * fontScale,
+        12,
+        (isMultiline ? 6 : 2) * fontScale,
       ),
       decoration: BoxDecoration(
-        color: muted ? Color(0xFFFFFFFF).withValues(alpha: 0.05) : Color(0xFFFFFFFF).withValues(alpha: 0.08),
+        color: const Color(0xFFFFFFFF).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: muted ? Color(0xFFFFFFFF).withValues(alpha: 0.10) : Color(0xFFFFFFFF).withValues(alpha: 0.15), width: 1)
+        border: Border.all(
+          color: const Color(0xFFFFFFFF).withValues(alpha: 0.15),
+          width: 1,
+        ),
       ),
       child: Row(
-        crossAxisAlignment: lines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        crossAxisAlignment:
+            isMultiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Text(
-              text,
-              maxLines: lines,
-              overflow: TextOverflow.ellipsis,
+            child: TextField(
+              controller: controller,
+              maxLines: maxLines,
+              keyboardType: keyboardType,
               style: GoogleFonts.inter(
-                color: muted ? Color(0xFFFFFFFF).withValues(alpha: 0.30) : Color(0xFFFFFFFF),
+                color: Colors.white,
                 fontSize: 16 * fontScale,
-                height: 1,
                 fontWeight: FontWeight.w500,
+                height: isMultiline ? 1.35 : 1.2,
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                hintText: hint,
+                hintStyle: GoogleFonts.inter(
+                  color: const Color(0xFFFFFFFF).withValues(alpha: 0.35),
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16 * fontScale,
+                ),
+                contentPadding: EdgeInsets.fromLTRB(
+                  4,
+                  isMultiline ? 10 : 12,
+                  4,
+                  isMultiline ? 10 : 12,
+                ),
               ),
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 10),
-            Icon(trailing, color: const Color(0xFFB7B7B7), size: 18 * fontScale),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _SelectFieldBox extends StatelessWidget {
-  const _SelectFieldBox({required this.text});
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
-      context,
-      small: 1.0,
-      medium: 1.08,
-      large: 1.22,
-    );
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, 15 * fontScale, 16, 15 * fontScale),
-      decoration: BoxDecoration(
-        color: Color(0xFFFFFFFF).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFFFFFFF).withValues(alpha: 0.15), width: 1),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              text,
-              style: GoogleFonts.inter(
-                color: Color(0xFFFFFFFF),
-                fontSize: 16 * fontScale,
-                fontWeight: FontWeight.w500,
-                height: 1,
-              ),
-            ),
-          ),
-          Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: const Color(0xFF797979),
-            size: 20 * fontScale,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PasswordFieldBox extends StatelessWidget {
-  const _PasswordFieldBox({required this.obscure, required this.onToggle});
-
-  final bool obscure;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
-      context,
-      small: 1.0,
-      medium: 1.08,
-      large: 1.22,
-    );
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, 15 * fontScale, 16, 15 * fontScale),
-      decoration: BoxDecoration(
-        color: Color(0xFFFFFFFF).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFFFFFFF).withValues(alpha: 0.15), width: 1),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              obscure ? '******' : l10n.passwordHint,
-              style: GoogleFonts.inter(
-                color: Color(0xFFFFFFFF),
-                fontSize: 16 * fontScale,
-                fontWeight: FontWeight.w500,
-                height: 1.0,
-              ),
-            ),
-          ),
-          InkResponse(
-            radius: 16 * fontScale,
-            onTap: onToggle,
-            child: Icon(
-              obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: Color(0xFF999999),
-              size: 16 * fontScale,
-            ),
-          ),
+          if (suffix != null) suffix,
         ],
       ),
     );

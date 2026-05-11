@@ -24,6 +24,9 @@ class ApiEndpoints {
   /// Multipart upload endpoint for the current user's profile avatar.
   static const profileAvatar = '/profile/avatar';
 
+  /// Authenticated profile update (`Authorization: Bearer …`).
+  static const profile = '/profile';
+
   /// Public contact form submission.
   static const contacts = '/contacts';
 
