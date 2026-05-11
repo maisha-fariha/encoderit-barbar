@@ -11,8 +11,10 @@ import '../controllers/service_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/availability_slot_model.dart';
 import '../models/appointment/appointment_model.dart';
+import '../models/appointment/recurring_preview_model.dart';
 import '../models/shop/shop_model.dart';
 import '../repositories/availability_repository.dart';
+import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 
@@ -31,11 +33,13 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   DateTime _selectedDate = _today();
   bool _recurringEnabled = true;
   int _recurringIndex = -1; // -1 = nothing selected; otherwise 0..3
-  int _howManyBookings = 0; // 0 = nothing selected; otherwise 1..10
-  List<DateTime> _recurringDates = <DateTime>[];
+  int _howManyBookings = 0; // 0 = nothing selected; otherwise 1..52
   List<AvailabilitySlot> _slots = const <AvailabilitySlot>[];
   bool _isLoadingSlots = false;
   String _slotsErrorMessage = '';
+  bool _isLoadingPreview = false;
+  String _previewErrorMessage = '';
+  List<RecurringPreviewDateItem> _previewItems = const <RecurringPreviewDateItem>[];
 
   static bool _isBlockedWeekday(DateTime d) =>
       d.weekday == DateTime.wednesday || d.weekday == DateTime.friday;
@@ -57,6 +61,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     final slot = _slots[_selectedTime];
     if (!slot.available) return null;
     return slot.time;
+  }
+
+  int? get _selectedShopIdAsInt => int.tryParse(_selectedShopId ?? '');
+  int? get _selectedServiceIdAsInt => int.tryParse(_selectedServiceId ?? '');
+  int? get _selectedBarberIdAsInt {
+    final list = _barberController.items;
+    if (list.isEmpty || _selectedBarber < 0 || _selectedBarber >= list.length) {
+      return null;
+    }
+    return int.tryParse(list[_selectedBarber].id);
   }
 
   List<_ServiceItem> get _items {
@@ -117,20 +131,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return list[_selectedBarber].name;
   }
 
-  /// Best-effort alternate barber: the first barber other than the selected one.
-  ///
-  /// Returns an empty string when only one barber is available — callers should
-  /// fall back to a "no barber available" UI in that case.
-  String get _alternativeBarberName {
-    final list = _barberController.items;
-    if (list.length <= 1) return '';
-    for (int i = 0; i < list.length; i++) {
-      if (i == _selectedBarber) continue;
-      final name = list[i].name.trim();
-      if (name.isNotEmpty) return name;
-    }
-    return '';
-  }
 
   Future<void> _loadServicesForSelectedShop() async {
     final shopId = _selectedShopId;
@@ -221,6 +221,80 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         });
       },
     );
+  }
+
+  Future<void> _loadRecurringPreview({bool showLoading = true}) async {
+    if (!_recurringEnabled || _recurringIndex < 0 || _howManyBookings < 1) {
+      setState(() {
+        _previewItems = const <RecurringPreviewDateItem>[];
+        _previewErrorMessage = '';
+        _isLoadingPreview = false;
+      });
+      return;
+    }
+    final shopId = _selectedShopIdAsInt;
+    final serviceId = _selectedServiceIdAsInt;
+    final barberId = _selectedBarberIdAsInt;
+    final time = _selectedSlotTime;
+    if (shopId == null || serviceId == null || barberId == null || time == null) {
+      setState(() {
+        _previewItems = const <RecurringPreviewDateItem>[];
+        _previewErrorMessage = '';
+        _isLoadingPreview = false;
+      });
+      return;
+    }
+
+    if (showLoading) {
+      setState(() {
+        _isLoadingPreview = true;
+        _previewErrorMessage = '';
+      });
+    }
+
+    final repo = AppServices.getIt<AppointmentRepository>();
+    final outcome = await repo.previewRecurring(
+      shopId: shopId,
+      barberId: barberId,
+      serviceId: serviceId,
+      date: _formatApiDate(_selectedDate),
+      time: time,
+      quantity: _howManyBookings,
+      interval: _recurringIndex + 1,
+      type: 'weekly',
+      notes: null,
+    );
+
+    if (!mounted) return;
+    if (outcome.success) {
+      assert(() {
+        debugPrint(
+          '[RecurringPreview] '
+          'shop=$shopId service=$serviceId barber=$barberId '
+          'date=${_formatApiDate(_selectedDate)} time=$time '
+          'qty=$_howManyBookings interval=${_recurringIndex + 1} '
+          'apiDates=${outcome.result?.dates.length ?? 0}',
+        );
+        return true;
+      }());
+      setState(() {
+        _previewItems = outcome.result?.dates ?? const <RecurringPreviewDateItem>[];
+        _previewErrorMessage = '';
+        _isLoadingPreview = false;
+        _howManyBookings = _previewItems.length;
+      });
+      assert(() {
+        debugPrint('[RecurringPreview] renderedDates=${_previewItems.length}');
+        return true;
+      }());
+      return;
+    }
+
+    setState(() {
+      _previewItems = const <RecurringPreviewDateItem>[];
+      _previewErrorMessage = outcome.message;
+      _isLoadingPreview = false;
+    });
   }
 
   void _showPageMessage(String message) {
@@ -475,10 +549,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         _recurringEnabled = true;
         _recurringIndex = -1;
         _howManyBookings = 0;
-        _recurringDates = <DateTime>[];
         _slots = const <AvailabilitySlot>[];
         _slotsErrorMessage = '';
         _isLoadingSlots = true;
+        _previewItems = const <RecurringPreviewDateItem>[];
+        _previewErrorMessage = '';
+        _isLoadingPreview = false;
       });
       await _loadSlotsForSelection(showLoading: false);
       return;
@@ -556,80 +632,20 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return list[(date.weekday - 1).clamp(0, 6)];
   }
 
-  static const List<int> _recurrenceIntervalDays = [7, 14, 21, 28];
-
   void _syncRecurringDates() {
-    if (!_recurringEnabled || _recurringIndex < 0 || _howManyBookings < 1) {
-      _recurringDates = <DateTime>[];
-      return;
-    }
-    final safeIndex = _recurringIndex.clamp(0, _recurrenceIntervalDays.length - 1);
-    final intervalDays = _recurrenceIntervalDays[safeIndex];
-    _recurringDates = List<DateTime>.generate(
-      _howManyBookings,
-      (i) => _selectedDate.add(Duration(days: intervalDays * i)),
-      growable: true,
-    );
+    // Recurring dates are now provided by the preview API.
   }
 
   void _removeRecurringDateAt(int index) {
-    if (index < 0 || index >= _recurringDates.length) return;
+    if (index < 0 || index >= _previewItems.length) return;
     setState(() {
-      _recurringDates.removeAt(index);
-      _howManyBookings = _recurringDates.length;
+      _previewItems = List<RecurringPreviewDateItem>.from(_previewItems)
+        ..removeAt(index);
+      _howManyBookings = _previewItems.length;
       if (_howManyBookings == 0) {
         _recurringIndex = -1;
       }
     });
-  }
-
-  // e.g. "Giovedì 9 aprile 2026, ore 10:00" (IT)
-  // or   "Thursday 9 April 2026, at 10:00" (EN)
-  String _bookingDateTimeLabel(DateTime date, String time, Locale locale) {
-    const itMonthsLower = [
-      'gennaio',
-      'febbraio',
-      'marzo',
-      'aprile',
-      'maggio',
-      'giugno',
-      'luglio',
-      'agosto',
-      'settembre',
-      'ottobre',
-      'novembre',
-      'dicembre',
-    ];
-    const enMonths = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    final isIt = locale.languageCode == 'it';
-    final weekday = _weekdayName(date, locale);
-    final dow = weekday.isEmpty
-        ? weekday
-        : '${weekday[0].toUpperCase()}${weekday.substring(1)}';
-    final mon = (isIt ? itMonthsLower : enMonths)[(date.month - 1).clamp(0, 11)];
-    final connector = isIt ? 'ore' : 'at';
-    return '$dow ${date.day} $mon ${date.year}, $connector $time';
-  }
-
-  List<String> _bookingDateTimeLabels(Locale locale) {
-    if (_recurringDates.isEmpty) return const [];
-    final time = _selectedSlotTime ?? '';
-    return _recurringDates
-        .map((d) => _bookingDateTimeLabel(d, time, locale))
-        .toList(growable: false);
   }
 
   // e.g. "Gio, Aprile 09" (IT) or "Thu, April 09" (EN)
@@ -762,6 +778,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     });
     if (_step == 4) {
       await _loadSlotsForSelection();
+      await _loadRecurringPreview();
     }
   }
 
@@ -1369,16 +1386,20 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                   _syncRecurringDates();
                                 });
                                 await _loadSlotsForSelection();
+                                await _loadRecurringPreview();
                               },
                               selectedTimeIndex: _selectedTime,
                               slots: _slots,
                               isLoadingSlots: _isLoadingSlots,
                               slotsErrorMessage: _slotsErrorMessage,
                               onRetrySlots: _loadSlotsForSelection,
-                              onSelectTime: (i) => setState(() {
-                                _selectedTime = i;
-                                _syncRecurringDates();
-                              }),
+                              onSelectTime: (i) async {
+                                setState(() {
+                                  _selectedTime = i;
+                                  _syncRecurringDates();
+                                });
+                                await _loadRecurringPreview();
+                              },
                               onTapCalendar: _pickStep3Date,
                             );
 
@@ -1387,14 +1408,19 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               children: [
                                 _Step3RecurringToggle(
                                   value: _recurringEnabled,
-                                  onChanged: (v) => setState(() {
-                                    _recurringEnabled = v;
-                                    if (!v) {
-                                      _recurringIndex = -1;
-                                      _howManyBookings = 0;
-                                    }
-                                    _syncRecurringDates();
-                                  }),
+                                  onChanged: (v) async {
+                                    setState(() {
+                                      _recurringEnabled = v;
+                                      if (!v) {
+                                        _recurringIndex = -1;
+                                        _howManyBookings = 0;
+                                        _previewItems =
+                                            const <RecurringPreviewDateItem>[];
+                                      }
+                                      _syncRecurringDates();
+                                    });
+                                    await _loadRecurringPreview();
+                                  },
                                 ),
                                 if (_recurringEnabled) ...[
                                   const SizedBox(height: 15),
@@ -1411,15 +1437,18 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                       l10n.every4Weeks,
                                     ],
                                     selectedIndex: _recurringIndex,
-                                    onSelect: (i) => setState(() {
-                                      _recurringIndex = i;
-                                      _syncRecurringDates();
-                                    }),
+                                    onSelect: (i) async {
+                                      setState(() {
+                                        _recurringIndex = i;
+                                        _syncRecurringDates();
+                                      });
+                                      await _loadRecurringPreview();
+                                    },
                                   ),
                                   if (_recurringIndex >= 0 &&
                                       _howManyBookings >= 1) ...[
                                     const SizedBox(height: 15),
-                                    _Step3MonthlySummary(
+                                    _RecurringPreviewSummary(
                                       intervalLabel: [
                                         l10n.everyWeekday(
                                           _weekdayName(
@@ -1431,22 +1460,25 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                         l10n.every3Weeks,
                                         l10n.every4Weeks,
                                       ][_recurringIndex.clamp(0, 3)],
-                                      dateLabels: _bookingDateTimeLabels(
-                                        Localizations.localeOf(context),
-                                      ),
+                                      previewItems: _previewItems,
+                                      isLoading: _isLoadingPreview,
+                                      errorMessage: _previewErrorMessage,
+                                      onRetry: _loadRecurringPreview,
                                       selectedBarberName: _selectedBarberName,
-                                      alternativeBarberName:
-                                          _alternativeBarberName,
                                       onRemoveAt: _removeRecurringDateAt,
+                                      decorateContainer: true,
                                     ),
                                   ],
                                   const SizedBox(height: 15),
                                   _Step4HowManyDropdown(
                                     selectedCount: _howManyBookings,
-                                    onSelect: (n) => setState(() {
-                                      _howManyBookings = n;
-                                      _syncRecurringDates();
-                                    }),
+                                    onSelect: (n) async {
+                                      setState(() {
+                                        _howManyBookings = n;
+                                        _syncRecurringDates();
+                                      });
+                                      await _loadRecurringPreview();
+                                    },
                                   ),
                                 ],
                               ],
@@ -1523,8 +1555,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                     ? intervalLabels[_recurringIndex]
                                     : intervalLabels[0];
                             final bookings = _recurringEnabled
-                                ? (_recurringDates.isNotEmpty
-                                      ? _recurringDates.length
+                                ? (_previewItems.isNotEmpty
+                                      ? _previewItems.length
                                       : (_howManyBookings >= 1 ? _howManyBookings : 1))
                                 : 1;
                             final card = _Step4SummaryCard(
@@ -1535,9 +1567,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               recurringEnabled: _recurringEnabled,
                               intervalLabel: intervalLabel,
                               bookingsCount: bookings,
-                              dateLabels: _bookingDateTimeLabels(locale),
                               selectedBarberName: _selectedBarberName,
-                              alternativeBarberName: _alternativeBarberName,
+                              previewItems: _previewItems,
+                              previewErrorMessage: _previewErrorMessage,
+                              isLoadingPreview: _isLoadingPreview,
+                              onRetryPreview: _loadRecurringPreview,
                               onRemoveRecurringAt: _removeRecurringDateAt,
                             );
                             if (!isLarge) return card;
@@ -1644,9 +1678,11 @@ class _Step4SummaryCard extends StatelessWidget {
     required this.recurringEnabled,
     required this.intervalLabel,
     required this.bookingsCount,
-    required this.dateLabels,
     required this.selectedBarberName,
-    required this.alternativeBarberName,
+    required this.previewItems,
+    required this.previewErrorMessage,
+    required this.isLoadingPreview,
+    required this.onRetryPreview,
     required this.onRemoveRecurringAt,
   });
 
@@ -1657,9 +1693,11 @@ class _Step4SummaryCard extends StatelessWidget {
   final bool recurringEnabled;
   final String intervalLabel;
   final int bookingsCount;
-  final List<String> dateLabels;
   final String selectedBarberName;
-  final String alternativeBarberName;
+  final List<RecurringPreviewDateItem> previewItems;
+  final String previewErrorMessage;
+  final bool isLoadingPreview;
+  final Future<void> Function() onRetryPreview;
   final ValueChanged<int> onRemoveRecurringAt;
 
   @override
@@ -1696,11 +1734,13 @@ class _Step4SummaryCard extends StatelessWidget {
           if (recurringEnabled) ...[
             const _Step4Divider(),
             const SizedBox(height: 20),
-            _Step3MonthlySummary(
+            _RecurringPreviewSummary(
               intervalLabel: intervalLabel,
-              dateLabels: dateLabels,
+              previewItems: previewItems,
+              isLoading: isLoadingPreview,
+              errorMessage: previewErrorMessage,
+              onRetry: onRetryPreview,
               selectedBarberName: selectedBarberName,
-              alternativeBarberName: alternativeBarberName,
               onRemoveAt: onRemoveRecurringAt,
               decorateContainer: false,
             ),
@@ -2675,224 +2715,30 @@ class _Step3RecurringOptions extends StatelessWidget {
   }
 }
 
-class _Step3MonthlySummary extends StatefulWidget {
-  const _Step3MonthlySummary({
+class _RecurringPreviewSummary extends StatelessWidget {
+  const _RecurringPreviewSummary({
     required this.intervalLabel,
-    required this.dateLabels,
+    required this.previewItems,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onRetry,
     required this.selectedBarberName,
-    required this.alternativeBarberName,
     this.onRemoveAt,
     this.decorateContainer = true,
   });
+
   final String intervalLabel;
-  final List<String> dateLabels;
+  final List<RecurringPreviewDateItem> previewItems;
+  final bool isLoading;
+  final String errorMessage;
+  final Future<void> Function() onRetry;
   final String selectedBarberName;
-  final String alternativeBarberName;
   final ValueChanged<int>? onRemoveAt;
   final bool decorateContainer;
 
   @override
-  State<_Step3MonthlySummary> createState() => _Step3MonthlySummaryState();
-}
-
-class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
-  /// Per-row waitlist state, keyed by the row's date label.
-  ///
-  /// Using the date string (instead of the row index) means that removing a
-  /// row from above doesn't accidentally move a "checked" state onto a
-  /// different date when the remaining rows shift up.
-  final Set<String> _waitlistedDates = <String>{};
-
-  void _toggleWaitlistFor(String dateLabel) {
-    setState(() {
-      if (!_waitlistedDates.add(dateLabel)) {
-        _waitlistedDates.remove(dateLabel);
-      }
-    });
-  }
-
-  @override
-  void didUpdateWidget(covariant _Step3MonthlySummary oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Drop state for any date labels that no longer exist (e.g. after the
-    // user removed a row or changed the recurring interval / count).
-    if (_waitlistedDates.isEmpty) return;
-    final live = widget.dateLabels.toSet();
-    _waitlistedDates.removeWhere((label) => !live.contains(label));
-  }
-
-  Widget _entry({
-    required int index,
-    required String text,
-    required Widget inner,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  text,
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFFDDDDDD),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                inner,
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          InkWell(
-            onTap: widget.onRemoveAt == null ? null : () => widget.onRemoveAt!(index),
-            borderRadius: BorderRadius.circular(12),
-            child: Icon(
-              Icons.close_rounded,
-              size: 16,
-              color: widget.onRemoveAt == null
-                  ? const Color(0xFF797979)
-                  : const Color(0xFFEDEDED),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _withBarberPill(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF797979).withValues(alpha: 0.20),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.inter(
-          color: const Color(0xFFDDDDDD),
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          height: 1.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _alternativeBarberPill(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFF797979).withValues(alpha: 0.20),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFEF4444), width: 1),
-      ),
-      child: Text(
-        text,
-        style: GoogleFonts.inter(
-          color: const Color(0xFFDDDDDD),
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          height: 1.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _warningWithWaitlist(BuildContext context, String dateLabel) {
-    final l10n = AppLocalizations.of(context)!;
-    final isChecked = _waitlistedDates.contains(dateLabel);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(
-              Icons.error_outline_rounded,
-              size: 16,
-              color: Color(0xFFEF4444),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              l10n.noBarberAvailable,
-              style: GoogleFonts.inter(
-                color: const Color(0xFFEF4444),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                height: 1.5,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        InkWell(
-          onTap: () => _toggleWaitlistFor(dateLabel),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: [
-                SvgPicture.asset(
-                  isChecked
-                      ? 'assets/icons/checked_box.svg'
-                      : 'assets/icons/non_checked_box.svg',
-                  width: 18,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  l10n.waitlistMe,
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFFDDDDDD),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Builds the right-hand inner widget for a single row.
-  ///
-  /// [rowIndex] drives the visual cycle (`% 4`); [dateLabel] keys the per-row
-  /// waitlist state so each row toggles independently and survives row
-  /// removals.
-  Widget _innerForCycle(int rowIndex, String dateLabel, BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final selected = widget.selectedBarberName.trim();
-    final alternative = widget.alternativeBarberName.trim();
-
-    switch (rowIndex % 4) {
-      case 0:
-        return _withBarberPill(l10n.withBarberLabel(selected));
-      case 1:
-        return _warningWithWaitlist(context, dateLabel);
-      case 2:
-        // If we don't have an alternate barber loaded, fall back to the
-        // "no barber available" warning so we never display fake data.
-        if (alternative.isEmpty || alternative == selected) {
-          return _warningWithWaitlist(context, dateLabel);
-        }
-        return _alternativeBarberPill(l10n.alternativeBarberLabel(alternative));
-      case 3:
-      default:
-        return _withBarberPill(l10n.withBarberLabel(selected));
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final lines = widget.dateLabels;
+    final l10n = AppLocalizations.of(context)!;
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2902,7 +2748,7 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                widget.intervalLabel,
+                intervalLabel,
                 style: GoogleFonts.inter(
                   color: const Color(0xFFFFFFFF),
                   fontSize: 16,
@@ -2914,16 +2760,58 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
           ],
         ),
         const SizedBox(height: 14),
-        for (int i = 0; i < lines.length; i++)
-          _entry(
-            index: i,
-            text: lines[i],
-            inner: _innerForCycle(i, lines[i], context),
-          ),
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 14),
+            child: Center(
+              child: CircularProgressIndicator(color: Color(0xFFEEEEEE)),
+            ),
+          )
+        else if (errorMessage.isNotEmpty && previewItems.isEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                errorMessage,
+                style: GoogleFonts.inter(
+                  color: const Color(0xFFDDDDDD),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: onRetry,
+                  child: Text(l10n.retryLabel),
+                ),
+              ),
+            ],
+          )
+        else if (previewItems.isEmpty)
+          Text(
+            l10n.noSlotsAvailableForSelectedDate,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFDDDDDD),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
+          )
+        else
+          for (int i = 0; i < previewItems.length; i++) ...[
+            _RecurringPreviewRow(
+              item: previewItems[i],
+              selectedBarberName: selectedBarberName,
+              onRemove: onRemoveAt == null ? null : () => onRemoveAt!(i),
+            ),
+          ],
       ],
     );
 
-    if (!widget.decorateContainer) return content;
+    if (!decorateContainer) return content;
     return Container(
       padding: const EdgeInsets.fromLTRB(30, 27, 30, 30),
       decoration: BoxDecoration(
@@ -2943,6 +2831,157 @@ class _Step3MonthlySummaryState extends State<_Step3MonthlySummary> {
   }
 }
 
+class _RecurringPreviewRow extends StatelessWidget {
+  const _RecurringPreviewRow({
+    required this.item,
+    required this.selectedBarberName,
+    this.onRemove,
+  });
+
+  final RecurringPreviewDateItem item;
+  final String selectedBarberName;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final alt = item.alternativeBarbers.isNotEmpty
+        ? item.alternativeBarbers.first.name.trim()
+        : '';
+    final hasReason = item.reason.trim().isNotEmpty;
+    final nextSlot = item.nextAvailableSlot?.trim() ?? '';
+    final nextDate = item.nextAvailableDate?.trim() ?? '';
+
+    Widget statusWidget;
+    if (item.isAvailable) {
+      statusWidget = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF797979).withValues(alpha: 0.20),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          l10n.withBarberLabel(selectedBarberName.trim()),
+          style: GoogleFonts.inter(
+            color: const Color(0xFFDDDDDD),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            height: 1.5,
+          ),
+        ),
+      );
+    } else if (alt.isNotEmpty) {
+      statusWidget = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFF797979).withValues(alpha: 0.20),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFEF4444), width: 1),
+        ),
+        child: Text(
+          l10n.alternativeBarberLabel(alt),
+          style: GoogleFonts.inter(
+            color: const Color(0xFFDDDDDD),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            height: 1.5,
+          ),
+        ),
+      );
+    } else {
+      statusWidget = Text(
+        item.status,
+        style: GoogleFonts.inter(
+          color: const Color(0xFFDDDDDD),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          height: 1.5,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.dateTimeString.isNotEmpty
+                      ? item.dateTimeString
+                      : '${item.date} ${item.time}',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFDDDDDD),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                statusWidget,
+                if (hasReason) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 16,
+                        color: Color(0xFFEF4444),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.reason,
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFFEF4444),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (nextSlot.isNotEmpty || nextDate.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    [
+                      if (nextSlot.isNotEmpty) '${l10n.nextSlotLabel}: $nextSlot',
+                      if (nextDate.isNotEmpty) '${l10n.nextDateLabel}: $nextDate',
+                    ].join(' • '),
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFFBDBDBD),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          InkWell(
+            onTap: onRemove,
+            borderRadius: BorderRadius.circular(12),
+            child: Icon(
+              Icons.close_rounded,
+              size: 16,
+              color: onRemove == null
+                  ? const Color(0xFF797979)
+                  : const Color(0xFFEDEDED),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Step4HowManyDropdown extends StatelessWidget {
   const _Step4HowManyDropdown({
     required this.selectedCount,
@@ -2952,7 +2991,7 @@ class _Step4HowManyDropdown extends StatelessWidget {
   final int selectedCount; // 0 means "no selection / placeholder"
   final ValueChanged<int> onSelect;
 
-  static const int _maxOptions = 10;
+  static const int _maxOptions = 52;
 
   Future<void> _open(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;

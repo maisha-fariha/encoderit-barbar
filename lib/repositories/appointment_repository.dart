@@ -5,6 +5,7 @@ import 'package:gems_core/gems_core.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 
 import '../models/appointment/appointment_model.dart';
+import '../models/appointment/recurring_preview_model.dart';
 import '../utils/api_endpoints.dart';
 
 class AppointmentPageResult {
@@ -76,6 +77,24 @@ class BookRecurringOutcome {
   /// True when the API succeeded with at least one slot skipped.
   bool get hasSkippedSlots =>
       success && (result?.skipped.isNotEmpty ?? false);
+}
+
+class RecurringPreviewOutcome {
+  const RecurringPreviewOutcome({
+    required this.success,
+    required this.message,
+    this.result,
+    this.errors,
+    this.statusCode,
+    this.isNetworkError = false,
+  });
+
+  final bool success;
+  final String message;
+  final RecurringPreviewResult? result;
+  final Map<String, dynamic>? errors;
+  final int? statusCode;
+  final bool isNetworkError;
 }
 
 class AppointmentRepository extends BaseRepository<AppointmentModel> {
@@ -195,6 +214,81 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
         debugPrint('[AppointmentRepository] recurring exception: $e\n$st');
       }
       return BookRecurringOutcome(
+        success: false,
+        message: e.toString(),
+        isNetworkError: true,
+      );
+    }
+  }
+
+  /// POST `/appointments/recurring/preview` — previews recurring dates/statuses.
+  Future<RecurringPreviewOutcome> previewRecurring({
+    required int shopId,
+    required int barberId,
+    required int serviceId,
+    required String date,
+    required String time,
+    required int quantity,
+    required int interval,
+    String type = 'weekly',
+    String? notes,
+  }) async {
+    final body = <String, dynamic>{
+      'shop_id': shopId,
+      'barber_id': barberId,
+      'service_id': serviceId,
+      'date': date,
+      'time': time,
+      'notes': notes,
+      'repeat': <String, dynamic>{
+        'type': type,
+        'value': quantity,
+        'interval': interval,
+      },
+    };
+    if (kDebugMode) {
+      debugPrint(
+        '[AppointmentRepository] POST ${ApiEndpoints.appointmentsRecurringPreview} '
+        'body=$body',
+      );
+    }
+
+    try {
+      final response = await apiService.post<dynamic>(
+        ApiEndpoints.appointmentsRecurringPreview,
+        data: body,
+      );
+
+      if (response.success) {
+        final raw = response.data;
+        Map<String, dynamic>? source;
+        if (raw is Map && raw['data'] is Map) {
+          source = Map<String, dynamic>.from(raw['data'] as Map);
+        } else if (raw is Map) {
+          source = Map<String, dynamic>.from(raw);
+        }
+        RecurringPreviewResult? parsed;
+        if (source != null) {
+          try {
+            parsed = RecurringPreviewResult.fromJson(source);
+          } catch (_) {}
+        }
+        return RecurringPreviewOutcome(
+          success: true,
+          message: (response.message ?? '').trim(),
+          result: parsed,
+          statusCode: response.statusCode,
+        );
+      }
+
+      return RecurringPreviewOutcome(
+        success: false,
+        message: (response.message ?? '').trim(),
+        errors: response.errors,
+        statusCode: response.statusCode,
+      );
+    } catch (e) {
+      return RecurringPreviewOutcome(
         success: false,
         message: e.toString(),
         isNetworkError: true,

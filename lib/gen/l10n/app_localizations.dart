@@ -800,6 +800,18 @@ abstract class AppLocalizations {
   /// **'No slots available for selected date.'**
   String get noSlotsAvailableForSelectedDate;
 
+  /// No description provided for @nextSlotLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Next slot'**
+  String get nextSlotLabel;
+
+  /// No description provided for @nextDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get nextDateLabel;
+
   /// No description provided for @reservationListTitle.
   ///
   /// In en, this message translates to:

@@ -140,6 +140,8 @@
   "noReservationsFound": "No reservations found.",
   "retryLabel": "Retry",
   "noSlotsAvailableForSelectedDate": "No slots available for selected date.",
+  "nextSlotLabel": "Next slot",
+  "nextDateLabel": "Date",
   "reservationListTitle": "Reservation list",
   "reservations": "Reservations",
   "bookings": "Bookings",

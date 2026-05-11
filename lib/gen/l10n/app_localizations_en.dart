@@ -381,6 +381,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'No slots available for selected date.';
 
   @override
+  String get nextSlotLabel => 'Next slot';
+
+  @override
+  String get nextDateLabel => 'Date';
+
+  @override
   String get reservationListTitle => 'Reservation list';
 
   @override

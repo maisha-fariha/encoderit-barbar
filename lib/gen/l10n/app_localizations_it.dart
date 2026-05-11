@@ -384,6 +384,12 @@ class AppLocalizationsIt extends AppLocalizations {
       'Nessuna fascia oraria disponibile per la data selezionata.';
 
   @override
+  String get nextSlotLabel => 'Prossimo slot';
+
+  @override
+  String get nextDateLabel => 'Data';
+
+  @override
   String get reservationListTitle => 'Elenco prenotazioni';
 
   @override
