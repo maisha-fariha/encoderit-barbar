@@ -368,6 +368,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not update profile. Check your connection and try again.';
 
   @override
+  String get noBookedAppointmentsFound => 'No booked appointments found.';
+
+  @override
+  String get noReservationsFound => 'No reservations found.';
+
+  @override
   String get reservationListTitle => 'Reservation list';
 
   @override

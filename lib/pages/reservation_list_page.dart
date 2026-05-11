@@ -456,7 +456,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
                           child: Row(
                             children: [
                               _TopPill(
-                                label: 'Booked',
+                                label: l10n.upcoming,
                                 count: '${booked.length}',
                                 selected: _tab == 0,
                                 onTap: () => setState(() => _tab = 0),
@@ -507,7 +507,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
                       : list.isEmpty
                       ? Center(
                           child: Text(
-                            'No reservations found.',
+                            l10n.noReservationsFound,
                             style: GoogleFonts.inter(
                               color: const Color(0xFFDDDDDD),
                               fontWeight: FontWeight.w500,
@@ -815,7 +815,7 @@ class _ReservationCard extends StatelessWidget {
       large: 1.22,
     );
     final statusLabel = switch (mode) {
-      _ReservationMode.booked => 'Booked',
+      _ReservationMode.booked => l10n.upcoming,
       _ReservationMode.completed => l10n.completed,
       _ReservationMode.cancelled => l10n.cancelled,
     };

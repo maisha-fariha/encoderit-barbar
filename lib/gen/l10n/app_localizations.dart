@@ -776,6 +776,18 @@ abstract class AppLocalizations {
   /// **'Could not update profile. Check your connection and try again.'**
   String get profileUpdateNetworkError;
 
+  /// No description provided for @noBookedAppointmentsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No booked appointments found.'**
+  String get noBookedAppointmentsFound;
+
+  /// No description provided for @noReservationsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No reservations found.'**
+  String get noReservationsFound;
+
   /// No description provided for @reservationListTitle.
   ///
   /// In en, this message translates to:

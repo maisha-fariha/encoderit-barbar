@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../gen/l10n/app_localizations.dart';
 
+import '../controllers/auth_controller.dart';
+import '../gen/l10n/app_localizations.dart';
+import '../models/appointment/appointment_model.dart';
+import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
+import '../services/app_services.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,6 +22,126 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _tab = 0;
   int _expandedIndex = 0;
+  bool _isLoadingUpcoming = true;
+  String _upcomingError = '';
+  List<_UpcomingItem> _upcomingItems = const <_UpcomingItem>[];
+  int _totalAppointmentsCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUpcomingBookedAppointments();
+  }
+
+  Future<bool> _ensureAuthenticated() async {
+    final authController = Get.find<AuthController>();
+    if (authController.isLoggedIn.value) return true;
+    final AuthData? stored = await AppServices.getIt<AuthService>().getStoredAuth();
+    final validStored =
+        stored != null && stored.accessToken.isNotEmpty && !stored.isExpired;
+    if (validStored) {
+      authController.isLoggedIn.value = true;
+      return true;
+    }
+    if (!mounted) return false;
+    Get.offAllNamed(AppRoutes.login);
+    return false;
+  }
+
+  bool _isUnauthenticatedMessage(String message) {
+    return message.trim().toLowerCase().contains('unauthenticated');
+  }
+
+  Future<void> _loadUpcomingBookedAppointments() async {
+    final canProceed = await _ensureAuthenticated();
+    if (!canProceed) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingUpcoming = false;
+        _upcomingError = '';
+        _upcomingItems = const <_UpcomingItem>[];
+        _totalAppointmentsCount = 0;
+        _expandedIndex = -1;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingUpcoming = true;
+      _upcomingError = '';
+    });
+    final repository = AppServices.getIt<AppointmentRepository>();
+    final totalResult = await repository.getPage(1, useCache: false);
+    if (!mounted) return;
+    totalResult.when(
+      success: (page) => _totalAppointmentsCount = page.total,
+      failure: (error) {
+        if (_isUnauthenticatedMessage(error.message)) {
+          Get.offAllNamed(AppRoutes.login);
+          return;
+        }
+        _totalAppointmentsCount = 0;
+      },
+    );
+    final result = await repository.getByStatus('booked');
+    if (!mounted) return;
+    result.when(
+      success: (items) {
+        final mapped = items.map(_toUpcomingItem).toList(growable: false);
+        setState(() {
+          _upcomingItems = mapped;
+          _isLoadingUpcoming = false;
+          _expandedIndex = mapped.isEmpty ? -1 : 0;
+        });
+      },
+      failure: (error) {
+        if (_isUnauthenticatedMessage(error.message)) {
+          Get.offAllNamed(AppRoutes.login);
+          return;
+        }
+        setState(() {
+          _upcomingItems = const <_UpcomingItem>[];
+          _upcomingError = error.message;
+          _isLoadingUpcoming = false;
+          _expandedIndex = -1;
+        });
+      },
+    );
+  }
+
+  _UpcomingItem _toUpcomingItem(AppointmentModel model) {
+    final serviceName = model.service.name.trim();
+    final barberName = model.barber.name.trim();
+    return _UpcomingItem(
+      title: serviceName.isNotEmpty ? serviceName : 'Service',
+      subtitle: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
+      dateText: _formatDateText(model.startsAt),
+      imageAsset: 'assets/images/barbar_1.jpg',
+      hasRecurrence: false,
+    );
+  }
+
+  String _formatDateText(DateTime? dateTime) {
+    if (dateTime == null) return '';
+    const months = <String>[
+      'gennaio',
+      'febbraio',
+      'marzo',
+      'aprile',
+      'maggio',
+      'giugno',
+      'luglio',
+      'agosto',
+      'settembre',
+      'ottobre',
+      'novembre',
+      'dicembre',
+    ];
+    final d = dateTime.toLocal();
+    final month = months[(d.month - 1).clamp(0, 11)];
+    final minute = d.minute.toString().padLeft(2, '0');
+    return '${d.day} $month ${d.year}, ${d.hour}:$minute';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +231,7 @@ class _HomePageState extends State<HomePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '30',
+                          '$_totalAppointmentsCount',
                           style: GoogleFonts.inter(
                             color: const Color(0xFFFFFFFF),
                             fontSize: 18 * fontScale,
@@ -154,6 +279,10 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       _UpcomingCard(
                         expandedIndex: _expandedIndex,
+                        isLoading: _isLoadingUpcoming,
+                        errorMessage: _upcomingError,
+                        items: _upcomingItems,
+                        onRetry: _loadUpcomingBookedAppointments,
                         onToggle: (i) => setState(
                           () => _expandedIndex = _expandedIndex == i ? -1 : i,
                         ),
@@ -174,7 +303,11 @@ class _HomePageState extends State<HomePage> {
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            onPressed: () => Get.toNamed(AppRoutes.appoinment),
+                            onPressed: () async {
+                              final canProceed = await _ensureAuthenticated();
+                              if (!canProceed) return;
+                              Get.toNamed(AppRoutes.appoinment);
+                            },
                             child: Text(
                                 l10n.serviceBooking,
                               style: GoogleFonts.inter(
@@ -243,9 +376,20 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _UpcomingCard extends StatelessWidget {
-  const _UpcomingCard({required this.expandedIndex, required this.onToggle});
+  const _UpcomingCard({
+    required this.expandedIndex,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.items,
+    required this.onRetry,
+    required this.onToggle,
+  });
 
   final int expandedIndex;
+  final bool isLoading;
+  final String errorMessage;
+  final List<_UpcomingItem> items;
+  final VoidCallback onRetry;
   final ValueChanged<int> onToggle;
 
   @override
@@ -257,30 +401,6 @@ class _UpcomingCard extends StatelessWidget {
       large: 1.22,
     );
     final l10n = AppLocalizations.of(context)!;
-    final items = const <_UpcomingItem>[
-      _UpcomingItem(
-        title: 'Taglio di capelli',
-        subtitle: 'con Silva',
-        dateText: '12 aprile 2026, 14:30',
-        imageAsset: 'assets/images/barbar_1.jpg',
-        hasRecurrence: true,
-      ),
-      _UpcomingItem(
-        title: 'Rifinitura della barba',
-        subtitle: 'con Rossi',
-        dateText: '12 aprile 2026, 14:30',
-        imageAsset: 'assets/images/barbar_2.jpg',
-        hasRecurrence: false,
-      ),
-      _UpcomingItem(
-        title: 'Capelli + Barba',
-        subtitle: 'con David',
-        dateText: '12 aprile 2026, 14:30',
-        imageAsset: 'assets/images/barbar_3.jpg',
-        hasRecurrence: false,
-      ),
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -294,6 +414,47 @@ class _UpcomingCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 15),
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: CircularProgressIndicator(color: Color(0xFFEEEEEE)),
+            ),
+          )
+        else if (errorMessage.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                errorMessage,
+                style: GoogleFonts.inter(
+                  color: const Color(0xFFDDDDDD),
+                  fontSize: 13 * fontScale,
+                  fontWeight: FontWeight.w500,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: onRetry,
+                  child: const Text('Retry'),
+                ),
+              ),
+            ],
+          )
+        else if (items.isEmpty)
+          Text(
+            l10n.noBookedAppointmentsFound,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFDDDDDD),
+              fontSize: 13 * fontScale,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
+          )
+        else
         ...List.generate(items.length, (i) {
           final item = items[i];
           final expanded = expandedIndex == i;

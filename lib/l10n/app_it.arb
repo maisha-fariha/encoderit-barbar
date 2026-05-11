@@ -136,6 +136,8 @@
   "profileEmailRequired": "Inserisci la tua email.",
   "profileUpdateSuccessFallback": "Profilo aggiornato.",
   "profileUpdateNetworkError": "Impossibile aggiornare il profilo. Controlla la connessione e riprova.",
+  "noBookedAppointmentsFound": "Nessun appuntamento prenotato trovato.",
+  "noReservationsFound": "Nessuna prenotazione trovata.",
   "reservationListTitle": "Elenco prenotazioni",
   "reservations": "Prenotazioni",
   "bookings": "Prenotazioni",

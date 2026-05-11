@@ -370,6 +370,13 @@ class AppLocalizationsIt extends AppLocalizations {
       'Impossibile aggiornare il profilo. Controlla la connessione e riprova.';
 
   @override
+  String get noBookedAppointmentsFound =>
+      'Nessun appuntamento prenotato trovato.';
+
+  @override
+  String get noReservationsFound => 'Nessuna prenotazione trovata.';
+
+  @override
   String get reservationListTitle => 'Elenco prenotazioni';
 
   @override

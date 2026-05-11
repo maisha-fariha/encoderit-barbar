@@ -136,6 +136,8 @@
   "profileEmailRequired": "Please enter your email.",
   "profileUpdateSuccessFallback": "Profile updated.",
   "profileUpdateNetworkError": "Could not update profile. Check your connection and try again.",
+  "noBookedAppointmentsFound": "No booked appointments found.",
+  "noReservationsFound": "No reservations found.",
   "reservationListTitle": "Reservation list",
   "reservations": "Reservations",
   "bookings": "Bookings",

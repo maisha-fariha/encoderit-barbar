@@ -318,6 +318,32 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
     }
   }
 
+  /// Fetches appointments filtered by status from `/profile/appointments`.
+  ///
+  /// Example: `status=booked` for upcoming items shown on the home page.
+  Future<Result<List<AppointmentModel>>> getByStatus(
+    String status, {
+    int page = 1,
+  }) async {
+    try {
+      final response = await apiService.get<dynamic>(
+        baseEndpoint,
+        queryParameters: {
+          'status': status,
+          'page': page,
+        },
+      );
+      if (response.success && response.data != null) {
+        return Result.success(_parseList(response.data));
+      }
+      return Result.failure(
+        ApiError(message: response.message ?? 'Failed to fetch appointments'),
+      );
+    } catch (e, stackTrace) {
+      return Result.failure(NetworkError.fromException(e, stackTrace));
+    }
+  }
+
   Future<void> _refreshInBackground() async {
     try {
       final response = await apiService.get<dynamic>(
