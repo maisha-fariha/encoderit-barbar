@@ -48,21 +48,72 @@ class _ReservationListPageState extends State<ReservationListPage> {
   }
 
   List<_ReservationItem> _mapItems(List<AppointmentModel> items) {
-    return items
-        .map(
-          (e) => _ReservationItem(
-            id: e.id,
-            title: e.service.name.isNotEmpty ? e.service.name : 'Service',
-            subtitle: e.barber.name.isNotEmpty
-                ? 'con ${e.barber.name}'
-                : 'con Barber',
-            dateText: _formatDateText(e.startsAt),
-            price: '€${e.service.price.toStringAsFixed(0)}',
-            imageAsset: 'assets/images/barbar_1.jpg',
-            recurring: false,
-          ),
-        )
-        .toList(growable: false);
+    final grouped = <String, List<AppointmentModel>>{};
+    final singles = <AppointmentModel>[];
+    for (final item in items) {
+      final groupId = item.recurringGroupId?.trim() ?? '';
+      if (groupId.isEmpty) {
+        singles.add(item);
+        continue;
+      }
+      grouped.putIfAbsent(groupId, () => <AppointmentModel>[]).add(item);
+    }
+
+    final result = <_ReservationItem>[];
+    for (final groupItems in grouped.values) {
+      groupItems.sort(
+        (a, b) => (a.startsAt ?? DateTime(1970)).compareTo(
+          b.startsAt ?? DateTime(1970),
+        ),
+      );
+      final first = groupItems.first;
+      final occurrences = groupItems
+          .map(
+            (e) => _ReservationOccurrence(
+              dateText: _formatDateText(e.startsAt),
+              barberText: e.barber.name.isNotEmpty
+                  ? 'con ${e.barber.name}'
+                  : 'con Barber',
+            ),
+          )
+          .toList(growable: false);
+      result.add(
+        _ReservationItem(
+          id: first.id,
+          title: first.service.name.isNotEmpty ? first.service.name : 'Service',
+          subtitle: first.barber.name.isNotEmpty
+              ? 'con ${first.barber.name}'
+              : 'con Barber',
+          dateText: _formatDateText(first.startsAt),
+          price: '€${first.service.price.toStringAsFixed(0)}',
+          imageAsset: 'assets/images/barbar_1.jpg',
+          recurring: occurrences.length > 1,
+          occurrences: occurrences,
+        ),
+      );
+    }
+
+    for (final e in singles) {
+      result.add(
+        _ReservationItem(
+          id: e.id,
+          title: e.service.name.isNotEmpty ? e.service.name : 'Service',
+          subtitle: e.barber.name.isNotEmpty ? 'con ${e.barber.name}' : 'con Barber',
+          dateText: _formatDateText(e.startsAt),
+          price: '€${e.service.price.toStringAsFixed(0)}',
+          imageAsset: 'assets/images/barbar_1.jpg',
+          recurring: false,
+          occurrences: <_ReservationOccurrence>[
+            _ReservationOccurrence(
+              dateText: _formatDateText(e.startsAt),
+              barberText: e.barber.name.isNotEmpty ? 'con ${e.barber.name}' : 'con Barber',
+            ),
+          ],
+        ),
+      );
+    }
+    result.sort((a, b) => a.dateText.compareTo(b.dateText));
+    return result;
   }
 
   Future<void> _deleteReservation(_ReservationItem item) async {
@@ -355,22 +406,6 @@ class _ReservationListPageState extends State<ReservationListPage> {
       large: 1.22,
     );
     final l10n = AppLocalizations.of(context)!;
-    final booked = _mapItems(_controller.byStatus('booked'));
-    final completed = _mapItems(_controller.byStatus('completed'));
-    final cancelled = _mapItems(_controller.byStatus('cancelled'));
-    final list = _tab == 0
-        ? booked
-        : _tab == 1
-        ? completed
-        : cancelled;
-    final mode = _tab == 0
-        ? _ReservationMode.booked
-        : _tab == 1
-        ? _ReservationMode.completed
-        : _ReservationMode.cancelled;
-    if (_expandedIndex >= list.length) {
-      _expandedIndex = list.isEmpty ? 0 : list.length - 1;
-    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -415,11 +450,28 @@ class _ReservationListPageState extends State<ReservationListPage> {
       ),
       body: GetBuilder<ReservationListController>(
         id: 'reservation-list',
-        builder: (controller) => Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: contentMaxWidth),
-            child: Column(
-              children: [
+        builder: (controller) {
+          final booked = _mapItems(controller.byStatus('booked'));
+          final completed = _mapItems(controller.byStatus('completed'));
+          final cancelled = _mapItems(controller.byStatus('cancelled'));
+          final list = _tab == 0
+              ? booked
+              : _tab == 1
+              ? completed
+              : cancelled;
+          final mode = _tab == 0
+              ? _ReservationMode.booked
+              : _tab == 1
+              ? _ReservationMode.completed
+              : _ReservationMode.cancelled;
+          final effectiveExpandedIndex = _expandedIndex >= list.length
+              ? (list.isEmpty ? -1 : list.length - 1)
+              : _expandedIndex;
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: contentMaxWidth),
+              child: Column(
+                children: [
                 Padding(
                   padding: EdgeInsets.fromLTRB(hPad, 15, hPad, 15),
                   child: Center(
@@ -539,7 +591,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
                               );
                             }
                             final item = list[i];
-                            final expanded = _expandedIndex == i;
+                            final expanded = effectiveExpandedIndex == i;
                             return _ReservationCard(
                               item: item,
                               expanded: expanded,
@@ -554,10 +606,11 @@ class _ReservationListPageState extends State<ReservationListPage> {
                           },
                         ),
                 ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: Container(
@@ -819,7 +872,7 @@ class _ReservationCard extends StatelessWidget {
       _ReservationMode.completed => l10n.completed,
       _ReservationMode.cancelled => l10n.cancelled,
     };
-    final showDelete = mode == _ReservationMode.booked;
+    final showDelete = mode == _ReservationMode.booked && !item.recurring;
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
@@ -953,13 +1006,13 @@ class _ReservationCard extends StatelessWidget {
             secondChild: Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
               child: Column(
-                children: const [
-                  _HomeDivider(),
-                  _ReservationRecurrence(),
-                  SizedBox(height: 12),
-                  _HomeDivider(),
-                  SizedBox(height: 12),
-                  _ReservaTime(),
+                children: [
+                  const _HomeDivider(),
+                  _ReservationRecurrence(occurrences: item.occurrences),
+                  const SizedBox(height: 12),
+                  const _HomeDivider(),
+                  const SizedBox(height: 12),
+                  _ReservaTime(count: item.occurrences.length),
                 ],
               ),
             ),
@@ -971,7 +1024,9 @@ class _ReservationCard extends StatelessWidget {
 }
 
 class _ReservaTime extends StatelessWidget {
-  const _ReservaTime();
+  const _ReservaTime({required this.count});
+
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -995,7 +1050,7 @@ class _ReservaTime extends StatelessWidget {
         ),
         const Spacer(),
         Text(
-          l10n.fiveTimes,
+          l10n.nTimes(count),
           style: GoogleFonts.inter(
             color: const Color(0xFFFFFFFF),
             fontSize: 16 * fontScale,
@@ -1050,7 +1105,9 @@ class _HomeDivider extends StatelessWidget {
 }
 
 class _ReservationRecurrence extends StatelessWidget {
-  const _ReservationRecurrence();
+  const _ReservationRecurrence({required this.occurrences});
+
+  final List<_ReservationOccurrence> occurrences;
 
   @override
   Widget build(BuildContext context) {
@@ -1081,21 +1138,11 @@ class _ReservationRecurrence extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        const _RecurrenceRow(
-          text: 'Giovedì 9 aprile 2026, ore 10:00',
-          pillText: 'con Marcus Silva',
-        ),
-        const _RecurrenceRow(
-          text: 'Giovedì 16 aprile 2026, ore 10:00',
-          pillText: 'con Marcus Silva',
-        ),
-        const _RecurrenceAltRow(
-          text: 'Giovedì 23 aprile 2026, ore 10:00',
-          altText: 'Alternative Barber with James Martinez',
-        ),
-        const _RecurrenceRow(
-          text: 'Giovedì 30 aprile 2026, ore 10:00',
-          pillText: 'con Marcus Silva',
+        ...occurrences.map(
+          (entry) => _RecurrenceRow(
+            text: entry.dateText,
+            pillText: entry.barberText,
+          ),
         ),
       ],
     );
@@ -1157,93 +1204,17 @@ class _RecurrenceRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.close_rounded,
-              size: 18,
-              color: Color(0xFF797979),
-            ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _RecurrenceAltRow extends StatelessWidget {
-  const _RecurrenceAltRow({required this.text, required this.altText});
+class _ReservationOccurrence {
+  const _ReservationOccurrence({required this.dateText, required this.barberText});
 
-  final String text;
-  final String altText;
-
-  @override
-  Widget build(BuildContext context) {
-    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
-      context,
-      small: 1.0,
-      medium: 1.08,
-      large: 1.22,
-    );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  text,
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFFEEEEEE),
-                    fontSize: 14 * fontScale,
-                    fontWeight: FontWeight.w500,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF797979).withValues(alpha: 0.20),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: const Color(0xFFEF4444),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    altText,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFDDDDDD),
-                      fontSize: 14 * fontScale,
-                      fontWeight: FontWeight.w500,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.close_rounded,
-              size: 18,
-              color: Color(0xFF797979),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  final String dateText;
+  final String barberText;
 }
 
 class _ReservationItem {
@@ -1255,6 +1226,7 @@ class _ReservationItem {
     required this.price,
     required this.imageAsset,
     required this.recurring,
+    required this.occurrences,
   });
 
   final String id;
@@ -1264,6 +1236,7 @@ class _ReservationItem {
   final String price;
   final String imageAsset;
   final bool recurring;
+  final List<_ReservationOccurrence> occurrences;
 }
 
 enum _ReservationMode { booked, completed, cancelled }

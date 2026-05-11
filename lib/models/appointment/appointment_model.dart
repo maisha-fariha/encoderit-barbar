@@ -20,6 +20,8 @@ class AppointmentModel with _$AppointmentModel implements BaseModel {
     @Default('booked') String status,
     String? notes,
     // ignore: invalid_annotation_target
+    @JsonKey(name: 'recurring_group_id') String? recurringGroupId,
+    // ignore: invalid_annotation_target
     @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson)
     DateTime? createdAt,
   }) = _AppointmentModel;

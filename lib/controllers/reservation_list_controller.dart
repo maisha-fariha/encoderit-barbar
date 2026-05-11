@@ -58,10 +58,32 @@ class ReservationListController extends BaseListController<AppointmentModel>
   }
 
   List<AppointmentModel> byStatus(String status) {
-    final expected = status.trim().toLowerCase();
+    final expected = _normalizeStatus(status);
     return items
-        .where((e) => e.status.trim().toLowerCase() == expected)
+        .where((e) => _normalizeStatus(e.status) == expected)
         .toList(growable: false);
+  }
+
+  String _normalizeStatus(String raw) {
+    final status = raw.trim().toLowerCase();
+    switch (status) {
+      case 'booked':
+      case 'upcoming':
+      case 'confirmed':
+      case 'pending':
+        return 'booked';
+      case 'done':
+      case 'complete':
+      case 'completed':
+        return 'completed';
+      case 'cancel':
+      case 'canceled':
+      case 'cancelled':
+      case 'rejected':
+        return 'cancelled';
+      default:
+        return status;
+    }
   }
 
   Future<Result<void>> deleteAppointment(String appointmentId) async {

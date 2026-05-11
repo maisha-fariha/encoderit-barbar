@@ -83,11 +83,14 @@ class _HomePageState extends State<HomePage> {
         _totalAppointmentsCount = 0;
       },
     );
-    final result = await repository.getByStatus('booked');
+    final result = await repository.getPage(1, useCache: false);
     if (!mounted) return;
     result.when(
-      success: (items) {
-        final mapped = items.map(_toUpcomingItem).toList(growable: false);
+      success: (page) {
+        final items = page.items
+            .where((item) => _normalizeStatus(item.status) == 'booked')
+            .toList(growable: false);
+        final mapped = _mapUpcomingItems(items);
         setState(() {
           _upcomingItems = mapped;
           _isLoadingUpcoming = false;
@@ -109,16 +112,98 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  _UpcomingItem _toUpcomingItem(AppointmentModel model) {
-    final serviceName = model.service.name.trim();
-    final barberName = model.barber.name.trim();
-    return _UpcomingItem(
-      title: serviceName.isNotEmpty ? serviceName : 'Service',
-      subtitle: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
-      dateText: _formatDateText(model.startsAt),
-      imageAsset: 'assets/images/barbar_1.jpg',
-      hasRecurrence: false,
+  String _normalizeStatus(String raw) {
+    final status = raw.trim().toLowerCase();
+    switch (status) {
+      case 'booked':
+      case 'upcoming':
+      case 'confirmed':
+      case 'pending':
+        return 'booked';
+      case 'done':
+      case 'complete':
+      case 'completed':
+        return 'completed';
+      case 'cancel':
+      case 'canceled':
+      case 'cancelled':
+      case 'rejected':
+        return 'cancelled';
+      default:
+        return status;
+    }
+  }
+
+  List<_UpcomingItem> _mapUpcomingItems(List<AppointmentModel> items) {
+    final grouped = <String, List<AppointmentModel>>{};
+    final singles = <AppointmentModel>[];
+    for (final item in items) {
+      final groupId = item.recurringGroupId?.trim() ?? '';
+      if (groupId.isEmpty) {
+        singles.add(item);
+      } else {
+        grouped.putIfAbsent(groupId, () => <AppointmentModel>[]).add(item);
+      }
+    }
+
+    final result = <_UpcomingItem>[];
+    for (final groupItems in grouped.values) {
+      groupItems.sort(
+        (a, b) =>
+            (a.startsAt ?? DateTime(1970)).compareTo(b.startsAt ?? DateTime(1970)),
+      );
+      final first = groupItems.first;
+      result.add(
+        _UpcomingItem(
+          title: first.service.name.trim().isNotEmpty
+              ? first.service.name.trim()
+              : 'Service',
+          subtitle: first.barber.name.trim().isNotEmpty
+              ? 'con ${first.barber.name.trim()}'
+              : 'con Barber',
+          dateText: _formatDateText(first.startsAt),
+          imageAsset: 'assets/images/barbar_1.jpg',
+          hasRecurrence: true,
+          sortAt: first.startsAt,
+          occurrences: groupItems
+              .map(
+                (e) => _UpcomingOccurrence(
+                  dateText: _formatDateText(e.startsAt),
+                  barberText: e.barber.name.trim().isNotEmpty
+                      ? 'con ${e.barber.name.trim()}'
+                      : 'con Barber',
+                ),
+              )
+              .toList(growable: false),
+        ),
+      );
+    }
+
+    for (final item in singles) {
+      final serviceName = item.service.name.trim();
+      final barberName = item.barber.name.trim();
+      result.add(
+        _UpcomingItem(
+          title: serviceName.isNotEmpty ? serviceName : 'Service',
+          subtitle: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
+          dateText: _formatDateText(item.startsAt),
+          imageAsset: 'assets/images/barbar_1.jpg',
+          hasRecurrence: false,
+          sortAt: item.startsAt,
+          occurrences: <_UpcomingOccurrence>[
+            _UpcomingOccurrence(
+              dateText: _formatDateText(item.startsAt),
+              barberText: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
+            ),
+          ],
+        ),
+      );
+    }
+
+    result.sort(
+      (a, b) => (a.sortAt ?? DateTime(1970)).compareTo(b.sortAt ?? DateTime(1970)),
     );
+    return result;
   }
 
   String _formatDateText(DateTime? dateTime) {
@@ -546,7 +631,9 @@ class _UpcomingAccordionItem extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Icon(
-                    expanded ? Icons.keyboard_arrow_up_rounded : null,
+                    expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
                     color: const Color(0xFF797979),
                     size: 20,
                   ),
@@ -575,7 +662,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                         ),
                         SizedBox(width: 10),
                         Text(
-                          l10n.every4Weeks,
+                          l10n.recurring,
                           style: GoogleFonts.inter(
                             color: Color(0xFFFFFFFF),
                             fontSize: 16 * fontScale,
@@ -586,32 +673,13 @@ class _UpcomingAccordionItem extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 8, left: 16, right: 16),
-                    child: _RecurrenceRow(
-                      text: 'Giovedì 9 aprile 2026, ore 10:00',
-                      pillText: 'con Marcus Silva',
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 8, left: 16, right: 16),
-                    child: _RecurrenceRow(
-                      text: 'Giovedì 16 aprile 2026, ore 10:00',
-                      pillText: 'con Marcus Silva',
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 8, left: 16, right: 16),
-                    child: _RecurrenceAltRow(
-                      text: 'Giovedì 23 aprile 2026, ore 10:00',
-                      altText: 'Alternative Barber with James Martinez',
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 8, left: 16, right: 16),
-                    child: _RecurrenceRow(
-                      text: 'Giovedì 30 aprile 2026, ore 10:00',
-                      pillText: 'con Marcus Silva',
+                  ...item.occurrences.map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8, left: 16, right: 16),
+                      child: _RecurrenceRow(
+                        text: entry.dateText,
+                        pillText: entry.barberText,
+                      ),
                     ),
                   ),
                   SizedBox(height: 15),
@@ -632,7 +700,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                         ),
                         Spacer(),
                         Text(
-                          l10n.fiveTimes,
+                          l10n.nTimes(item.occurrences.length),
                           style: GoogleFonts.inter(
                             color: Color(0xFFFFFFFF),
                             fontSize: 16 * fontScale,
@@ -720,89 +788,6 @@ class _RecurrenceRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.close_rounded,
-              size: 16,
-              color: Color(0xFF797979),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecurrenceAltRow extends StatelessWidget {
-  const _RecurrenceAltRow({required this.text, required this.altText});
-
-  final String text;
-  final String altText;
-
-  @override
-  Widget build(BuildContext context) {
-    final fontScale = ResponsiveHelper.getResponsiveValue<double>(
-      context,
-      small: 1.0,
-      medium: 1.08,
-      large: 1.22,
-    );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  text,
-                  style: GoogleFonts.inter(
-                    color: Color(0xFFEEEEEE),
-                    fontSize: 14 * fontScale,
-                    fontWeight: FontWeight.w500,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF797979).withValues(alpha: 0.20),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: const Color(0xFFEF4444),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    altText,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFFDDDDDD),
-                      fontSize: 14 * fontScale,
-                      fontWeight: FontWeight.w500,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.close_rounded,
-              size: 16,
-              color: Color(0xFF797979),
-            ),
-          ),
         ],
       ),
     );
@@ -816,6 +801,8 @@ class _UpcomingItem {
     required this.dateText,
     required this.imageAsset,
     required this.hasRecurrence,
+    required this.sortAt,
+    required this.occurrences,
   });
 
   final String title;
@@ -823,6 +810,15 @@ class _UpcomingItem {
   final String dateText;
   final String imageAsset;
   final bool hasRecurrence;
+  final DateTime? sortAt;
+  final List<_UpcomingOccurrence> occurrences;
+}
+
+class _UpcomingOccurrence {
+  const _UpcomingOccurrence({required this.dateText, required this.barberText});
+
+  final String dateText;
+  final String barberText;
 }
 
 class _BottomNavBar extends StatelessWidget {

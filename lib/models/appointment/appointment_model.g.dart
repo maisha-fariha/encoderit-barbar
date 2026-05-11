@@ -19,6 +19,7 @@ _$AppointmentModelImpl _$$AppointmentModelImplFromJson(
   endsAt: _dateTimeFromJson(json['ends_at']),
   status: json['status'] as String? ?? 'booked',
   notes: json['notes'] as String?,
+  recurringGroupId: json['recurring_group_id'] as String?,
   createdAt: _dateTimeFromJson(json['created_at']),
 );
 
@@ -33,6 +34,7 @@ Map<String, dynamic> _$$AppointmentModelImplToJson(
   'ends_at': instance.endsAt?.toIso8601String(),
   'status': instance.status,
   'notes': instance.notes,
+  'recurring_group_id': instance.recurringGroupId,
   'created_at': instance.createdAt?.toIso8601String(),
 };
 
