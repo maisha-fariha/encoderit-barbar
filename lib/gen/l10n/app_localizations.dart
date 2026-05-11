@@ -788,6 +788,18 @@ abstract class AppLocalizations {
   /// **'No reservations found.'**
   String get noReservationsFound;
 
+  /// No description provided for @retryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retryLabel;
+
+  /// No description provided for @noSlotsAvailableForSelectedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No slots available for selected date.'**
+  String get noSlotsAvailableForSelectedDate;
+
   /// No description provided for @reservationListTitle.
   ///
   /// In en, this message translates to:

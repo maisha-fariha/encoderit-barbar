@@ -374,6 +374,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noReservationsFound => 'No reservations found.';
 
   @override
+  String get retryLabel => 'Retry';
+
+  @override
+  String get noSlotsAvailableForSelectedDate =>
+      'No slots available for selected date.';
+
+  @override
   String get reservationListTitle => 'Reservation list';
 
   @override

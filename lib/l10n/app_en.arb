@@ -138,6 +138,8 @@
   "profileUpdateNetworkError": "Could not update profile. Check your connection and try again.",
   "noBookedAppointmentsFound": "No booked appointments found.",
   "noReservationsFound": "No reservations found.",
+  "retryLabel": "Retry",
+  "noSlotsAvailableForSelectedDate": "No slots available for selected date.",
   "reservationListTitle": "Reservation list",
   "reservations": "Reservations",
   "bookings": "Bookings",

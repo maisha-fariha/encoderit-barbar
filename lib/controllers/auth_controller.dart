@@ -1,4 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:get/get.dart';
@@ -16,6 +17,13 @@ class AuthController extends GetxController {
 
   final RxBool isLoggedIn = false.obs;
   final RxBool isBusy = false.obs;
+
+  void _debugLogAuthToken(String source, String token) {
+    if (!kDebugMode) return;
+    final t = token.trim();
+    if (t.isEmpty) return;
+    debugPrint('[AuthToken][$source] Bearer $t');
+  }
 
   String _extractApiMessage({
     required String? message,
@@ -103,6 +111,10 @@ class AuthController extends GetxController {
   Future<void> bootstrap() async {
     if (await _hasNetwork()) {
       isLoggedIn.value = await authGateway.isAuthenticated();
+      final stored = await authGateway.getStoredAuth();
+      if (stored != null) {
+        _debugLogAuthToken('bootstrap', stored.accessToken);
+      }
       return;
     }
     isLoggedIn.value = await _tryOfflineSession();
@@ -113,6 +125,7 @@ class AuthController extends GetxController {
     if (stored == null || stored.accessToken.isEmpty) return false;
     if (stored.isExpired) return false;
     authGateway.apiService.setAuthToken(stored.accessToken);
+    _debugLogAuthToken('offline-session', stored.accessToken);
     return true;
   }
 
@@ -126,6 +139,7 @@ class AuthController extends GetxController {
       );
       if (res.success && res.data != null) {
         isLoggedIn.value = true;
+        _debugLogAuthToken('login', res.data!.accessToken);
         _snackbar('Welcome back', 'Login successful');
         await _notifyAvatarServiceAuthChanged();
         Get.offAllNamed(AppRoutes.home);

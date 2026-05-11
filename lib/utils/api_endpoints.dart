@@ -20,6 +20,7 @@ class ApiEndpoints {
   /// Recurring appointments booking endpoint.
   /// Body: `{shop_id, barber_id, service_id, date, time, notes, repeat: {type, value}}`.
   static const appointmentsRecurring = '/appointments/recurring';
+  static const availabilitySlots = '/availability/slots';
 
   /// Multipart upload endpoint for the current user's profile avatar.
   static const profileAvatar = '/profile/avatar';

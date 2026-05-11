@@ -4,6 +4,7 @@ import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get_it/get_it.dart';
 
 import '../di/appointment/appointment_di.dart';
+import '../di/availability/availability_di.dart';
 import '../di/auth/auth_di.dart';
 import '../di/contact/contact_di.dart';
 import '../di/profile/profile_di.dart';
@@ -48,6 +49,7 @@ class AppServices {
     await setupReservationListDomainServices();
     await setupBarberServicesDomainServices();
     await setupAppointmentDomainServices();
+    await setupAvailabilityDomainServices();
     await setupContactDomainServices();
     await setupProfileDomainServices();
   }

@@ -377,6 +377,13 @@ class AppLocalizationsIt extends AppLocalizations {
   String get noReservationsFound => 'Nessuna prenotazione trovata.';
 
   @override
+  String get retryLabel => 'Riprova';
+
+  @override
+  String get noSlotsAvailableForSelectedDate =>
+      'Nessuna fascia oraria disponibile per la data selezionata.';
+
+  @override
   String get reservationListTitle => 'Elenco prenotazioni';
 
   @override

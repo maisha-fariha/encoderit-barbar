@@ -9,9 +9,12 @@ import '../controllers/reservation_list_controller.dart';
 import '../controllers/shop_list_controller.dart';
 import '../controllers/service_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
+import '../models/appointment/availability_slot_model.dart';
 import '../models/appointment/appointment_model.dart';
 import '../models/shop/shop_model.dart';
+import '../repositories/availability_repository.dart';
 import '../routes/app_pages.dart';
+import '../services/app_services.dart';
 
 class AppoinmentPage extends StatefulWidget {
   const AppoinmentPage({super.key});
@@ -24,12 +27,15 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   int _step = 1;
   int _selectedService = 0;
   int _selectedBarber = 0;
-  int _selectedTime = 0;
+  int _selectedTime = -1;
   DateTime _selectedDate = _today();
   bool _recurringEnabled = true;
   int _recurringIndex = -1; // -1 = nothing selected; otherwise 0..3
   int _howManyBookings = 0; // 0 = nothing selected; otherwise 1..10
   List<DateTime> _recurringDates = <DateTime>[];
+  List<AvailabilitySlot> _slots = const <AvailabilitySlot>[];
+  bool _isLoadingSlots = false;
+  String _slotsErrorMessage = '';
 
   static bool _isBlockedWeekday(DateTime d) =>
       d.weekday == DateTime.wednesday || d.weekday == DateTime.friday;
@@ -46,26 +52,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   late final ServiceListController _serviceController;
   late final BarberListController _barberController;
 
-  final _times = const <String>[
-    '09:00',
-    '09:30',
-    '10:00',
-    '10:30',
-    '11:00',
-    '11:30',
-    '12:00',
-    '12:30',
-    '13:00',
-    '13:30',
-    '14:00',
-    '14:30',
-    '15:00',
-    '15:30',
-    '16:00',
-    '16:30',
-    '17:00',
-    '17:30',
-  ];
+  String? get _selectedSlotTime {
+    if (_selectedTime < 0 || _selectedTime >= _slots.length) return null;
+    final slot = _slots[_selectedTime];
+    if (!slot.available) return null;
+    return slot.time;
+  }
 
   List<_ServiceItem> get _items {
     return _serviceController.items
@@ -169,6 +161,68 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     }
   }
 
+  Future<void> _loadSlotsForSelection({bool showLoading = true}) async {
+    final shopId = int.tryParse(_selectedShopId ?? '');
+    final serviceId = int.tryParse(_selectedServiceId ?? '');
+    final barbers = _barberController.items;
+    final barberId = (barbers.isNotEmpty &&
+            _selectedBarber >= 0 &&
+            _selectedBarber < barbers.length)
+        ? int.tryParse(barbers[_selectedBarber].id)
+        : null;
+    if (shopId == null || serviceId == null || barberId == null) {
+      setState(() {
+        _slots = const <AvailabilitySlot>[];
+        _selectedTime = -1;
+        _slotsErrorMessage = '';
+        _isLoadingSlots = false;
+      });
+      return;
+    }
+
+    if (showLoading) {
+      setState(() {
+        _isLoadingSlots = true;
+        _slotsErrorMessage = '';
+      });
+    }
+
+    final repo = AppServices.getIt<AvailabilityRepository>();
+    final result = await repo.getSlots(
+      shopId: shopId,
+      serviceId: serviceId,
+      barberId: barberId,
+      date: _formatApiDate(_selectedDate),
+    );
+    if (!mounted) return;
+    result.when(
+      success: (data) {
+        final slots = data.slots;
+        int index = _selectedTime;
+        final invalid = index < 0 ||
+            index >= slots.length ||
+            (index >= 0 && index < slots.length && !slots[index].available);
+        if (invalid) {
+          index = slots.indexWhere((e) => e.available);
+        }
+        setState(() {
+          _slots = slots;
+          _selectedTime = index;
+          _slotsErrorMessage = '';
+          _isLoadingSlots = false;
+        });
+      },
+      failure: (error) {
+        setState(() {
+          _slots = const <AvailabilitySlot>[];
+          _selectedTime = -1;
+          _slotsErrorMessage = error.message;
+          _isLoadingSlots = false;
+        });
+      },
+    );
+  }
+
   void _showPageMessage(String message) {
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) return;
@@ -259,11 +313,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       return;
     }
 
-    final time = (_times.isNotEmpty &&
-            _selectedTime >= 0 &&
-            _selectedTime < _times.length)
-        ? _times[_selectedTime]
-        : '';
+    final time = _selectedSlotTime ?? '';
     if (time.isEmpty) {
       _showErrorMessage(l10n.bookingGenericError);
       return;
@@ -420,16 +470,24 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       }
       setState(() {
         _step = 4;
-        _selectedTime = 0;
+        _selectedTime = -1;
         _selectedDate = _today();
         _recurringEnabled = true;
         _recurringIndex = -1;
         _howManyBookings = 0;
         _recurringDates = <DateTime>[];
+        _slots = const <AvailabilitySlot>[];
+        _slotsErrorMessage = '';
+        _isLoadingSlots = true;
       });
+      await _loadSlotsForSelection(showLoading: false);
       return;
     }
     if (_step == 4) {
+      if (_selectedSlotTime == null || _selectedSlotTime!.isEmpty) {
+        _showPageMessage(AppLocalizations.of(context)!.bookingGenericError);
+        return;
+      }
       setState(() => _step = 5);
       return;
     }
@@ -568,9 +626,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   List<String> _bookingDateTimeLabels(Locale locale) {
     if (_recurringDates.isEmpty) return const [];
-    final time = _times.isNotEmpty
-        ? _times[_selectedTime.clamp(0, _times.length - 1)]
-        : '';
+    final time = _selectedSlotTime ?? '';
     return _recurringDates
         .map((d) => _bookingDateTimeLabel(d, time, locale))
         .toList(growable: false);
@@ -704,6 +760,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       _selectedDate = picked;
       _syncRecurringDates();
     });
+    if (_step == 4) {
+      await _loadSlotsForSelection();
+    }
   }
 
   Future<void> _showConfirmDialog() async {
@@ -1079,7 +1138,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                           0xFF000000,
                                         ),
                                       ),
-                                      child: const Text('Retry'),
+                                      child: Text(l10n.retryLabel),
                                     ),
                                   ],
                                 ),
@@ -1162,7 +1221,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                           0xFF000000,
                                         ),
                                       ),
-                                      child: const Text('Retry'),
+                                      child: Text(l10n.retryLabel),
                                     ),
                                   ],
                                 ),
@@ -1233,7 +1292,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                           0xFF000000,
                                         ),
                                       ),
-                                      child: const Text('Retry'),
+                                      child: Text(l10n.retryLabel),
                                     ),
                                   ],
                                 ),
@@ -1304,12 +1363,18 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 Localizations.localeOf(context),
                               ),
                               selectedDate: _selectedDate,
-                              onSelectDate: (d) => setState(() {
-                                _selectedDate = d;
-                                _syncRecurringDates();
-                              }),
+                              onSelectDate: (d) async {
+                                setState(() {
+                                  _selectedDate = d;
+                                  _syncRecurringDates();
+                                });
+                                await _loadSlotsForSelection();
+                              },
                               selectedTimeIndex: _selectedTime,
-                              times: _times,
+                              slots: _slots,
+                              isLoadingSlots: _isLoadingSlots,
+                              slotsErrorMessage: _slotsErrorMessage,
+                              onRetrySlots: _loadSlotsForSelection,
                               onSelectTime: (i) => setState(() {
                                 _selectedTime = i;
                                 _syncRecurringDates();
@@ -1465,7 +1530,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             final card = _Step4SummaryCard(
                               service: selectedService,
                               barber: selectedBarber,
-                              time: _times[_selectedTime],
+                              time: _selectedSlotTime ?? '',
                               dateLabel: _shortDateLabel(_selectedDate, locale),
                               recurringEnabled: _recurringEnabled,
                               intervalLabel: intervalLabel,
@@ -2145,7 +2210,10 @@ class _Step3CalendarCard extends StatelessWidget {
     required this.selectedDate,
     required this.onSelectDate,
     required this.selectedTimeIndex,
-    required this.times,
+    required this.slots,
+    required this.isLoadingSlots,
+    required this.slotsErrorMessage,
+    required this.onRetrySlots,
     required this.onSelectTime,
     required this.onTapCalendar,
   });
@@ -2154,7 +2222,10 @@ class _Step3CalendarCard extends StatelessWidget {
   final DateTime selectedDate;
   final ValueChanged<DateTime> onSelectDate;
   final int selectedTimeIndex;
-  final List<String> times;
+  final List<AvailabilitySlot> slots;
+  final bool isLoadingSlots;
+  final String slotsErrorMessage;
+  final Future<void> Function() onRetrySlots;
   final ValueChanged<int> onSelectTime;
   final VoidCallback onTapCalendar;
 
@@ -2178,8 +2249,6 @@ class _Step3CalendarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    // Disabled times to match the reference screenshot styling.
-    final disabled = <int>{6, 14, 16}; // 12:00, 14:30, 17:00
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
       decoration: BoxDecoration(
@@ -2273,58 +2342,99 @@ class _Step3CalendarCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: times.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: 2.35,
-            ),
-            itemBuilder: (context, i) {
-              final isDisabled = disabled.contains(i);
-              final selected = i == selectedTimeIndex;
-              final bg = isDisabled
-                  ? Color(0xFF242424).withValues(alpha: 0.30)
-                  : selected
-                  ? const Color(0xFFFFFFFF)
-                  : const Color(0xFF242424);
-              final border = isDisabled
-                  ? Color(0xFF797979).withValues(alpha: 0.30)
-                  : selected
-                  ? const Color(0xFFDDDDDD)
-                  : const Color(0xFF797979);
-              final text = isDisabled
-                  ? Color(0xFFEEEEEE).withValues(alpha: 0.30)
-                  : selected
-                  ? const Color(0xFF242424)
-                  : const Color(0xFFEEEEEE);
-              return InkWell(
-                onTap: isDisabled ? null : () => onSelectTime(i),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: border),
+          if (isLoadingSlots)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFFEEEEEE)),
+              ),
+            )
+          else if (slotsErrorMessage.isNotEmpty && slots.isEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  slotsErrorMessage,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFDDDDDD),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
                   ),
-                  child: Center(
-                    child: Text(
-                      times[i],
-                      style: GoogleFonts.inter(
-                        color: text,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        height: 1.5,
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: onRetrySlots,
+                    child: Text(l10n.retryLabel),
+                  ),
+                ),
+              ],
+            )
+          else if (slots.isEmpty)
+            Text(
+              l10n.noSlotsAvailableForSelectedDate,
+              style: GoogleFonts.inter(
+                color: const Color(0xFFDDDDDD),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                height: 1.5,
+              ),
+            )
+          else
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: slots.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 14,
+                childAspectRatio: 2.35,
+              ),
+              itemBuilder: (context, i) {
+                final isDisabled = !slots[i].available;
+                final selected = i == selectedTimeIndex;
+                final bg = isDisabled
+                    ? Color(0xFF242424).withValues(alpha: 0.30)
+                    : selected
+                    ? const Color(0xFFFFFFFF)
+                    : const Color(0xFF242424);
+                final border = isDisabled
+                    ? Color(0xFF797979).withValues(alpha: 0.30)
+                    : selected
+                    ? const Color(0xFFDDDDDD)
+                    : const Color(0xFF797979);
+                final text = isDisabled
+                    ? Color(0xFFEEEEEE).withValues(alpha: 0.30)
+                    : selected
+                    ? const Color(0xFF242424)
+                    : const Color(0xFFEEEEEE);
+                return InkWell(
+                  onTap: isDisabled ? null : () => onSelectTime(i),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: bg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: border),
+                    ),
+                    child: Center(
+                      child: Text(
+                        slots[i].time,
+                        style: GoogleFonts.inter(
+                          color: text,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          height: 1.5,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
         ],
       ),
     );
