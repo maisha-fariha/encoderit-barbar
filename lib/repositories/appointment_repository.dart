@@ -356,6 +356,24 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
     }
   }
 
+  Future<Result<void>> deleteRecurringGroup(String recurringGroupId) async {
+    try {
+      final response = await apiService.delete<dynamic>(
+        '${ApiEndpoints.appointmentsRecurring}/$recurringGroupId',
+      );
+      if (response.success) {
+        return Result.success(null);
+      }
+      return Result.failure(
+        ApiError(
+          message: response.message ?? 'Failed to delete recurring appointments',
+        ),
+      );
+    } catch (e, stackTrace) {
+      return Result.failure(NetworkError.fromException(e, stackTrace));
+    }
+  }
+
   @override
   Future<Result<List<AppointmentModel>>> getAll({bool useCache = true}) async {
     final pageResult = await getPage(1, useCache: useCache);

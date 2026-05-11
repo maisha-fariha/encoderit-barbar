@@ -97,4 +97,16 @@ class ReservationListController extends BaseListController<AppointmentModel>
     );
     return result;
   }
+
+  Future<Result<void>> deleteRecurringGroup(String recurringGroupId) async {
+    final result = await repository.deleteRecurringGroup(recurringGroupId);
+    result.when(
+      success: (_) {
+        items.removeWhere((e) => e.recurringGroupId == recurringGroupId);
+        update(['reservation-list']);
+      },
+      failure: (_) {},
+    );
+    return result;
+  }
 }

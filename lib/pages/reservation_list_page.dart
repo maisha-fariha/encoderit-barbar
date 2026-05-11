@@ -123,6 +123,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
   }
 
   Future<void> _deleteReservation(_ReservationItem item) async {
+    if ((item.recurringGroupId ?? '').isNotEmpty) {
+      await _deleteReservationByRecurringGroup(item.recurringGroupId!);
+      return;
+    }
     await _deleteReservationById(item.id);
   }
 
@@ -131,6 +135,48 @@ class _ReservationListPageState extends State<ReservationListPage> {
     if (confirmed != true) return;
 
     final result = await _controller.deleteAppointment(appointmentId);
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.clearSnackBars();
+    result.when(
+      success: (_) => messenger.showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFE8E8E8),
+          content: Text(
+            l10n.appointmentDeleted,
+            style: GoogleFonts.inter(
+              color: const Color(0xFF0B0B0B),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+      failure: (error) => messenger.showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFE8E8E8),
+          content: Text(
+            error.message,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFB91C1C),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteReservationByRecurringGroup(String recurringGroupId) async {
+    final confirmed = await _showDeleteConfirmDialog();
+    if (confirmed != true) return;
+
+    final result = await _controller.deleteRecurringGroup(recurringGroupId);
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.maybeOf(context);
