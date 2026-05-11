@@ -105,7 +105,9 @@ class AppointmentController extends GetxController {
     required String time, // HH:mm
     required RecurringRepeatType repeatType,
     required int repeatValue,
+    required int repeatInterval,
     String? notes,
+    List<Map<String, dynamic>>? overrides,
   }) async {
     if (isBooking.value) {
       return const BookRecurringOutcome(
@@ -127,23 +129,32 @@ class AppointmentController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final request = RecurringAppointmentRequest(
-        shopId: shopId,
-        barberId: barberId,
-        serviceId: serviceId,
-        date: date,
-        time: time,
-        notes: notes,
-        repeat: RecurringRepeat(type: repeatType, value: clampedValue),
-      );
+      final request = <String, dynamic>{
+        'shop_id': shopId,
+        'barber_id': barberId,
+        'service_id': serviceId,
+        'date': date,
+        'time': time,
+        'notes': notes,
+        'repeat': <String, dynamic>{
+          'type': repeatType == RecurringRepeatType.monthly
+              ? 'monthly'
+              : 'weekly',
+          'value': clampedValue,
+          'interval': repeatInterval.clamp(1, 4),
+        },
+      };
+      if (overrides != null && overrides.isNotEmpty) {
+        request['overrides'] = overrides;
+      }
 
       if (kDebugMode) {
         debugPrint(
-          '[AppointmentController] bookRecurring request=${request.toJson()}',
+          '[AppointmentController] bookRecurring request=$request',
         );
       }
 
-      final outcome = await repository.bookRecurringAppointment(request);
+      final outcome = await repository.bookRecurringAppointmentBody(request);
 
       if (kDebugMode) {
         final r = outcome.result;

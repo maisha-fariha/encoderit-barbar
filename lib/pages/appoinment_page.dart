@@ -40,6 +40,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   bool _isLoadingPreview = false;
   String _previewErrorMessage = '';
   List<RecurringPreviewDateItem> _previewItems = const <RecurringPreviewDateItem>[];
+  final Set<String> _waitlistedOriginalDates = <String>{};
 
   static bool _isBlockedWeekday(DateTime d) =>
       d.weekday == DateTime.wednesday || d.weekday == DateTime.friday;
@@ -279,9 +280,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       }());
       setState(() {
         _previewItems = outcome.result?.dates ?? const <RecurringPreviewDateItem>[];
+        final allowedDates = _previewItems.map((e) => e.date).toSet();
+        _waitlistedOriginalDates.retainAll(allowedDates);
         _previewErrorMessage = '';
         _isLoadingPreview = false;
-        _howManyBookings = _previewItems.length;
       });
       assert(() {
         debugPrint('[RecurringPreview] renderedDates=${_previewItems.length}');
@@ -343,18 +345,29 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return '${d.year}-${two(d.month)}-${two(d.day)}';
   }
 
-  /// Maps the UI's "recurring interval" selection to the API's repeat type.
+  /// Maps UI recurrence to API repeat type.
   ///
-  /// The backend currently only accepts `monthly` or `times` for
-  /// `repeat.type` (it rejects `weekly`/`daily` with
-  /// "The selected repeat.type is invalid"). Because none of the four UI
-  /// options express a single-month cadence, we send `times` for all of them
-  /// so the API just creates [_howManyBookings] appointments.
-  ///
-  /// If the backend gains support for `weekly`, return [RecurringRepeatType.weekly]
-  /// for indices 0..2 and [RecurringRepeatType.monthly] for index 3.
+  /// Current tab-4 options are all week-based frequencies, so `weekly`
+  /// is correct for booking payloads.
   RecurringRepeatType _mapRecurringRepeatType(int recurringIndex) {
-    return RecurringRepeatType.times;
+    return RecurringRepeatType.weekly;
+  }
+
+  List<Map<String, dynamic>> _buildRecurringOverrides() {
+    if (_waitlistedOriginalDates.isEmpty || _previewItems.isEmpty) {
+      return const <Map<String, dynamic>>[];
+    }
+    final overrides = <Map<String, dynamic>>[];
+    for (final item in _previewItems) {
+      if (!_waitlistedOriginalDates.contains(item.date)) continue;
+      overrides.add(<String, dynamic>{
+        'original_date': item.date,
+        'waiting_list': true,
+        'date': item.date,
+        'time': item.time,
+      });
+    }
+    return overrides;
   }
 
   /// Confirms the booking from the dialog.
@@ -415,7 +428,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         time: time,
         repeatType: _mapRecurringRepeatType(_recurringIndex),
         repeatValue: _howManyBookings,
+        repeatInterval: _recurringIndex + 1,
         notes: null,
+        overrides: _buildRecurringOverrides(),
       );
 
       if (!mounted) return;
@@ -553,6 +568,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         _slotsErrorMessage = '';
         _isLoadingSlots = true;
         _previewItems = const <RecurringPreviewDateItem>[];
+        _waitlistedOriginalDates.clear();
         _previewErrorMessage = '';
         _isLoadingPreview = false;
       });
@@ -638,12 +654,24 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   void _removeRecurringDateAt(int index) {
     if (index < 0 || index >= _previewItems.length) return;
+    final removedDate = _previewItems[index].date;
     setState(() {
       _previewItems = List<RecurringPreviewDateItem>.from(_previewItems)
         ..removeAt(index);
+      _waitlistedOriginalDates.remove(removedDate);
       _howManyBookings = _previewItems.length;
       if (_howManyBookings == 0) {
         _recurringIndex = -1;
+      }
+    });
+  }
+
+  void _toggleWaitlistForDate(String originalDate, bool value) {
+    setState(() {
+      if (value) {
+        _waitlistedOriginalDates.add(originalDate);
+      } else {
+        _waitlistedOriginalDates.remove(originalDate);
       }
     });
   }
@@ -1466,6 +1494,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                       onRetry: _loadRecurringPreview,
                                       selectedBarberName: _selectedBarberName,
                                       onRemoveAt: _removeRecurringDateAt,
+                                      waitlistedOriginalDates:
+                                          _waitlistedOriginalDates,
+                                      onToggleWaitlist: _toggleWaitlistForDate,
                                       decorateContainer: true,
                                     ),
                                   ],
@@ -1742,6 +1773,7 @@ class _Step4SummaryCard extends StatelessWidget {
               onRetry: onRetryPreview,
               selectedBarberName: selectedBarberName,
               onRemoveAt: onRemoveRecurringAt,
+              waitlistedOriginalDates: const <String>{},
               decorateContainer: false,
             ),
             const SizedBox(height: 25),
@@ -2723,7 +2755,9 @@ class _RecurringPreviewSummary extends StatelessWidget {
     required this.errorMessage,
     required this.onRetry,
     required this.selectedBarberName,
+    required this.waitlistedOriginalDates,
     this.onRemoveAt,
+    this.onToggleWaitlist,
     this.decorateContainer = true,
   });
 
@@ -2733,7 +2767,9 @@ class _RecurringPreviewSummary extends StatelessWidget {
   final String errorMessage;
   final Future<void> Function() onRetry;
   final String selectedBarberName;
+  final Set<String> waitlistedOriginalDates;
   final ValueChanged<int>? onRemoveAt;
+  final void Function(String originalDate, bool value)? onToggleWaitlist;
   final bool decorateContainer;
 
   @override
@@ -2805,6 +2841,10 @@ class _RecurringPreviewSummary extends StatelessWidget {
             _RecurringPreviewRow(
               item: previewItems[i],
               selectedBarberName: selectedBarberName,
+              isWaitlisted: waitlistedOriginalDates.contains(previewItems[i].date),
+              onToggleWaitlist: onToggleWaitlist == null
+                  ? null
+                  : (value) => onToggleWaitlist!(previewItems[i].date, value),
               onRemove: onRemoveAt == null ? null : () => onRemoveAt!(i),
             ),
           ],
@@ -2835,11 +2875,15 @@ class _RecurringPreviewRow extends StatelessWidget {
   const _RecurringPreviewRow({
     required this.item,
     required this.selectedBarberName,
+    required this.isWaitlisted,
+    this.onToggleWaitlist,
     this.onRemove,
   });
 
   final RecurringPreviewDateItem item;
   final String selectedBarberName;
+  final bool isWaitlisted;
+  final ValueChanged<bool>? onToggleWaitlist;
   final VoidCallback? onRemove;
 
   @override
@@ -2961,6 +3005,33 @@ class _RecurringPreviewRow extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (!item.isAvailable && onToggleWaitlist != null) ...[
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () => onToggleWaitlist!(!isWaitlisted),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: isWaitlisted,
+                          onChanged: (value) =>
+                              onToggleWaitlist!(value ?? false),
+                          activeColor: const Color(0xFF185C5C),
+                        ),
+                        Expanded(
+                          child: Text(
+                            l10n.waitlistMe,
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFFDDDDDD),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -3051,7 +3122,7 @@ class _Step4HowManyDropdown extends StatelessWidget {
                       shrinkWrap: true,
                       padding: EdgeInsets.zero,
                       itemCount: _maxOptions,
-                      separatorBuilder: (_, __) => const Padding(
+                      separatorBuilder: (_, index) => const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
                         child: _Step3Divider(),
                       ),

@@ -173,6 +173,13 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
     RecurringAppointmentRequest request,
   ) async {
     final body = request.toJson();
+    return bookRecurringAppointmentBody(body);
+  }
+
+  /// POST `/appointments/recurring` with a raw request body.
+  Future<BookRecurringOutcome> bookRecurringAppointmentBody(
+    Map<String, dynamic> body,
+  ) async {
     if (kDebugMode) {
       debugPrint(
         '[AppointmentRepository] POST ${ApiEndpoints.appointmentsRecurring} '
