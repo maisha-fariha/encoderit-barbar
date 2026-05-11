@@ -734,6 +734,24 @@ abstract class AppLocalizations {
   /// **'Contact us'**
   String get contactUs;
 
+  /// No description provided for @contactFormIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in all fields.'**
+  String get contactFormIncomplete;
+
+  /// No description provided for @contactSubmitNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send your message. Check your connection and try again.'**
+  String get contactSubmitNetworkError;
+
+  /// No description provided for @contactSubmitSuccessFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Your message was sent.'**
+  String get contactSubmitSuccessFallback;
+
   /// No description provided for @reservationListTitle.
   ///
   /// In en, this message translates to:

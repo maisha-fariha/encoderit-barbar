@@ -347,6 +347,16 @@ class AppLocalizationsIt extends AppLocalizations {
   String get contactUs => 'Contattaci';
 
   @override
+  String get contactFormIncomplete => 'Compila tutti i campi.';
+
+  @override
+  String get contactSubmitNetworkError =>
+      'Impossibile inviare il messaggio. Controlla la connessione e riprova.';
+
+  @override
+  String get contactSubmitSuccessFallback => 'Messaggio inviato.';
+
+  @override
   String get reservationListTitle => 'Elenco prenotazioni';
 
   @override

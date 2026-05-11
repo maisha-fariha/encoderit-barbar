@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../controllers/contact_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 
 import '../routes/app_pages.dart';
@@ -21,6 +22,85 @@ class _ContactPageState extends State<ContactPage> {
   final _email = TextEditingController();
   final _subject = TextEditingController();
   final _message = TextEditingController();
+
+  void _showSnack(String text, {required bool isError}) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFFE8E8E8),
+        content: Text(
+          text,
+          style: GoogleFonts.inter(
+            color: isError ? const Color(0xFFB91C1C) : const Color(0xFF0B0B0B),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _firstErrorString(Map<String, dynamic>? errors) {
+    if (errors == null || errors.isEmpty) return '';
+    for (final value in errors.values) {
+      if (value is List && value.isNotEmpty && value.first is String) {
+        final v = (value.first as String).trim();
+        if (v.isNotEmpty) return v;
+      }
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return '';
+  }
+
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    final l10n = AppLocalizations.of(context)!;
+    final name = _name.text.trim();
+    final email = _email.text.trim();
+    final subject = _subject.text.trim();
+    final message = _message.text.trim();
+    if (name.isEmpty || email.isEmpty || subject.isEmpty || message.isEmpty) {
+      _showSnack(l10n.contactFormIncomplete, isError: true);
+      return;
+    }
+
+    final controller = Get.find<ContactController>();
+    final outcome = await controller.submit(
+      name: name,
+      email: email,
+      subject: subject,
+      message: message,
+    );
+    if (!mounted) return;
+
+    if (outcome.success) {
+      final msg = outcome.message.isNotEmpty
+          ? outcome.message
+          : l10n.contactSubmitSuccessFallback;
+      _showSnack(msg, isError: false);
+      _name.clear();
+      _email.clear();
+      _subject.clear();
+      _message.clear();
+      return;
+    }
+
+    if (outcome.isNetworkError) {
+      _showSnack(l10n.contactSubmitNetworkError, isError: true);
+      return;
+    }
+
+    final fromErrors = _firstErrorString(outcome.errors);
+    final errMsg = outcome.message.isNotEmpty
+        ? outcome.message
+        : (fromErrors.isNotEmpty ? fromErrors : l10n.bookingGenericError);
+    _showSnack(errMsg, isError: true);
+  }
 
   @override
   void dispose() {
@@ -199,29 +279,44 @@ class _ContactPageState extends State<ContactPage> {
                                 maxLines: 4,
                               ),
                               const SizedBox(height: 30),
-                              SizedBox(
-                                height: 54,
-                                child: Material(
-                                  color: Color(0xFFEEEEEE),
-                                  elevation: 0,
-                                  borderRadius: BorderRadius.circular(30),
-                                  child: InkWell(
+                              Obx(() {
+                                final busy =
+                                    Get.find<ContactController>().isSubmitting.value;
+                                return SizedBox(
+                                  height: 54,
+                                  child: Material(
+                                    color: busy
+                                        ? const Color(0xFFCCCCCC)
+                                        : const Color(0xFFEEEEEE),
+                                    elevation: 0,
                                     borderRadius: BorderRadius.circular(30),
-                                    onTap: () => FocusScope.of(context).unfocus(),
-                                    child: Center(
-                                      child: Text(
-                                        l10n.sendYourMessage,
-                                        style: GoogleFonts.inter(
-                                          color: Color(0xFF000000),
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          height: 1.5,
-                                        ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(30),
+                                      onTap: busy ? null : _submit,
+                                      child: Center(
+                                        child: busy
+                                            ? const SizedBox(
+                                                width: 22,
+                                                height: 22,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: Color(0xFF000000),
+                                                ),
+                                              )
+                                            : Text(
+                                                l10n.sendYourMessage,
+                                                style: GoogleFonts.inter(
+                                                  color: const Color(0xFF000000),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                  height: 1.5,
+                                                ),
+                                              ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
                             ],
                           ),
                         ),

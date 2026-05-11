@@ -24,6 +24,9 @@ class ApiEndpoints {
   /// Multipart upload endpoint for the current user's profile avatar.
   static const profileAvatar = '/profile/avatar';
 
+  /// Public contact form submission.
+  static const contacts = '/contacts';
+
   /// Services list (demo: ReqRes `/products` — same `data` list pattern).
   static const barberServices = '/products';
 }
