@@ -60,7 +60,9 @@ class _ReservationListPageState extends State<ReservationListPage> {
     }
 
     final result = <_ReservationItem>[];
-    for (final groupItems in grouped.values) {
+    for (final entry in grouped.entries) {
+      final groupId = entry.key;
+      final groupItems = entry.value;
       groupItems.sort(
         (a, b) => (a.startsAt ?? DateTime(1970)).compareTo(
           b.startsAt ?? DateTime(1970),
@@ -70,6 +72,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
       final occurrences = groupItems
           .map(
             (e) => _ReservationOccurrence(
+              appointmentId: e.id,
               dateText: _formatDateText(e.startsAt),
               barberText: e.barber.name.isNotEmpty
                   ? 'con ${e.barber.name}'
@@ -87,7 +90,8 @@ class _ReservationListPageState extends State<ReservationListPage> {
           dateText: _formatDateText(first.startsAt),
           price: '€${first.service.price.toStringAsFixed(0)}',
           imageAsset: 'assets/images/barbar_1.jpg',
-          recurring: occurrences.length > 1,
+          recurring: true,
+          recurringGroupId: groupId,
           occurrences: occurrences,
         ),
       );
@@ -103,8 +107,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
           price: '€${e.service.price.toStringAsFixed(0)}',
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
+          recurringGroupId: null,
           occurrences: <_ReservationOccurrence>[
             _ReservationOccurrence(
+              appointmentId: e.id,
               dateText: _formatDateText(e.startsAt),
               barberText: e.barber.name.isNotEmpty ? 'con ${e.barber.name}' : 'con Barber',
             ),
@@ -117,10 +123,14 @@ class _ReservationListPageState extends State<ReservationListPage> {
   }
 
   Future<void> _deleteReservation(_ReservationItem item) async {
+    await _deleteReservationById(item.id);
+  }
+
+  Future<void> _deleteReservationById(String appointmentId) async {
     final confirmed = await _showDeleteConfirmDialog();
     if (confirmed != true) return;
 
-    final result = await _controller.deleteAppointment(item.id);
+    final result = await _controller.deleteAppointment(appointmentId);
     if (!mounted) return;
     final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.maybeOf(context);
@@ -597,6 +607,8 @@ class _ReservationListPageState extends State<ReservationListPage> {
                               expanded: expanded,
                               mode: mode,
                               onDelete: () => _deleteReservation(item),
+                              onDeleteOccurrence: (appointmentId) =>
+                                  _deleteReservationById(appointmentId),
                               onTap: () => setState(
                                 () => _expandedIndex = _expandedIndex == i
                                     ? -1
@@ -849,6 +861,7 @@ class _ReservationCard extends StatelessWidget {
     required this.expanded,
     required this.mode,
     required this.onDelete,
+    required this.onDeleteOccurrence,
     required this.onTap,
   });
 
@@ -856,6 +869,7 @@ class _ReservationCard extends StatelessWidget {
   final bool expanded;
   final _ReservationMode mode;
   final VoidCallback onDelete;
+  final ValueChanged<String> onDeleteOccurrence;
   final VoidCallback onTap;
 
   @override
@@ -872,7 +886,7 @@ class _ReservationCard extends StatelessWidget {
       _ReservationMode.completed => l10n.completed,
       _ReservationMode.cancelled => l10n.cancelled,
     };
-    final showDelete = mode == _ReservationMode.booked && !item.recurring;
+    final showDelete = mode == _ReservationMode.booked;
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
@@ -1008,7 +1022,11 @@ class _ReservationCard extends StatelessWidget {
               child: Column(
                 children: [
                   const _HomeDivider(),
-                  _ReservationRecurrence(occurrences: item.occurrences),
+                  _ReservationRecurrence(
+                    occurrences: item.occurrences,
+                    showDelete: showDelete,
+                    onDeleteOccurrence: onDeleteOccurrence,
+                  ),
                   const SizedBox(height: 12),
                   const _HomeDivider(),
                   const SizedBox(height: 12),
@@ -1105,9 +1123,15 @@ class _HomeDivider extends StatelessWidget {
 }
 
 class _ReservationRecurrence extends StatelessWidget {
-  const _ReservationRecurrence({required this.occurrences});
+  const _ReservationRecurrence({
+    required this.occurrences,
+    required this.showDelete,
+    required this.onDeleteOccurrence,
+  });
 
   final List<_ReservationOccurrence> occurrences;
+  final bool showDelete;
+  final ValueChanged<String> onDeleteOccurrence;
 
   @override
   Widget build(BuildContext context) {
@@ -1142,6 +1166,9 @@ class _ReservationRecurrence extends StatelessWidget {
           (entry) => _RecurrenceRow(
             text: entry.dateText,
             pillText: entry.barberText,
+            onDelete: showDelete
+                ? () => onDeleteOccurrence(entry.appointmentId)
+                : null,
           ),
         ),
       ],
@@ -1150,10 +1177,15 @@ class _ReservationRecurrence extends StatelessWidget {
 }
 
 class _RecurrenceRow extends StatelessWidget {
-  const _RecurrenceRow({required this.text, required this.pillText});
+  const _RecurrenceRow({
+    required this.text,
+    required this.pillText,
+    this.onDelete,
+  });
 
   final String text;
   final String pillText;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -1204,6 +1236,18 @@ class _RecurrenceRow extends StatelessWidget {
               ],
             ),
           ),
+          if (onDelete != null) ...[
+            const SizedBox(width: 10),
+            InkWell(
+              onTap: onDelete,
+              borderRadius: BorderRadius.circular(12),
+              child: const Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: Color(0xFF797979),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1211,8 +1255,13 @@ class _RecurrenceRow extends StatelessWidget {
 }
 
 class _ReservationOccurrence {
-  const _ReservationOccurrence({required this.dateText, required this.barberText});
+  const _ReservationOccurrence({
+    required this.appointmentId,
+    required this.dateText,
+    required this.barberText,
+  });
 
+  final String appointmentId;
   final String dateText;
   final String barberText;
 }
@@ -1226,6 +1275,7 @@ class _ReservationItem {
     required this.price,
     required this.imageAsset,
     required this.recurring,
+    required this.recurringGroupId,
     required this.occurrences,
   });
 
@@ -1236,6 +1286,7 @@ class _ReservationItem {
   final String price;
   final String imageAsset;
   final bool recurring;
+  final String? recurringGroupId;
   final List<_ReservationOccurrence> occurrences;
 }
 
