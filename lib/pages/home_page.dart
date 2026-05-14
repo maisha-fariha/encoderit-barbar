@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/auth_controller.dart';
+import '../controllers/appointment_ui_refresh_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
@@ -26,11 +27,28 @@ class _HomePageState extends State<HomePage> {
   String _upcomingError = '';
   List<_UpcomingItem> _upcomingItems = const <_UpcomingItem>[];
   int _totalAppointmentsCount = 0;
+  Worker? _appointmentRefreshWorker;
 
   @override
   void initState() {
     super.initState();
     _loadUpcomingBookedAppointments();
+    if (Get.isRegistered<AppointmentUiRefreshController>()) {
+      _appointmentRefreshWorker = ever(
+        Get.find<AppointmentUiRefreshController>().revision,
+        (_) {
+          if (mounted) {
+            _loadUpcomingBookedAppointments();
+          }
+        },
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _appointmentRefreshWorker?.dispose();
+    super.dispose();
   }
 
   Future<bool> _ensureAuthenticated() async {
@@ -164,7 +182,7 @@ class _HomePageState extends State<HomePage> {
           dateText: _formatDateText(first.startsAt),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: true,
-          sortAt: first.startsAt,
+          sortAt: groupItems.last.startsAt,
           occurrences: groupItems
               .map(
                 (e) => _UpcomingOccurrence(
@@ -201,7 +219,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     result.sort(
-      (a, b) => (a.sortAt ?? DateTime(1970)).compareTo(b.sortAt ?? DateTime(1970)),
+      (a, b) => (b.sortAt ?? DateTime(1970)).compareTo(a.sortAt ?? DateTime(1970)),
     );
     return result;
   }

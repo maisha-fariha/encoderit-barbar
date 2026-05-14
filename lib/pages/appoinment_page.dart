@@ -4,6 +4,7 @@ import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/appointment_controller.dart';
+import '../controllers/appointment_ui_refresh_controller.dart';
 import '../controllers/barber_list_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../controllers/shop_list_controller.dart';
@@ -109,6 +110,17 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     _shopController.loadItems();
     _serviceController.items.clear();
     _barberController.items.clear();
+  }
+
+  /// Clears appointment cache, refreshes reservation list, and signals home to reload.
+  Future<void> _syncAppointmentsAfterBooking() async {
+    await AppServices.getIt<AppointmentRepository>().invalidateAppointmentsCache();
+    if (Get.isRegistered<AppointmentUiRefreshController>()) {
+      Get.find<AppointmentUiRefreshController>().notifyAppointmentsChanged();
+    }
+    if (Get.isRegistered<ReservationListController>()) {
+      await Get.find<ReservationListController>().loadItems();
+    }
   }
 
   String? get _selectedShopId => _shopController.selectedShop?.id;
@@ -457,11 +469,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         }
         _showPageMessage(message);
 
-        // Best-effort: refresh the reservation list so the new bookings show up.
-        if (Get.isRegistered<ReservationListController>()) {
-          // ignore: discarded_futures
-          Get.find<ReservationListController>().loadItems();
-        }
+        await _syncAppointmentsAfterBooking();
 
         if (Get.previousRoute.isNotEmpty) {
           Get.back();
@@ -499,10 +507,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
           ? outcome.message
           : l10n.bookingSuccess;
       _showPageMessage(successMsg);
-      if (Get.isRegistered<ReservationListController>()) {
-        // ignore: discarded_futures
-        Get.find<ReservationListController>().loadItems();
-      }
+      await _syncAppointmentsAfterBooking();
       if (Get.previousRoute.isNotEmpty) {
         Get.back();
       } else {

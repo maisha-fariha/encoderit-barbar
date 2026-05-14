@@ -1,6 +1,8 @@
 import 'package:gems_core/gems_core.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
+import 'package:get/get.dart';
 
+import 'appointment_ui_refresh_controller.dart';
 import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
 
@@ -21,7 +23,7 @@ class ReservationListController extends BaseListController<AppointmentModel>
     setLoading(true);
     setError('');
     try {
-      final result = await repository.getPage(1);
+      final result = await repository.getPage(1, useCache: false);
       result.when(
         success: (page) {
           items.clear();
@@ -92,6 +94,7 @@ class ReservationListController extends BaseListController<AppointmentModel>
       success: (_) {
         items.removeWhere((e) => e.id == appointmentId);
         update(['reservation-list']);
+        _notifyGlobalAppointmentRefresh();
       },
       failure: (_) {},
     );
@@ -104,9 +107,17 @@ class ReservationListController extends BaseListController<AppointmentModel>
       success: (_) {
         items.removeWhere((e) => e.recurringGroupId == recurringGroupId);
         update(['reservation-list']);
+        _notifyGlobalAppointmentRefresh();
       },
       failure: (_) {},
     );
     return result;
+  }
+
+  Future<void> _notifyGlobalAppointmentRefresh() async {
+    await repository.invalidateAppointmentsCache();
+    if (Get.isRegistered<AppointmentUiRefreshController>()) {
+      Get.find<AppointmentUiRefreshController>().notifyAppointmentsChanged();
+    }
   }
 }

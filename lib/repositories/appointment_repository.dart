@@ -106,6 +106,11 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
 
   static const _cacheKey = 'appointments_all';
 
+  /// Clears cached appointment list so the next fetch hits the network.
+  Future<void> invalidateAppointmentsCache() async {
+    await databaseService.delete(_cacheKey);
+  }
+
   @override
   AppointmentModel fromJson(Map<String, dynamic> json) =>
       AppointmentModel.fromJson(json);
@@ -453,7 +458,9 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
         },
       );
       if (response.success && response.data != null) {
-        return Result.success(_parseList(response.data));
+        final list = _parseList(response.data);
+        _sortAppointmentsDescending(list);
+        return Result.success(list);
       }
       return Result.failure(
         ApiError(message: response.message ?? 'Failed to fetch appointments'),
@@ -507,6 +514,14 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
         .toList();
   }
 
+  void _sortAppointmentsDescending(List<AppointmentModel> list) {
+    list.sort((AppointmentModel a, AppointmentModel b) {
+      final da = a.startsAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final db = b.startsAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return db.compareTo(da);
+    });
+  }
+
   AppointmentPageResult _parsePage(dynamic raw) {
     final list = _parseList(raw);
     int currentPage = 1;
@@ -526,6 +541,8 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
         if (totalRaw is int) total = totalRaw;
       }
     }
+
+    _sortAppointmentsDescending(list);
 
     return AppointmentPageResult(
       items: list,

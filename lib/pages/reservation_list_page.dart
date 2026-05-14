@@ -92,6 +92,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: true,
           recurringGroupId: groupId,
+          sortAt: groupItems.last.startsAt,
           occurrences: occurrences,
         ),
       );
@@ -108,6 +109,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
           recurringGroupId: null,
+          sortAt: e.startsAt,
           occurrences: <_ReservationOccurrence>[
             _ReservationOccurrence(
               appointmentId: e.id,
@@ -118,7 +120,11 @@ class _ReservationListPageState extends State<ReservationListPage> {
         ),
       );
     }
-    result.sort((a, b) => a.dateText.compareTo(b.dateText));
+    result.sort((a, b) {
+      final da = a.sortAt ?? DateTime(1970);
+      final db = b.sortAt ?? DateTime(1970);
+      return db.compareTo(da);
+    });
     return result;
   }
 
@@ -1322,6 +1328,7 @@ class _ReservationItem {
     required this.imageAsset,
     required this.recurring,
     required this.recurringGroupId,
+    required this.sortAt,
     required this.occurrences,
   });
 
@@ -1333,6 +1340,7 @@ class _ReservationItem {
   final String imageAsset;
   final bool recurring;
   final String? recurringGroupId;
+  final DateTime? sortAt;
   final List<_ReservationOccurrence> occurrences;
 }
 

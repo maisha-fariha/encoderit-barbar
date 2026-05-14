@@ -12,6 +12,7 @@ import 'services/app_services.dart';
 import 'services/profile_avatar_service.dart';
 import 'auth/app_auth_gateway.dart';
 import 'controllers/appointment_controller.dart';
+import 'controllers/appointment_ui_refresh_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/barber_list_controller.dart';
 import 'controllers/contact_controller.dart';
@@ -61,6 +62,7 @@ Future<void> main() async {
 
   final reservationList = AppServices.getIt<ReservationListController>();
   Get.put(reservationList, permanent: true);
+  Get.put(AppointmentUiRefreshController(), permanent: true);
   final appointmentController = AppServices.getIt<AppointmentController>();
   Get.put(appointmentController, permanent: true);
   final contactController = AppServices.getIt<ContactController>();
