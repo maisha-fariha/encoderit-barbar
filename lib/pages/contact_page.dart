@@ -112,7 +112,10 @@ class _ContactPageState extends State<ContactPage> {
     super.initState();
     final shops = Get.find<ShopListController>();
     if (shops.items.isEmpty) {
-      shops.loadItems();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        shops.loadItems();
+      });
     }
   }
 

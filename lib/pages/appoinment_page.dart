@@ -107,9 +107,14 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     _shopController = Get.find<ShopListController>();
     _serviceController = Get.find<ServiceListController>();
     _barberController = Get.find<BarberListController>();
-    _shopController.loadItems();
-    _serviceController.items.clear();
-    _barberController.items.clear();
+    // Defer mutations that notify GetX/Obx (e.g. Contact's shop Obx) so we never
+    // call them during this route's first build — avoids "markNeedsBuild during build".
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _shopController.loadItems();
+      _serviceController.items.clear();
+      _barberController.items.clear();
+    });
   }
 
   /// Clears appointment cache, refreshes reservation list, and signals home to reload.
