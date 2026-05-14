@@ -39,6 +39,28 @@ class ReservationListController extends BaseListController<AppointmentModel>
     update(['reservation-list']);
   }
 
+  /// Replaces the list with page 1 from the API without clearing [items] first
+  /// or toggling [isLoading], so the UI keeps showing the previous rows until
+  /// the response arrives (used after delete/cancel so tab counts stay in sync).
+  Future<void> reloadItemsFromNetwork() async {
+    setError('');
+    try {
+      final result = await repository.getPage(1, useCache: false);
+      result.when(
+        success: (page) {
+          items
+            ..clear()
+            ..addAll(page.items);
+          currentPage = page.currentPage;
+          hasMore = page.currentPage < page.lastPage;
+        },
+        failure: (error) => setError(error.message),
+      );
+    } finally {
+      update(['reservation-list']);
+    }
+  }
+
   Future<void> loadNextPage() async {
     if (isLoading.value || isLoadingMore || !hasMore) return;
     isLoadingMore = true;
@@ -90,34 +112,23 @@ class ReservationListController extends BaseListController<AppointmentModel>
 
   Future<Result<void>> deleteAppointment(String appointmentId) async {
     final result = await repository.deleteAppointment(appointmentId);
-    result.when(
-      success: (_) {
-        items.removeWhere((e) => e.id == appointmentId);
-        update(['reservation-list']);
-        _notifyGlobalAppointmentRefresh();
-      },
-      failure: (_) {},
-    );
+    if (!result.isSuccess) return result;
+    await repository.invalidateAppointmentsCache();
+    await reloadItemsFromNetwork();
+    if (Get.isRegistered<AppointmentUiRefreshController>()) {
+      Get.find<AppointmentUiRefreshController>().notifyAppointmentsChanged();
+    }
     return result;
   }
 
   Future<Result<void>> deleteRecurringGroup(String recurringGroupId) async {
     final result = await repository.deleteRecurringGroup(recurringGroupId);
-    result.when(
-      success: (_) {
-        items.removeWhere((e) => e.recurringGroupId == recurringGroupId);
-        update(['reservation-list']);
-        _notifyGlobalAppointmentRefresh();
-      },
-      failure: (_) {},
-    );
-    return result;
-  }
-
-  Future<void> _notifyGlobalAppointmentRefresh() async {
+    if (!result.isSuccess) return result;
     await repository.invalidateAppointmentsCache();
+    await reloadItemsFromNetwork();
     if (Get.isRegistered<AppointmentUiRefreshController>()) {
       Get.find<AppointmentUiRefreshController>().notifyAppointmentsChanged();
     }
+    return result;
   }
 }
