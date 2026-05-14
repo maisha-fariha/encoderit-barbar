@@ -980,6 +980,18 @@ abstract class AppLocalizations {
   /// **'Please choose a recurring interval and number of bookings.'**
   String get recurringMissingSelection;
 
+  /// No description provided for @recurringIntervalRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select how often the appointment repeats before continuing.'**
+  String get recurringIntervalRequired;
+
+  /// No description provided for @recurringQuantityRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select how many bookings you want before continuing.'**
+  String get recurringQuantityRequired;
+
   /// No description provided for @recurringAllSkipped.
   ///
   /// In en, this message translates to:

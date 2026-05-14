@@ -580,6 +580,23 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         _showPageMessage(AppLocalizations.of(context)!.bookingGenericError);
         return;
       }
+      final l10n = AppLocalizations.of(context)!;
+      if (_recurringEnabled) {
+        final missingInterval = _recurringIndex < 0;
+        final missingQuantity = _howManyBookings < 1;
+        if (missingInterval && missingQuantity) {
+          _showErrorMessage(l10n.recurringMissingSelection);
+          return;
+        }
+        if (missingInterval) {
+          _showErrorMessage(l10n.recurringIntervalRequired);
+          return;
+        }
+        if (missingQuantity) {
+          _showErrorMessage(l10n.recurringQuantityRequired);
+          return;
+        }
+      }
       setState(() => _step = 5);
       return;
     }

@@ -180,6 +180,8 @@
   },
   "recurringSuccess": "Appuntamenti ricorrenti elaborati.",
   "recurringMissingSelection": "Seleziona un intervallo ricorrente e il numero di prenotazioni.",
+  "recurringIntervalRequired": "Seleziona la frequenza della ripetizione prima di continuare.",
+  "recurringQuantityRequired": "Seleziona quante prenotazioni desideri prima di continuare.",
   "recurringAllSkipped": "{count, plural, =1{Lo slot selezionato è stato saltato.} other{Tutti gli {count} slot selezionati sono stati saltati.}}",
   "@recurringAllSkipped": {
     "placeholders": {

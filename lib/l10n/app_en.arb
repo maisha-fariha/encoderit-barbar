@@ -180,6 +180,8 @@
   },
   "recurringSuccess": "Recurring appointments processed.",
   "recurringMissingSelection": "Please choose a recurring interval and number of bookings.",
+  "recurringIntervalRequired": "Please select how often the appointment repeats before continuing.",
+  "recurringQuantityRequired": "Please select how many bookings you want before continuing.",
   "recurringAllSkipped": "{count, plural, =1{The selected slot was skipped.} other{All {count} selected slots were skipped.}}",
   "@recurringAllSkipped": {
     "placeholders": {

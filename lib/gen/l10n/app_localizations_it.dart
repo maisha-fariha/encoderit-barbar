@@ -485,6 +485,14 @@ class AppLocalizationsIt extends AppLocalizations {
       'Seleziona un intervallo ricorrente e il numero di prenotazioni.';
 
   @override
+  String get recurringIntervalRequired =>
+      'Seleziona la frequenza della ripetizione prima di continuare.';
+
+  @override
+  String get recurringQuantityRequired =>
+      'Seleziona quante prenotazioni desideri prima di continuare.';
+
+  @override
   String recurringAllSkipped(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
