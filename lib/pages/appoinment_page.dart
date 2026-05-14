@@ -1143,6 +1143,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                 duration: const Duration(milliseconds: 220),
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeOut,
+                layoutBuilder: (currentChild, previousChildren) {
+                  return Stack(
+                    alignment: Alignment.topCenter,
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      ...previousChildren,
+                      ...? (currentChild != null ? <Widget>[currentChild] : null),
+                    ],
+                  );
+                },
                 child: _step == 1
                     ? GetBuilder<ShopListController>(
                         id: 'shop-selection',
@@ -1606,7 +1616,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               onRemoveRecurringAt: _removeRecurringDateAt,
                             );
                             if (!isLarge) return card;
-                            return Center(
+                            return Align(
+                              alignment: Alignment.topCenter,
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints(
                                   maxWidth: 980,
