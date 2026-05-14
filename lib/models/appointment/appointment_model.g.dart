@@ -21,6 +21,7 @@ _$AppointmentModelImpl _$$AppointmentModelImplFromJson(
   notes: json['notes'] as String?,
   recurringGroupId: json['recurring_group_id'] as String?,
   createdAt: _dateTimeFromJson(json['created_at']),
+  updatedAt: _dateTimeFromJson(json['updated_at']),
 );
 
 Map<String, dynamic> _$$AppointmentModelImplToJson(
@@ -36,6 +37,7 @@ Map<String, dynamic> _$$AppointmentModelImplToJson(
   'notes': instance.notes,
   'recurring_group_id': instance.recurringGroupId,
   'created_at': instance.createdAt?.toIso8601String(),
+  'updated_at': instance.updatedAt?.toIso8601String(),
 };
 
 _$AppointmentBarberImpl _$$AppointmentBarberImplFromJson(

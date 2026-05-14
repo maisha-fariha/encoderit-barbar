@@ -516,9 +516,7 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
 
   void _sortAppointmentsDescending(List<AppointmentModel> list) {
     list.sort((AppointmentModel a, AppointmentModel b) {
-      final da = a.startsAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final db = b.startsAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return db.compareTo(da);
+      return b.activitySortTime.compareTo(a.activitySortTime);
     });
   }
 

@@ -92,7 +92,9 @@ class _ReservationListPageState extends State<ReservationListPage> {
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: true,
           recurringGroupId: groupId,
-          sortAt: groupItems.last.startsAt,
+          sortAt: groupItems
+              .map((e) => e.activitySortTime)
+              .reduce((a, b) => a.isAfter(b) ? a : b),
           occurrences: occurrences,
         ),
       );
@@ -109,7 +111,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
           recurringGroupId: null,
-          sortAt: e.startsAt,
+          sortAt: e.activitySortTime,
           occurrences: <_ReservationOccurrence>[
             _ReservationOccurrence(
               appointmentId: e.id,

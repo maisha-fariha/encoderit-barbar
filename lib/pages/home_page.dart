@@ -182,7 +182,9 @@ class _HomePageState extends State<HomePage> {
           dateText: _formatDateText(first.startsAt),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: true,
-          sortAt: groupItems.last.startsAt,
+          sortAt: groupItems
+              .map((e) => e.activitySortTime)
+              .reduce((a, b) => a.isAfter(b) ? a : b),
           occurrences: groupItems
               .map(
                 (e) => _UpcomingOccurrence(
@@ -207,7 +209,7 @@ class _HomePageState extends State<HomePage> {
           dateText: _formatDateText(item.startsAt),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: false,
-          sortAt: item.startsAt,
+          sortAt: item.activitySortTime,
           occurrences: <_UpcomingOccurrence>[
             _UpcomingOccurrence(
               dateText: _formatDateText(item.startsAt),

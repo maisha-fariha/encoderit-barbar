@@ -24,10 +24,22 @@ class AppointmentModel with _$AppointmentModel implements BaseModel {
     // ignore: invalid_annotation_target
     @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson)
     DateTime? createdAt,
+    // ignore: invalid_annotation_target
+    @JsonKey(name: 'updated_at', fromJson: _dateTimeFromJson)
+    DateTime? updatedAt,
   }) = _AppointmentModel;
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) =>
       _$AppointmentModelFromJson(json);
+}
+
+/// Latest server-side change time for list ordering (newest first).
+extension AppointmentModelActivitySort on AppointmentModel {
+  DateTime get activitySortTime =>
+      updatedAt ??
+      createdAt ??
+      startsAt ??
+      DateTime.fromMillisecondsSinceEpoch(0);
 }
 
 @freezed

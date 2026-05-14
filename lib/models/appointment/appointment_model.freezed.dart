@@ -38,7 +38,9 @@ mixin _$AppointmentModel {
   @JsonKey(name: 'recurring_group_id')
   String? get recurringGroupId => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson)
-  DateTime? get createdAt => throw _privateConstructorUsedError;
+  DateTime? get createdAt => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  @JsonKey(name: 'updated_at', fromJson: _dateTimeFromJson)
+  DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   /// Serializes this AppointmentModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -69,6 +71,8 @@ abstract class $AppointmentModelCopyWith<$Res> {
     @JsonKey(name: 'recurring_group_id') String? recurringGroupId,
     @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson)
     DateTime? createdAt,
+    @JsonKey(name: 'updated_at', fromJson: _dateTimeFromJson)
+    DateTime? updatedAt,
   });
 
   $AppointmentBarberCopyWith<$Res> get barber;
@@ -101,6 +105,7 @@ class _$AppointmentModelCopyWithImpl<$Res, $Val extends AppointmentModel>
     Object? notes = freezed,
     Object? recurringGroupId = freezed,
     Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -143,6 +148,10 @@ class _$AppointmentModelCopyWithImpl<$Res, $Val extends AppointmentModel>
             createdAt: freezed == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            updatedAt: freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
           )
           as $Val,
@@ -205,6 +214,8 @@ abstract class _$$AppointmentModelImplCopyWith<$Res>
     @JsonKey(name: 'recurring_group_id') String? recurringGroupId,
     @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson)
     DateTime? createdAt,
+    @JsonKey(name: 'updated_at', fromJson: _dateTimeFromJson)
+    DateTime? updatedAt,
   });
 
   @override
@@ -239,6 +250,7 @@ class __$$AppointmentModelImplCopyWithImpl<$Res>
     Object? notes = freezed,
     Object? recurringGroupId = freezed,
     Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(
       _$AppointmentModelImpl(
@@ -282,6 +294,10 @@ class __$$AppointmentModelImplCopyWithImpl<$Res>
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        updatedAt: freezed == updatedAt
+            ? _value.updatedAt
+            : updatedAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
       ),
     );
   }
@@ -301,6 +317,7 @@ class _$AppointmentModelImpl implements _AppointmentModel {
     this.notes,
     @JsonKey(name: 'recurring_group_id') this.recurringGroupId,
     @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson) this.createdAt,
+    @JsonKey(name: 'updated_at', fromJson: _dateTimeFromJson) this.updatedAt,
   });
 
   factory _$AppointmentModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -337,10 +354,14 @@ class _$AppointmentModelImpl implements _AppointmentModel {
   @override
   @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson)
   final DateTime? createdAt;
+  // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'updated_at', fromJson: _dateTimeFromJson)
+  final DateTime? updatedAt;
 
   @override
   String toString() {
-    return 'AppointmentModel(id: $id, barber: $barber, service: $service, shop: $shop, startsAt: $startsAt, endsAt: $endsAt, status: $status, notes: $notes, recurringGroupId: $recurringGroupId, createdAt: $createdAt)';
+    return 'AppointmentModel(id: $id, barber: $barber, service: $service, shop: $shop, startsAt: $startsAt, endsAt: $endsAt, status: $status, notes: $notes, recurringGroupId: $recurringGroupId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -360,7 +381,9 @@ class _$AppointmentModelImpl implements _AppointmentModel {
             (identical(other.recurringGroupId, recurringGroupId) ||
                 other.recurringGroupId == recurringGroupId) &&
             (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt));
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -377,6 +400,7 @@ class _$AppointmentModelImpl implements _AppointmentModel {
     notes,
     recurringGroupId,
     createdAt,
+    updatedAt,
   );
 
   /// Create a copy of AppointmentModel
@@ -411,6 +435,8 @@ abstract class _AppointmentModel implements AppointmentModel {
     @JsonKey(name: 'recurring_group_id') final String? recurringGroupId,
     @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson)
     final DateTime? createdAt,
+    @JsonKey(name: 'updated_at', fromJson: _dateTimeFromJson)
+    final DateTime? updatedAt,
   }) = _$AppointmentModelImpl;
 
   factory _AppointmentModel.fromJson(Map<String, dynamic> json) =
@@ -441,7 +467,10 @@ abstract class _AppointmentModel implements AppointmentModel {
   String? get recurringGroupId; // ignore: invalid_annotation_target
   @override
   @JsonKey(name: 'created_at', fromJson: _dateTimeFromJson)
-  DateTime? get createdAt;
+  DateTime? get createdAt; // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'updated_at', fromJson: _dateTimeFromJson)
+  DateTime? get updatedAt;
 
   /// Create a copy of AppointmentModel
   /// with the given fields replaced by the non-null parameter values.
