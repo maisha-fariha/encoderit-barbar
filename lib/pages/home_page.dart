@@ -586,7 +586,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
+        onTap: item.hasRecurrence ? onTap : null,
         child: Column(
           children: [
             Padding(
@@ -629,14 +629,16 @@ class _UpcomingAccordionItem extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    expanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
-                    color: const Color(0xFF797979),
-                    size: 20,
-                  ),
+                  if (item.hasRecurrence) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      expanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: const Color(0xFF797979),
+                      size: 20,
+                    ),
+                  ],
                 ],
               ),
             ),

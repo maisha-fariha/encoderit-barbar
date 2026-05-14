@@ -548,18 +548,20 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
       final individual = dataMap['individual'];
       final recurringGroups = dataMap['recurring_groups'];
       if (individual is List || recurringGroups is List) {
-        final recurringAppointments = <dynamic>[];
+        final merged = <dynamic>[];
+        if (individual is List) {
+          merged.addAll(individual);
+        }
         if (recurringGroups is List) {
           for (final group in recurringGroups) {
             if (group is! Map) continue;
             final appointments = group['appointments'];
             if (appointments is List) {
-              recurringAppointments.addAll(appointments);
+              merged.addAll(appointments);
             }
           }
         }
-        if (recurringAppointments.isNotEmpty) return recurringAppointments;
-        if (individual is List) return individual;
+        if (merged.isNotEmpty) return merged;
       }
       final nestedAppointments = dataMap['appointments'];
       if (nestedAppointments is List) return nestedAppointments;
