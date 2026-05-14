@@ -14,6 +14,12 @@ class Shop with _$Shop implements BaseModel {
     @Default('') String phone,
     @Default('') String email,
     // ignore: invalid_annotation_target
+    @JsonKey(name: 'latitude', fromJson: _nullableDoubleFromJson)
+    double? latitude,
+    // ignore: invalid_annotation_target
+    @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
+    double? longitude,
+    // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
     @Default(<ShopService>[]) List<ShopService> services,
   }) = _Shop;
@@ -52,6 +58,13 @@ double _priceFromJson(dynamic value) {
   return 0;
 }
 
+double? _nullableDoubleFromJson(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
 extension ShopDisplay on Shop {
   String get addressLine1 {
     if (address.isEmpty) return '';
@@ -65,5 +78,14 @@ extension ShopDisplay on Shop {
     final idx = address.indexOf(',');
     if (idx <= 0 || idx + 1 >= address.length) return '';
     return address.substring(idx + 1).trim();
+  }
+
+  /// True when API provided usable WGS84 coordinates for a map pin.
+  bool get hasMapCoordinates {
+    final lat = latitude;
+    final lng = longitude;
+    if (lat == null || lng == null) return false;
+    if (!lat.isFinite || !lng.isFinite) return false;
+    return lat.abs() <= 90 && lng.abs() <= 180;
   }
 }

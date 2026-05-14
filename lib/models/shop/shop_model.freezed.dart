@@ -29,6 +29,10 @@ mixin _$Shop {
   String get phone => throw _privateConstructorUsedError;
   String get email =>
       throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  @JsonKey(name: 'latitude', fromJson: _nullableDoubleFromJson)
+  double? get latitude => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
+  double? get longitude => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(name: 'is_active')
   bool get isActive => throw _privateConstructorUsedError;
   List<ShopService> get services => throw _privateConstructorUsedError;
@@ -53,6 +57,10 @@ abstract class $ShopCopyWith<$Res> {
     String address,
     String phone,
     String email,
+    @JsonKey(name: 'latitude', fromJson: _nullableDoubleFromJson)
+    double? latitude,
+    @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
+    double? longitude,
     @JsonKey(name: 'is_active') bool isActive,
     List<ShopService> services,
   });
@@ -78,6 +86,8 @@ class _$ShopCopyWithImpl<$Res, $Val extends Shop>
     Object? address = null,
     Object? phone = null,
     Object? email = null,
+    Object? latitude = freezed,
+    Object? longitude = freezed,
     Object? isActive = null,
     Object? services = null,
   }) {
@@ -103,6 +113,14 @@ class _$ShopCopyWithImpl<$Res, $Val extends Shop>
                 ? _value.email
                 : email // ignore: cast_nullable_to_non_nullable
                       as String,
+            latitude: freezed == latitude
+                ? _value.latitude
+                : latitude // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            longitude: freezed == longitude
+                ? _value.longitude
+                : longitude // ignore: cast_nullable_to_non_nullable
+                      as double?,
             isActive: null == isActive
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
@@ -131,6 +149,10 @@ abstract class _$$ShopImplCopyWith<$Res> implements $ShopCopyWith<$Res> {
     String address,
     String phone,
     String email,
+    @JsonKey(name: 'latitude', fromJson: _nullableDoubleFromJson)
+    double? latitude,
+    @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
+    double? longitude,
     @JsonKey(name: 'is_active') bool isActive,
     List<ShopService> services,
   });
@@ -153,6 +175,8 @@ class __$$ShopImplCopyWithImpl<$Res>
     Object? address = null,
     Object? phone = null,
     Object? email = null,
+    Object? latitude = freezed,
+    Object? longitude = freezed,
     Object? isActive = null,
     Object? services = null,
   }) {
@@ -178,6 +202,14 @@ class __$$ShopImplCopyWithImpl<$Res>
             ? _value.email
             : email // ignore: cast_nullable_to_non_nullable
                   as String,
+        latitude: freezed == latitude
+            ? _value.latitude
+            : latitude // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        longitude: freezed == longitude
+            ? _value.longitude
+            : longitude // ignore: cast_nullable_to_non_nullable
+                  as double?,
         isActive: null == isActive
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
@@ -200,6 +232,9 @@ class _$ShopImpl implements _Shop {
     this.address = '',
     this.phone = '',
     this.email = '',
+    @JsonKey(name: 'latitude', fromJson: _nullableDoubleFromJson) this.latitude,
+    @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
+    this.longitude,
     @JsonKey(name: 'is_active') this.isActive = false,
     final List<ShopService> services = const <ShopService>[],
   }) : _services = services;
@@ -225,6 +260,14 @@ class _$ShopImpl implements _Shop {
   final String email;
   // ignore: invalid_annotation_target
   @override
+  @JsonKey(name: 'latitude', fromJson: _nullableDoubleFromJson)
+  final double? latitude;
+  // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
+  final double? longitude;
+  // ignore: invalid_annotation_target
+  @override
   @JsonKey(name: 'is_active')
   final bool isActive;
   final List<ShopService> _services;
@@ -238,7 +281,7 @@ class _$ShopImpl implements _Shop {
 
   @override
   String toString() {
-    return 'Shop(id: $id, name: $name, address: $address, phone: $phone, email: $email, isActive: $isActive, services: $services)';
+    return 'Shop(id: $id, name: $name, address: $address, phone: $phone, email: $email, latitude: $latitude, longitude: $longitude, isActive: $isActive, services: $services)';
   }
 
   @override
@@ -251,6 +294,10 @@ class _$ShopImpl implements _Shop {
             (identical(other.address, address) || other.address == address) &&
             (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.email, email) || other.email == email) &&
+            (identical(other.latitude, latitude) ||
+                other.latitude == latitude) &&
+            (identical(other.longitude, longitude) ||
+                other.longitude == longitude) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
             const DeepCollectionEquality().equals(other._services, _services));
@@ -265,6 +312,8 @@ class _$ShopImpl implements _Shop {
     address,
     phone,
     email,
+    latitude,
+    longitude,
     isActive,
     const DeepCollectionEquality().hash(_services),
   );
@@ -290,6 +339,10 @@ abstract class _Shop implements Shop {
     final String address,
     final String phone,
     final String email,
+    @JsonKey(name: 'latitude', fromJson: _nullableDoubleFromJson)
+    final double? latitude,
+    @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
+    final double? longitude,
     @JsonKey(name: 'is_active') final bool isActive,
     final List<ShopService> services,
   }) = _$ShopImpl;
@@ -308,6 +361,12 @@ abstract class _Shop implements Shop {
   String get phone;
   @override
   String get email; // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'latitude', fromJson: _nullableDoubleFromJson)
+  double? get latitude; // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
+  double? get longitude; // ignore: invalid_annotation_target
   @override
   @JsonKey(name: 'is_active')
   bool get isActive;

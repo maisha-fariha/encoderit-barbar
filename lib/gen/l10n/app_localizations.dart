@@ -752,6 +752,18 @@ abstract class AppLocalizations {
   /// **'Your message was sent.'**
   String get contactSubmitSuccessFallback;
 
+  /// No description provided for @contactNoShopsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No shop data yet. Open booking and pick a shop to see address and map here.'**
+  String get contactNoShopsHint;
+
+  /// No description provided for @contactMapNoCoordinates.
+  ///
+  /// In en, this message translates to:
+  /// **'Map location is not available for this shop.'**
+  String get contactMapNoCoordinates;
+
   /// No description provided for @profileNameRequired.
   ///
   /// In en, this message translates to:

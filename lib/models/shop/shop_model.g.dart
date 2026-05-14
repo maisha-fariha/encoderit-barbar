@@ -12,6 +12,8 @@ _$ShopImpl _$$ShopImplFromJson(Map<String, dynamic> json) => _$ShopImpl(
   address: json['address'] as String? ?? '',
   phone: json['phone'] as String? ?? '',
   email: json['email'] as String? ?? '',
+  latitude: _nullableDoubleFromJson(json['latitude']),
+  longitude: _nullableDoubleFromJson(json['longitude']),
   isActive: json['is_active'] as bool? ?? false,
   services:
       (json['services'] as List<dynamic>?)
@@ -27,6 +29,8 @@ Map<String, dynamic> _$$ShopImplToJson(_$ShopImpl instance) =>
       'address': instance.address,
       'phone': instance.phone,
       'email': instance.email,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
       'is_active': instance.isActive,
       'services': instance.services,
     };

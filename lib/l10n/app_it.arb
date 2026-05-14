@@ -132,6 +132,8 @@
   "contactFormIncomplete": "Compila tutti i campi.",
   "contactSubmitNetworkError": "Impossibile inviare il messaggio. Controlla la connessione e riprova.",
   "contactSubmitSuccessFallback": "Messaggio inviato.",
+  "contactNoShopsHint": "Nessun dato negozio. Apri la prenotazione e scegli un negozio per vedere indirizzo e mappa.",
+  "contactMapNoCoordinates": "Posizione sulla mappa non disponibile per questo negozio.",
   "profileNameRequired": "Inserisci nome o cognome.",
   "profileEmailRequired": "Inserisci la tua email.",
   "profileUpdateSuccessFallback": "Profilo aggiornato.",

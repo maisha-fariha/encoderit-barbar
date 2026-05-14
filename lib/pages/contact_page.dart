@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:latlong2/latlong.dart';
+
 import '../controllers/contact_controller.dart';
+import '../controllers/shop_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
+import '../models/shop/shop_model.dart';
 
 import '../routes/app_pages.dart';
 
@@ -103,12 +108,29 @@ class _ContactPageState extends State<ContactPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    final shops = Get.find<ShopListController>();
+    if (shops.items.isEmpty) {
+      shops.loadItems();
+    }
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     _email.dispose();
     _subject.dispose();
     _message.dispose();
     super.dispose();
+  }
+
+  String _addressBody(Shop shop) {
+    if (shop.address.trim().isEmpty) return '—';
+    final line1 = shop.addressLine1;
+    final line2 = shop.addressLine2;
+    if (line2.isEmpty) return line1;
+    return '$line1,\n$line2';
   }
 
   @override
@@ -184,63 +206,137 @@ class _ContactPageState extends State<ContactPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 16),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 10),
-                    child: _MapPreviewCard(),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 10),
+                  child: Obx(() {
+                    final shopCtrl = Get.find<ShopListController>();
+                    final loading = shopCtrl.isLoading.value;
+                    final _ = shopCtrl.items.length;
+                    return GetBuilder<ShopListController>(
+                      id: 'shop-selection',
+                      builder: (c) {
+                        if (loading && c.items.isEmpty) {
+                          return const SizedBox(
+                            height: 182,
+                            child: Center(
+                              child: SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFFCCCCCC),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        final shop = c.selectedShop;
+                        if (shop == null) {
+                          return _EmptyShopMapCard(message: l10n.contactNoShopsHint);
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (shop.name.trim().isNotEmpty) ...[
+                              Text(
+                                shop.name,
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFFFFFFFF),
+                                  fontSize: 18 * fontScale,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.35,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            _MapPreviewCard(shop: shop, l10n: l10n),
+                          ],
+                        );
+                      },
+                    );
+                  }),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFF242424),
+                    borderRadius: BorderRadius.only(topRight: Radius.circular(30), topLeft: Radius.circular(30)),
                   ),
-                  const SizedBox(height: 14),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Color(0xFF242424),
-                      borderRadius: BorderRadius.only(topRight: Radius.circular(30), topLeft: Radius.circular(30)),
-                    ),
-                    padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _SectionHeader(
-                          icon: 'assets/icons/location.svg',
-                          title: l10n.address,
-                        ),
-                        const SizedBox(height: 15),
-                        const _InsetDividerLine(),
-                        const SizedBox(height: 15),
-                        Text(
-                          'P.za della Signoria,\n50122 Firenze FI,\nItalia',
-                          style: GoogleFonts.inter(
-                            color: Color(0xFFFFFFFF),
-                            fontSize: 14 * fontScale,
-                            height: 1.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        _SectionHeader(
-                          icon: 'assets/icons/information.svg',
-                          title: l10n.connectionInfo,
-                        ),
-                        const SizedBox(height: 15),
-                        const _InsetDividerLine(),
-                        const SizedBox(height: 15),
-                        const _InfoRow(icon: 'assets/icons/phone.svg', value: '+390552768325'),
-                        const SizedBox(height: 15),
-                        const _InfoRow(icon: 'assets/icons/mail.svg', value: 'yourmail@mail.com'),
-                        const SizedBox(height: 40),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Color(0xFF000000),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          padding: const EdgeInsets.fromLTRB(25, 20, 25, 20),
-                          child: Column(
+                  padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _SectionHeader(
+                        icon: 'assets/icons/location.svg',
+                        title: l10n.address,
+                      ),
+                      const SizedBox(height: 15),
+                      const _InsetDividerLine(),
+                      const SizedBox(height: 15),
+                      GetBuilder<ShopListController>(
+                        id: 'shop-selection',
+                        builder: (c) {
+                          final shop = c.selectedShop;
+                          final body = shop == null
+                              ? l10n.contactNoShopsHint
+                              : _addressBody(shop);
+                          return Text(
+                            body,
+                            style: GoogleFonts.inter(
+                              color: Color(0xFFFFFFFF),
+                              fontSize: 14 * fontScale,
+                              height: 1.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      _SectionHeader(
+                        icon: 'assets/icons/information.svg',
+                        title: l10n.connectionInfo,
+                      ),
+                      const SizedBox(height: 15),
+                      const _InsetDividerLine(),
+                      const SizedBox(height: 15),
+                      GetBuilder<ShopListController>(
+                        id: 'shop-selection',
+                        builder: (c) {
+                          final shop = c.selectedShop;
+                          final phone = (shop?.phone ?? '').trim();
+                          final email = (shop?.email ?? '').trim();
+                          return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Row(
-                                children: [
-                                   SvgPicture.asset(
-                                    'assets/icons/contact.svg',
-                                    width: 20,
-                                  ),
+                              _InfoRow(
+                                icon: 'assets/icons/phone.svg',
+                                value: phone.isEmpty ? '—' : phone,
+                              ),
+                              const SizedBox(height: 15),
+                              _InfoRow(
+                                icon: 'assets/icons/mail.svg',
+                                value: email.isEmpty ? '—' : email,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 40),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Color(0xFF000000),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        padding: const EdgeInsets.fromLTRB(25, 20, 25, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/icons/contact.svg',
+                                  width: 20,
+                                ),
                                   const SizedBox(width: 10),
                                   Text(
                                     l10n.contactUs,
@@ -320,11 +416,11 @@ class _ContactPageState extends State<ContactPage> {
                             ],
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -381,86 +477,177 @@ class _ContactPageState extends State<ContactPage> {
   }
 }
 
+class _EmptyShopMapCard extends StatelessWidget {
+  const _EmptyShopMapCard({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: 182,
+        color: const Color(0xFF2A2A2A),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            color: const Color(0xFFCCCCCC),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            height: 1.45,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _MapPreviewCard extends StatelessWidget {
+  const _MapPreviewCard({required this.shop, required this.l10n});
+
+  final Shop shop;
+  final AppLocalizations l10n;
+
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: SizedBox(
         height: 182,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/images/map.png',
-              fit: BoxFit.cover,
-              color: Colors.black.withValues(alpha: 0.40),
-              colorBlendMode: BlendMode.darken,
+        child: shop.hasMapCoordinates
+            ? _OsmMiniMap(
+                key: ValueKey<String>(
+                  '${shop.id}-${shop.latitude}-${shop.longitude}',
+                ),
+                latitude: shop.latitude!,
+                longitude: shop.longitude!,
+              )
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/images/map.png',
+                    fit: BoxFit.cover,
+                    color: Colors.black.withValues(alpha: 0.40),
+                    colorBlendMode: BlendMode.darken,
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        l10n.contactMapNoCoordinates,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFE8E8E8),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _OsmMiniMap extends StatefulWidget {
+  const _OsmMiniMap({
+    super.key,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  final double latitude;
+  final double longitude;
+
+  @override
+  State<_OsmMiniMap> createState() => _OsmMiniMapState();
+}
+
+class _OsmMiniMapState extends State<_OsmMiniMap>
+    with AutomaticKeepAliveClientMixin {
+  final MapController _mapController = MapController();
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final point = LatLng(widget.latitude, widget.longitude);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'assets/images/map.png',
+          fit: BoxFit.cover,
+          color: Colors.black.withValues(alpha: 0.40),
+          colorBlendMode: BlendMode.darken,
+        ),
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: point,
+            initialZoom: 16,
+            minZoom: 4,
+            maxZoom: 20,
+            keepAlive: true,
+            backgroundColor: Colors.transparent,
+            interactionOptions: InteractionOptions(
+              flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              enableMultiFingerGestureRace: true,
             ),
-            // Positioned(
-            //   left: 10,
-            //   top: 10,
-            //   child: Container(
-            //     width: 230,
-            //     padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-            //     decoration: BoxDecoration(
-            //       color: Colors.white.withValues(alpha: 0.94),
-            //       borderRadius: BorderRadius.circular(12),
-            //     ),
-            //     child: const Column(
-            //       crossAxisAlignment: CrossAxisAlignment.start,
-            //       children: [
-            //         Text(
-            //           'Palazzo Vecchio',
-            //           style: TextStyle(
-            //             color: Color(0xFF1A1A1A),
-            //             fontSize: 13,
-            //             fontWeight: FontWeight.w800,
-            //           ),
-            //         ),
-            //         SizedBox(height: 2),
-            //         Text(
-            //           'P.za della Signoria, 50122...',
-            //           style: TextStyle(
-            //             color: Color(0xFF3A3A3A),
-            //             fontSize: 11.5,
-            //             fontWeight: FontWeight.w600,
-            //           ),
-            //         ),
-            //         SizedBox(height: 4),
-            //         Row(
-            //           children: [
-            //             Icon(Icons.star_rounded, color: Color(0xFF1A1A1A), size: 14),
-            //             SizedBox(width: 4),
-            //             Text(
-            //               '4.7',
-            //               style: TextStyle(
-            //                 color: Color(0xFF1A1A1A),
-            //                 fontSize: 11.5,
-            //                 fontWeight: FontWeight.w700,
-            //               ),
-            //             ),
-            //             SizedBox(width: 6),
-            //             Text(
-            //               '(21.80)',
-            //               style: TextStyle(
-            //                 color: Color(0xFF4A4A4A),
-            //                 fontSize: 11.5,
-            //                 fontWeight: FontWeight.w600,
-            //               ),
-            //             ),
-            //           ],
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-            // ),
-            // const Center(
-            //   child: Icon(Icons.location_pin, color: Color(0xFFD83A3A), size: 34),
-            // ),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.encoderit.barber',
+            ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: point,
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.topCenter,
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Color(0xFFD83A3A),
+                    size: 44,
+                  ),
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 6, bottom: 4),
+                child: Text(
+                  '© OpenStreetMap',
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
-      ),
+      ],
     );
   }
 }

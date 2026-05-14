@@ -357,6 +357,14 @@ class AppLocalizationsIt extends AppLocalizations {
   String get contactSubmitSuccessFallback => 'Messaggio inviato.';
 
   @override
+  String get contactNoShopsHint =>
+      'Nessun dato negozio. Apri la prenotazione e scegli un negozio per vedere indirizzo e mappa.';
+
+  @override
+  String get contactMapNoCoordinates =>
+      'Posizione sulla mappa non disponibile per questo negozio.';
+
+  @override
   String get profileNameRequired => 'Inserisci nome o cognome.';
 
   @override

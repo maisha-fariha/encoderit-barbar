@@ -132,6 +132,8 @@
   "contactFormIncomplete": "Please fill in all fields.",
   "contactSubmitNetworkError": "Could not send your message. Check your connection and try again.",
   "contactSubmitSuccessFallback": "Your message was sent.",
+  "contactNoShopsHint": "No shop data yet. Open booking and pick a shop to see address and map here.",
+  "contactMapNoCoordinates": "Map location is not available for this shop.",
   "profileNameRequired": "Please enter your first or last name.",
   "profileEmailRequired": "Please enter your email.",
   "profileUpdateSuccessFallback": "Profile updated.",
