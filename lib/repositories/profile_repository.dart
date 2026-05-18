@@ -1,7 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:gems_core/gems_core.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
+import 'package:get/get.dart' hide FormData, MultipartFile;
+import 'package:path/path.dart' as p;
 
 import '../models/profile/profile_update_request.dart';
+import '../services/profile_avatar_service.dart';
 import '../utils/api_endpoints.dart';
 
 /// Result of `PUT /profile`.
@@ -29,26 +37,52 @@ class ProfileRepository {
   final AuthService authService;
 
   Future<UpdateProfileOutcome> updateProfile(ProfileUpdateRequest request) async {
-    final body = request.toJson();
-    if (kDebugMode) {
-      debugPrint('[ProfileRepository] PUT ${ApiEndpoints.profile} body=$body');
-    }
+    final hasAvatarFile = request.avatarFile != null;
+    final headers = const {'Accept': 'application/json'};
+    final url = '${Environment.instance.apiBaseUrl}${ApiEndpoints.profile}';
 
     try {
-      final response = await apiService.put<dynamic>(
-        ApiEndpoints.profile,
-        data: body,
-      );
-
-      if (kDebugMode) {
-        debugPrint(
-          '[ProfileRepository] success=${response.success} '
-          'status=${response.statusCode} message=${response.message}',
+      final ApiResponse<dynamic> response;
+      if (hasAvatarFile) {
+        final file = request.avatarFile!;
+        final filename = p.basename(file.path);
+        final contentType = _imageDioMediaType(file.path);
+        final form = FormData.fromMap({
+          ...request.toFormFields(),
+          'avatar': await MultipartFile.fromFile(
+            file.path,
+            filename: filename,
+            contentType: contentType,
+          ),
+        });
+        _logPutProfileRequest(
+          url: url,
+          headers: headers,
+          body: form,
+          sourceFile: file,
+        );
+        response = await apiService.put<dynamic>(
+          ApiEndpoints.profile,
+          data: form,
+          options: Options(headers: headers),
+        );
+      } else {
+        final body = request.toJson();
+        _logPutProfileRequest(
+          url: url,
+          headers: headers,
+          body: body,
+        );
+        response = await apiService.put<dynamic>(
+          ApiEndpoints.profile,
+          data: body,
         );
       }
 
+      _logPutProfileResponse(response);
+
       if (response.success) {
-        await _mergeStoredUser(body, response.data);
+        await _mergeStoredUser(request.toFormFields(), response.data);
         return UpdateProfileOutcome(
           success: true,
           message: (response.message ?? '').trim(),
@@ -69,6 +103,127 @@ class ProfileRepository {
         message: e.toString(),
         isNetworkError: true,
       );
+    }
+  }
+
+  void _logPutProfileRequest({
+    required String url,
+    required Map<String, dynamic> headers,
+    required dynamic body,
+    File? sourceFile,
+  }) {
+    if (!kDebugMode) return;
+
+    final buffer = StringBuffer()
+      ..writeln('[ProfileRepository] >>> PUT $url')
+      ..writeln('  method: PUT')
+      ..writeln('  requestHeaders: $headers');
+
+    if (body is FormData) {
+      final form = body;
+      buffer
+        ..writeln(
+          '  contentType: multipart/form-data; boundary=${form.boundary}',
+        )
+        ..writeln('  bodySummary: ${form.fields.length} text part(s), '
+            '${form.files.length} file part(s)')
+        ..writeln('  --- multipart text parts (form-data / Text) ---');
+      if (form.fields.isEmpty) {
+        buffer.writeln('    (none)');
+      } else {
+        for (final part in form.fields) {
+          final value = part.value;
+          final display = value.isEmpty ? '(empty string)' : value;
+          buffer.writeln('    ${part.key}: $display');
+        }
+      }
+      buffer.writeln('  --- multipart file parts (form-data / File) ---');
+      if (form.files.isEmpty) {
+        buffer.writeln('    (none)');
+      } else {
+        for (final part in form.files) {
+          final file = part.value;
+          buffer
+            ..writeln('    ${part.key}:')
+            ..writeln('      type: MultipartFile')
+            ..writeln('      filename: ${file.filename ?? '(null)'}')
+            ..writeln(
+              '      contentType: ${file.contentType?.mimeType ?? '(null)'}',
+            )
+            ..writeln('      length: ${file.length} bytes');
+          if (sourceFile != null && part.key == 'avatar') {
+            final exists = sourceFile.existsSync();
+            buffer
+              ..writeln('      sourcePath: ${sourceFile.path}')
+              ..writeln('      sourceExistsOnDisk: $exists');
+            if (exists) {
+              buffer.writeln(
+                '      sourceSizeOnDisk: ${sourceFile.lengthSync()} bytes',
+              );
+            }
+          }
+        }
+      }
+      buffer.writeln(
+        '  note: API returns avatar_url (string) in JSON response; '
+        'upload uses file part key "avatar" (Postman).',
+      );
+    } else if (body is Map) {
+      buffer
+        ..writeln('  contentType: application/json')
+        ..writeln('  --- JSON body ---');
+      try {
+        buffer.writeln(
+          const JsonEncoder.withIndent('    ').convert(body),
+        );
+      } catch (_) {
+        buffer.writeln('    $body');
+      }
+    } else {
+      buffer.writeln('  body: $body');
+    }
+
+    debugPrint(buffer.toString());
+  }
+
+  void _logPutProfileResponse(ApiResponse<dynamic> response) {
+    if (!kDebugMode) return;
+
+    final buffer = StringBuffer()
+      ..writeln('[ProfileRepository] <<< PUT ${ApiEndpoints.profile} response')
+      ..writeln('  success: ${response.success}')
+      ..writeln('  statusCode: ${response.statusCode}')
+      ..writeln('  message: ${response.message ?? '(null)'}')
+      ..writeln('  errors: ${response.errors ?? '(null)'}')
+      ..writeln('  --- response body ---');
+
+    final data = response.data;
+    if (data == null) {
+      buffer.writeln('    (null)');
+    } else if (data is Map || data is List) {
+      try {
+        buffer.writeln(const JsonEncoder.withIndent('    ').convert(data));
+      } catch (_) {
+        buffer.writeln('    $data');
+      }
+    } else {
+      buffer.writeln('    $data');
+    }
+
+    debugPrint(buffer.toString());
+  }
+
+  DioMediaType _imageDioMediaType(String path) {
+    final ext = p.extension(path).toLowerCase();
+    switch (ext) {
+      case '.png':
+        return DioMediaType('image', 'png');
+      case '.webp':
+        return DioMediaType('image', 'webp');
+      case '.gif':
+        return DioMediaType('image', 'gif');
+      default:
+        return DioMediaType('image', 'jpeg');
     }
   }
 
@@ -104,7 +259,6 @@ class ProfileRepository {
     merged['name'] = sent['name'];
     merged['email'] = sent['email'];
     merged['phone'] = sent['phone'];
-    merged['avatar_url'] = sent['avatar_url'];
     merged['dob'] = sent['dob'];
     merged['address'] = sent['address'];
     merged['zip_code'] = sent['zip_code'];
@@ -122,6 +276,10 @@ class ProfileRepository {
         userData: merged,
       ),
     );
+
+    if (Get.isRegistered<ProfileAvatarService>()) {
+      Get.find<ProfileAvatarService>().revision.value++;
+    }
   }
 
   void _applyResponseUserMap(

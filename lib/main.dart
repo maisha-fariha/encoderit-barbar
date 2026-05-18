@@ -3,7 +3,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:gems_core/gems_core.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'routes/app_pages.dart';
@@ -54,7 +53,6 @@ Future<void> main() async {
 
   final avatarService = ProfileAvatarService(
     gateway: AppServices.getIt<AppAuthGateway>(),
-    connectivity: AppServices.getIt<Connectivity>(),
     prefs: AppServices.getIt<SharedPreferences>(),
   );
   await avatarService.initialize();

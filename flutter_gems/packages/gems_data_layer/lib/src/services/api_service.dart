@@ -33,6 +33,11 @@ class ApiService {
             options.headers.remove('Authorization');
           }
 
+          // Let Dio set multipart boundary (matches Postman form-data / File uploads).
+          if (options.data is FormData) {
+            options.headers.remove(Headers.contentTypeHeader);
+          }
+
           if (config.enableLogging) {
             print('REQUEST[${options.method}] => PATH: ${options.path}');
             print('Headers: ${options.headers}');

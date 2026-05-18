@@ -14,6 +14,7 @@ import '../models/profile/profile_update_request.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
+import '../utils/avatar_url_resolver.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -36,8 +37,14 @@ class _ProfilePageState extends State<ProfilePage> {
   final _province = TextEditingController();
   final _country = TextEditingController();
 
-  /// Relative avatar URL from session (e.g. after upload); sent on `PUT /profile`.
+  /// Remote `avatar_url` string from session/API (for display after GET).
   String _avatarUrl = '';
+
+  /// New photo chosen in this session; sent as multipart `avatar` (file) on PUT.
+  File? _pendingAvatarFile;
+
+  /// True after user picks a new photo until a successful profile save.
+  bool _avatarDirty = false;
 
   ProfileAvatarService? get _avatarSvc =>
       Get.isRegistered<ProfileAvatarService>()
@@ -143,6 +150,13 @@ class _ProfilePageState extends State<ProfilePage> {
     if (result.isCancelled) return;
 
     if (result.isSuccess) {
+      setState(() {
+        _pendingAvatarFile = result.file;
+        _avatarDirty = true;
+      });
+      if (Get.isRegistered<ProfileAvatarService>()) {
+        Get.find<ProfileAvatarService>().revision.value++;
+      }
       messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
@@ -364,6 +378,18 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  /// File to upload when the user changed their photo (pending ref or local cache).
+  Future<File?> _resolveAvatarFileForUpload() async {
+    if (!_avatarDirty) return null;
+    final pending = _pendingAvatarFile;
+    if (pending != null && pending.existsSync()) return pending;
+    final svc = _avatarSvc;
+    if (svc == null) return null;
+    final cached = await svc.currentAvatarFile();
+    if (cached != null && cached.existsSync()) return cached;
+    return null;
+  }
+
   Future<void> _submitProfile() async {
     FocusScope.of(context).unfocus();
     final l10n = AppLocalizations.of(context)!;
@@ -380,11 +406,13 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
+    final avatarFile = await _resolveAvatarFileForUpload();
+
     final request = ProfileUpdateRequest(
       name: name,
       email: email,
       phone: _phone.text.trim(),
-      avatarUrl: _avatarUrl,
+      avatarFile: avatarFile,
       dob: _dobCtrl.text.trim(),
       address: _address.text.trim(),
       zipCode: _zip.text.trim(),
@@ -402,6 +430,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ? outcome.message
           : l10n.profileUpdateSuccessFallback;
       _showSnack(msg, isError: false);
+      setState(() {
+        _pendingAvatarFile = null;
+        _avatarDirty = false;
+      });
       await _loadFromSession();
       if (Get.isRegistered<ProfileAvatarService>()) {
         Get.find<ProfileAvatarService>().revision.value++;
@@ -573,6 +605,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: _ProfileAvatar(
                       size: avatarSize,
                       service: _avatarSvc,
+                      pickedFile: _pendingAvatarFile,
+                      remoteAvatarUrl: resolveAvatarDisplayUrl(_avatarUrl),
                       onTapEdit: _openAvatarPicker,
                     ),
                   ),
@@ -824,11 +858,15 @@ class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({
     required this.size,
     required this.service,
+    required this.pickedFile,
+    required this.remoteAvatarUrl,
     required this.onTapEdit,
   });
 
   final double size;
   final ProfileAvatarService? service;
+  final File? pickedFile;
+  final String? remoteAvatarUrl;
   final VoidCallback onTapEdit;
 
   @override
@@ -853,30 +891,7 @@ class _ProfileAvatar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: const Color(0xFFDDDDDD), width: 2),
               ),
-              child: service == null
-                  ? const _FallbackAvatar()
-                  : ValueListenableBuilder<int>(
-                      valueListenable: service!.revision,
-                      builder: (context, _, child) {
-                        return FutureBuilder<File?>(
-                          future: service!.currentAvatarFile(),
-                          builder: (context, snapshot) {
-                            final file = snapshot.data;
-                            if (file == null) return const _FallbackAvatar();
-                            return Image.file(
-                              file,
-                              key: ValueKey(
-                                file.path + file.lengthSync().toString(),
-                              ),
-                              fit: BoxFit.cover,
-                              gaplessPlayback: true,
-                              errorBuilder: (context, error, stack) =>
-                                  const _FallbackAvatar(),
-                            );
-                          },
-                        );
-                      },
-                    ),
+              child: _buildAvatarImage(),
             ),
           ),
         ),
@@ -907,6 +922,71 @@ class _ProfileAvatar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAvatarImage() {
+    final pending = pickedFile;
+    if (pending != null && pending.existsSync()) {
+      return Image.file(
+        pending,
+        key: ValueKey('pending-${pending.path}'),
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => const _FallbackAvatar(),
+      );
+    }
+
+    final remote = remoteAvatarUrl;
+    if (remote != null && remote.isNotEmpty) {
+      return Image.network(
+        remote,
+        key: ValueKey(remote),
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(
+            child: SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFFCCCCCC),
+              ),
+            ),
+          );
+        },
+        errorBuilder: (_, __, ___) => _buildLocalOrFallback(),
+      );
+    }
+
+    return _buildLocalOrFallback();
+  }
+
+  Widget _buildLocalOrFallback() {
+    final svc = service;
+    if (svc == null) return const _FallbackAvatar();
+    return ValueListenableBuilder<int>(
+      valueListenable: svc.revision,
+      builder: (context, _, __) {
+        return FutureBuilder<File?>(
+          future: svc.currentAvatarFile(),
+          builder: (context, snapshot) {
+            final file = snapshot.data;
+            if (file == null || !file.existsSync()) {
+              return const _FallbackAvatar();
+            }
+            return Image.file(
+              file,
+              key: ValueKey('local-${file.path}'),
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => const _FallbackAvatar(),
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -12,6 +12,8 @@ import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
+import '../services/profile_avatar_service.dart';
+import '../widgets/session_user_avatar.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -29,9 +31,18 @@ class _HomePageState extends State<HomePage> {
   int _totalAppointmentsCount = 0;
   Worker? _appointmentRefreshWorker;
 
+  String _userName = '';
+  String _userId = '';
+  String _avatarUrl = '';
+
+  void _onProfileAvatarRevisionChanged() {
+    if (mounted) _loadUserFromSession();
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadUserFromSession();
     _loadUpcomingBookedAppointments();
     if (Get.isRegistered<AppointmentUiRefreshController>()) {
       _appointmentRefreshWorker = ever(
@@ -43,12 +54,48 @@ class _HomePageState extends State<HomePage> {
         },
       );
     }
+    if (Get.isRegistered<ProfileAvatarService>()) {
+      Get.find<ProfileAvatarService>().revision.addListener(
+        _onProfileAvatarRevisionChanged,
+      );
+    }
   }
 
   @override
   void dispose() {
     _appointmentRefreshWorker?.dispose();
+    if (Get.isRegistered<ProfileAvatarService>()) {
+      Get.find<ProfileAvatarService>().revision.removeListener(
+        _onProfileAvatarRevisionChanged,
+      );
+    }
     super.dispose();
+  }
+
+  Future<void> _loadUserFromSession() async {
+    final auth = await AppServices.getIt<AuthService>().getStoredAuth();
+    if (!mounted) return;
+    final u = auth?.userData;
+    if (u == null) {
+      setState(() {
+        _userName = '';
+        _userId = '';
+        _avatarUrl = '';
+      });
+      return;
+    }
+    final name = (u['name'] as String? ?? '').trim();
+    final email = (u['email'] as String? ?? '').trim();
+    final displayName = name.isNotEmpty
+        ? name
+        : (email.contains('@') ? email.split('@').first : email);
+    final idRaw = u['id'];
+    final id = idRaw == null ? '' : idRaw.toString().trim();
+    setState(() {
+      _userName = displayName;
+      _userId = id;
+      _avatarUrl = (u['avatar_url'] as String? ?? '').trim();
+    });
   }
 
   Future<bool> _ensureAuthenticated() async {
@@ -287,22 +334,9 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
                 child: Row(
                   children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFFDDDDDD),
-                          width: 2,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: const Color(0xFF2B2B2B),
-                        backgroundImage:
-                            const AssetImage('assets/images/profile.jpg'),
-                      ),
+                    SessionUserAvatar(
+                      radius: 22,
+                      avatarUrl: _avatarUrl.isEmpty ? null : _avatarUrl,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -311,7 +345,9 @@ class _HomePageState extends State<HomePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Leonardo',
+                            _userName.isEmpty ? '—' : _userName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.inter(
                               color: const Color(0xFFFFFFFF),
                               fontSize: 18 * fontScale,
@@ -319,15 +355,19 @@ class _HomePageState extends State<HomePage> {
                               height: 1.5,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            l10n.idNumber('5630'),
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFFDDDDDD),
-                              fontSize: 14 * fontScale,
-                              fontWeight: FontWeight.w400,
+                          if (_userId.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              l10n.idNumber(_userId),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFFDDDDDD),
+                                fontSize: 14 * fontScale,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),

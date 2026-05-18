@@ -1,10 +1,17 @@
-/// Request body for `PUT /profile`.
+import 'dart:io';
+
+/// Request for `PUT /profile`.
+///
+/// Text fields are always sent. When [avatarFile] is set, the request uses
+/// `multipart/form-data` with form field `avatar` (File, per Postman). The API
+/// responds with `avatar_url` as a URL string. When [avatarFile] is null, only
+/// text fields are sent (JSON or multipart without file).
 class ProfileUpdateRequest {
   const ProfileUpdateRequest({
     required this.name,
     required this.email,
     required this.phone,
-    required this.avatarUrl,
+    this.avatarFile,
     this.dob = '',
     this.address = '',
     this.zipCode = '',
@@ -16,7 +23,7 @@ class ProfileUpdateRequest {
   final String name;
   final String email;
   final String phone;
-  final String avatarUrl;
+  final File? avatarFile;
   final String dob;
   final String address;
   final String zipCode;
@@ -24,11 +31,11 @@ class ProfileUpdateRequest {
   final String municipality;
   final String country;
 
+  /// JSON body when no new avatar file is selected.
   Map<String, dynamic> toJson() => <String, dynamic>{
         'name': name,
         'email': email,
         'phone': phone,
-        'avatar_url': avatarUrl,
         'dob': dob,
         'address': address,
         'zip_code': zipCode,
@@ -36,4 +43,7 @@ class ProfileUpdateRequest {
         'municipality': municipality,
         'country': country,
       };
+
+  /// Text form fields for multipart `PUT /profile` (file part is `avatar`).
+  Map<String, dynamic> toFormFields() => toJson();
 }
