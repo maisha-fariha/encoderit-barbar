@@ -908,10 +908,16 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
+  /// No description provided for @photoSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo selected. Tap Update to save your profile.'**
+  String get photoSelected;
+
   /// No description provided for @photoSavedOffline.
   ///
   /// In en, this message translates to:
-  /// **'Photo saved. It will sync when you\'re online.'**
+  /// **'Photo saved on this device. Tap Update when you\'re online to upload.'**
   String get photoSavedOffline;
 
   /// No description provided for @photoSyncedOnline.

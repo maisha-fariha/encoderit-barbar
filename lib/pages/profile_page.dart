@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
@@ -158,13 +159,15 @@ class _ProfilePageState extends State<ProfilePage> {
       if (Get.isRegistered<ProfileAvatarService>()) {
         Get.find<ProfileAvatarService>().revision.value++;
       }
+      final online = await _hasNetwork();
+      if (!mounted) return;
       messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
           backgroundColor: const Color(0xFFE8E8E8),
           content: Text(
-            l10n.photoSavedOffline,
+            online ? l10n.photoSelected : l10n.photoSavedOffline,
             style: const TextStyle(
               color: Color(0xFF0B0B0B),
               fontWeight: FontWeight.w600,
@@ -215,6 +218,12 @@ class _ProfilePageState extends State<ProfilePage> {
     _province.dispose();
     _country.dispose();
     super.dispose();
+  }
+
+  Future<bool> _hasNetwork() async {
+    final result =
+        await AppServices.getIt<Connectivity>().checkConnectivity();
+    return result != ConnectivityResult.none;
   }
 
   String _stringField(Map<String, dynamic> u, List<String> keys) {
