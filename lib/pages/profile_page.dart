@@ -15,6 +15,7 @@ import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/avatar_url_resolver.dart';
+import '../widgets/avatar_image_preview.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -885,15 +886,25 @@ class _ProfileAvatar extends StatelessWidget {
         SizedBox(
           width: size,
           height: size,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _openPreview(context),
+              borderRadius: BorderRadius.circular(24),
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFDDDDDD), width: 2),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: const Color(0xFFDDDDDD),
+                      width: 2,
+                    ),
+                  ),
+                  child: _buildAvatarImage(),
+                ),
               ),
-              child: _buildAvatarImage(),
             ),
           ),
         ),
@@ -924,6 +935,38 @@ class _ProfileAvatar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _openPreview(BuildContext context) async {
+    final pending = pickedFile;
+    if (pending != null && pending.existsSync()) {
+      if (!context.mounted) return;
+      await showAvatarImagePreview(context, file: pending);
+      return;
+    }
+
+    final remote = remoteAvatarUrl;
+    if (remote != null && remote.isNotEmpty) {
+      if (!context.mounted) return;
+      await showAvatarImagePreview(context, networkUrl: remote);
+      return;
+    }
+
+    final svc = service;
+    if (svc != null) {
+      final local = await svc.currentAvatarFile();
+      if (!context.mounted) return;
+      if (local != null && local.existsSync()) {
+        await showAvatarImagePreview(context, file: local);
+        return;
+      }
+    }
+
+    if (!context.mounted) return;
+    await showAvatarImagePreview(
+      context,
+      assetPath: 'assets/images/profile.jpg',
     );
   }
 
