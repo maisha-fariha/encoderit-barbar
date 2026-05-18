@@ -546,56 +546,63 @@ class _ProfilePageState extends State<ProfilePage> {
                         height: 1.5,
                       ),
                     ),
-                    const Spacer(),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF).withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(0xFFFFFFFF).withValues(alpha: 0.18),
-                          width: 1,
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(3),
-                      child: Builder(
-                        builder: (context) {
-                          final locale = Get.locale ?? Localizations.localeOf(context);
-                          final isEn = locale.languageCode == 'en';
-                          return ToggleButtons(
-                            isSelected: [isEn, !isEn],
-                            onPressed: (index) {
-                              final next = index == 0 ? const Locale('en') : const Locale('it');
-                              Get.updateLocale(next);
-                              setState(() {});
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            selectedBorderColor: Colors.transparent,
-                            borderColor: Colors.transparent,
-                            fillColor: const Color(0xFFFFFFFF).withValues(alpha: 0.14),
-                            selectedColor: const Color(0xFFFFFFFF),
-                            color: const Color(0xFFFFFFFF).withValues(alpha: 0.70),
-                            constraints: BoxConstraints(
-                              minHeight: 32,
-                              minWidth: ResponsiveHelper.getResponsiveValue<double>(
-                                context,
-                                small: 46,
-                                large: 54,
-                              ),
-                            ),
-                            textStyle: GoogleFonts.inter(
-                              fontSize: 12 * fontScale,
-                              fontWeight: FontWeight.w800,
-                              height: 1,
-                              letterSpacing: 0.4,
-                            ),
-                            children: const [
-                              Text('EN'),
-                              Text('IT'),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
+                    // Language toggle (hidden — app defaults to Italian).
+                    // const Spacer(),
+                    // Container(
+                    //   decoration: BoxDecoration(
+                    //     color: const Color(0xFFFFFFFF).withValues(alpha: 0.10),
+                    //     borderRadius: BorderRadius.circular(14),
+                    //     border: Border.all(
+                    //       color: const Color(0xFFFFFFFF).withValues(alpha: 0.18),
+                    //       width: 1,
+                    //     ),
+                    //   ),
+                    //   padding: const EdgeInsets.all(3),
+                    //   child: Builder(
+                    //     builder: (context) {
+                    //       final locale =
+                    //           Get.locale ?? Localizations.localeOf(context);
+                    //       final isEn = locale.languageCode == 'en';
+                    //       return ToggleButtons(
+                    //         isSelected: [isEn, !isEn],
+                    //         onPressed: (index) {
+                    //           final next = index == 0
+                    //               ? const Locale('en')
+                    //               : const Locale('it');
+                    //           Get.updateLocale(next);
+                    //           setState(() {});
+                    //         },
+                    //         borderRadius: BorderRadius.circular(12),
+                    //         selectedBorderColor: Colors.transparent,
+                    //         borderColor: Colors.transparent,
+                    //         fillColor:
+                    //             const Color(0xFFFFFFFF).withValues(alpha: 0.14),
+                    //         selectedColor: const Color(0xFFFFFFFF),
+                    //         color:
+                    //             const Color(0xFFFFFFFF).withValues(alpha: 0.70),
+                    //         constraints: BoxConstraints(
+                    //           minHeight: 32,
+                    //           minWidth:
+                    //               ResponsiveHelper.getResponsiveValue<double>(
+                    //             context,
+                    //             small: 46,
+                    //             large: 54,
+                    //           ),
+                    //         ),
+                    //         textStyle: GoogleFonts.inter(
+                    //           fontSize: 12 * fontScale,
+                    //           fontWeight: FontWeight.w800,
+                    //           height: 1,
+                    //           letterSpacing: 0.4,
+                    //         ),
+                    //         children: const [
+                    //           Text('EN'),
+                    //           Text('IT'),
+                    //         ],
+                    //       );
+                    //     },
+                    //   ),
+                    // ),
                   ],
                 ),
               ),

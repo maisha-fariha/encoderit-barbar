@@ -103,7 +103,9 @@ class EncoderitBarbarApp extends StatelessWidget {
         ],
         locale: const Locale('it'),
         fallbackLocale: const Locale('it'),
-        supportedLocales: const [Locale('en'), Locale('it')],
+        supportedLocales: const [Locale('it'), Locale('en')],
+        localeResolutionCallback: (locale, supportedLocales) =>
+            const Locale('it'),
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: _statusBarStyle,
           // Ensures there's never a white flash behind the first route.
