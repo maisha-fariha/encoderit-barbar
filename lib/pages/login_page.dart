@@ -158,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 SizedBox(
                                   // Keep the form lower on screen like the old layout.
-                                  height: constraints.maxHeight < 700
+                                  height: constraints.maxWidth > 1080
                                       ? 140
                                       : 350,
                                 ),
