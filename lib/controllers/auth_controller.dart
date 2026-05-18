@@ -226,6 +226,34 @@ class AuthController extends GetxController {
     Get.offAllNamed(AppRoutes.login);
   }
 
+  /// Clears session, shows a toast, and navigates to login when the API rejects auth.
+  Future<void> handleSessionExpired({String? message}) async {
+    final route = Get.currentRoute;
+    if (route == AppRoutes.login ||
+        route == AppRoutes.register ||
+        route == AppRoutes.onboarding) {
+      return;
+    }
+
+    final displayMessage = _extractApiMessage(
+      message: message,
+      errors: null,
+      fallback: 'Your session has expired. Please sign in again.',
+    );
+
+    await authGateway.logout();
+    authGateway.apiService.setAuthToken(null);
+    isLoggedIn.value = false;
+    isBusy.value = false;
+
+    _snackbar('Session expired', displayMessage, isError: true);
+
+    if (Get.currentRoute != AppRoutes.login) {
+      Get.offAllNamed(AppRoutes.login);
+    }
+    await _notifyAvatarServiceAuthChanged();
+  }
+
   Future<void> _notifyAvatarServiceAuthChanged() async {
     try {
       if (Get.isRegistered<ProfileAvatarService>()) {

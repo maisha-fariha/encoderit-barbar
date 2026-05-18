@@ -113,10 +113,6 @@ class _HomePageState extends State<HomePage> {
     return false;
   }
 
-  bool _isUnauthenticatedMessage(String message) {
-    return message.trim().toLowerCase().contains('unauthenticated');
-  }
-
   Future<void> _loadUpcomingBookedAppointments() async {
     final canProceed = await _ensureAuthenticated();
     if (!canProceed) {
@@ -140,13 +136,7 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     totalResult.when(
       success: (page) => _totalAppointmentsCount = page.total,
-      failure: (error) {
-        if (_isUnauthenticatedMessage(error.message)) {
-          Get.offAllNamed(AppRoutes.login);
-          return;
-        }
-        _totalAppointmentsCount = 0;
-      },
+      failure: (_) => _totalAppointmentsCount = 0,
     );
     final result = await repository.getPage(1, useCache: false);
     if (!mounted) return;
@@ -163,10 +153,6 @@ class _HomePageState extends State<HomePage> {
         });
       },
       failure: (error) {
-        if (_isUnauthenticatedMessage(error.message)) {
-          Get.offAllNamed(AppRoutes.login);
-          return;
-        }
         setState(() {
           _upcomingItems = const <_UpcomingItem>[];
           _upcomingError = error.message;

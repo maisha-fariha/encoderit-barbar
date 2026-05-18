@@ -13,6 +13,7 @@ import '../di/barber_list/barber_list_di.dart';
 import '../di/reservation_list/reservation_list_di.dart';
 import '../di/service_list/service_list_di.dart';
 import '../di/shop_list/shop_list_di.dart';
+import 'session_guard.dart';
 
 /// Central bootstrap: core env, data layer (API, Hive [DatabaseService], [SyncService]), feature DI.
 class AppServices {
@@ -33,6 +34,7 @@ class AppServices {
       baseUrl: env.apiBaseUrl,
       enableLogging: env.enableLogging,
       timeout: env.apiTimeout,
+      onUnauthorized: SessionGuard.onUnauthorized,
     );
 
     await setupDataLayerServices(

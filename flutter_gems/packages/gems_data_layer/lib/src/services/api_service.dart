@@ -67,6 +67,15 @@ class ApiService {
               print('Message: ${error.message}');
             }
           }
+          final responseData = error.response?.data;
+          final responseMap = responseData is Map
+              ? Map<String, dynamic>.from(responseData)
+              : null;
+          _notifyUnauthorizedIfNeeded(
+            statusCode: error.response?.statusCode,
+            message: _extractApiErrorMessage(responseMap),
+            requestPath: error.requestOptions.path,
+          );
           return handler.next(error);
         },
       ),
@@ -208,10 +217,23 @@ class ApiService {
       }
     }
 
-    return ApiResponse.error(
-      response.data['message'] ?? 'Request failed',
+    final responseMap =
+        response.data is Map ? Map<String, dynamic>.from(response.data) : null;
+    final message = _extractApiErrorMessage(responseMap) ?? 'Request failed';
+    _notifyUnauthorizedIfNeeded(
       statusCode: response.statusCode,
-      errors: response.data['errors'],
+      message: message,
+      requestPath: response.requestOptions.path,
+    );
+
+    return ApiResponse.error(
+      message,
+      statusCode: response.statusCode,
+      errors: responseMap?['errors'] is Map<String, dynamic>
+          ? responseMap!['errors'] as Map<String, dynamic>
+          : responseMap?['errors'] is Map
+              ? Map<String, dynamic>.from(responseMap!['errors'] as Map)
+              : null,
     );
   }
 
@@ -240,6 +262,12 @@ class ApiService {
         message = error.message ?? 'Network error occurred';
       }
 
+      _notifyUnauthorizedIfNeeded(
+        statusCode: statusCode,
+        message: message,
+        requestPath: error.requestOptions.path,
+      );
+
       return ApiResponse.error(
         message,
         statusCode: statusCode ?? 500,
@@ -255,6 +283,46 @@ class ApiService {
       error.toString(),
       statusCode: 500,
     );
+  }
+
+  void _notifyUnauthorizedIfNeeded({
+    int? statusCode,
+    String? message,
+    String? requestPath,
+  }) {
+    final callback = config.onUnauthorized;
+    if (callback == null) return;
+    if (!_shouldTreatAsUnauthorized(statusCode, message, requestPath)) return;
+    callback(message, requestPath: requestPath);
+  }
+
+  bool _shouldTreatAsUnauthorized(
+    int? statusCode,
+    String? message,
+    String? requestPath,
+  ) {
+    if (_isAuthRequestPath(requestPath)) return false;
+    if (statusCode == 401) return true;
+    return _isUnauthenticatedMessage(message);
+  }
+
+  bool _isAuthRequestPath(String? path) {
+    if (path == null || path.isEmpty) return false;
+    final normalized = path.toLowerCase();
+    return normalized.contains('/auth/login') ||
+        normalized.contains('/auth/register') ||
+        normalized.contains('/auth/verify-otp') ||
+        normalized.contains('/auth/forgot-password') ||
+        normalized.contains('/auth/reset-password');
+  }
+
+  bool _isUnauthenticatedMessage(String? message) {
+    if (message == null || message.trim().isEmpty) return false;
+    final normalized = message.trim().toLowerCase();
+    return normalized.contains('unauthenticated') ||
+        normalized.contains('unauthorized') ||
+        normalized.contains('token expired') ||
+        normalized.contains('session expired');
   }
 
   String? _extractApiErrorMessage(Map<String, dynamic>? data) {
