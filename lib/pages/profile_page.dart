@@ -269,7 +269,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String _two(int n) => n.toString().padLeft(2, '0');
 
   Future<void> _pickDob() async {
-    DateTime initial = DateTime(1990, 1, 1);
+    DateTime initial = DateTime.now();
     final raw = _dobCtrl.text.trim();
     if (raw.isNotEmpty) {
       final parsed = DateTime.tryParse(raw);
