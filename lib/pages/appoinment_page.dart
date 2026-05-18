@@ -3049,12 +3049,10 @@ class _RecurringPreviewRow extends StatelessWidget {
                     onTap: () => onToggleWaitlist!(!isWaitlisted),
                     child: Row(
                       children: [
-                        Checkbox(
-                          value: isWaitlisted,
-                          onChanged: (value) =>
-                              onToggleWaitlist!(value ?? false),
-                          activeColor: const Color(0xFF185C5C),
-                        ),
+                        isWaitlisted
+                            ? SvgPicture.asset('assets/icons/checked_box.svg', width: 20)
+                            : SvgPicture.asset('assets/icons/non_checked_box.svg', width: 20),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             l10n.waitlistMe,
