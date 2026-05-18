@@ -268,6 +268,82 @@ class _ProfilePageState extends State<ProfilePage> {
 
   String _two(int n) => n.toString().padLeft(2, '0');
 
+  /// Dark-themed [showDatePicker] shell — matches [appoinment_page.dart].
+  Widget _darkDatePickerBuilder(BuildContext context, Widget? child) {
+    final base = Theme.of(context);
+    const surface = Color(0xFF242424);
+    const onSurface = Color(0xFFEDEDED);
+    const primary = Color(0xFF185C5C);
+    const onPrimary = Color(0xFFEDEDED);
+    const divider = Color(0xFF3A3A3A);
+
+    final scheme = base.colorScheme.copyWith(
+      brightness: Brightness.dark,
+      primary: primary,
+      onPrimary: onPrimary,
+      secondary: primary,
+      onSecondary: onPrimary,
+      surface: surface,
+      onSurface: onSurface,
+    );
+    return Theme(
+      data: ThemeData(
+        brightness: Brightness.dark,
+        useMaterial3: true,
+        colorScheme: scheme,
+        dialogTheme: const DialogThemeData(
+          backgroundColor: surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(22)),
+          ),
+        ),
+        dividerColor: divider,
+        datePickerTheme: DatePickerThemeData(
+          backgroundColor: surface,
+          dividerColor: divider,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(22)),
+          ),
+          headerBackgroundColor: surface,
+          headerForegroundColor: onSurface,
+          weekdayStyle: const TextStyle(
+            color: Color(0xFFBDBDBD),
+            fontWeight: FontWeight.w700,
+          ),
+          dayStyle: const TextStyle(
+            color: onSurface,
+            fontWeight: FontWeight.w700,
+          ),
+          todayForegroundColor: const WidgetStatePropertyAll(onSurface),
+          todayBorder: const BorderSide(color: primary, width: 1),
+          dayForegroundColor: const WidgetStatePropertyAll(onSurface),
+          dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return primary;
+            return Colors.transparent;
+          }),
+          yearForegroundColor: const WidgetStatePropertyAll(onSurface),
+          yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return primary;
+            return Colors.transparent;
+          }),
+          rangePickerBackgroundColor: surface,
+          rangePickerHeaderBackgroundColor: surface,
+          rangePickerHeaderForegroundColor: onSurface,
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: primary,
+            textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ),
+        textTheme: GoogleFonts.interTextTheme(
+          base.textTheme,
+        ).apply(bodyColor: onSurface, displayColor: onSurface),
+      ),
+      child: child ?? const SizedBox.shrink(),
+    );
+  }
+
   Future<void> _pickDob() async {
     DateTime initial = DateTime.now();
     final raw = _dobCtrl.text.trim();
@@ -280,6 +356,7 @@ class _ProfilePageState extends State<ProfilePage> {
       initialDate: initial,
       firstDate: DateTime(1900),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      builder: _darkDatePickerBuilder,
     );
     if (picked == null || !mounted) return;
     setState(() {
