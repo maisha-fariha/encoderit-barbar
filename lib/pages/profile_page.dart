@@ -242,7 +242,8 @@ class _ProfilePageState extends State<ProfilePage> {
       _municipality.text = _stringField(u, ['municipality', 'city']);
       _province.text = _stringField(u, ['province']);
       _country.text = _stringField(u, ['country']);
-      _avatarUrl = (u['avatar_url'] as String? ?? '').trim();
+      _avatarUrl =
+          resolveAvatarDisplayUrl(u['avatar_url'] as String?)?.trim() ?? '';
     });
   }
 
@@ -606,7 +607,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       size: avatarSize,
                       service: _avatarSvc,
                       pickedFile: _pendingAvatarFile,
-                      remoteAvatarUrl: resolveAvatarDisplayUrl(_avatarUrl),
+                      remoteAvatarUrl:
+                          _avatarUrl.isEmpty ? null : _avatarUrl,
                       onTapEdit: _openAvatarPicker,
                     ),
                   ),

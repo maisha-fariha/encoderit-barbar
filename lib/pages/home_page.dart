@@ -13,6 +13,7 @@ import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
+import '../utils/avatar_url_resolver.dart';
 import '../widgets/session_user_avatar.dart';
 
 class HomePage extends StatefulWidget {
@@ -94,7 +95,8 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _userName = displayName;
       _userId = id;
-      _avatarUrl = (u['avatar_url'] as String? ?? '').trim();
+      _avatarUrl =
+          resolveAvatarDisplayUrl(u['avatar_url'] as String?)?.trim() ?? '';
     });
   }
 

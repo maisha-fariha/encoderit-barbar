@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import '../models/profile/profile_update_request.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/api_endpoints.dart';
+import '../utils/avatar_url_resolver.dart';
 
 /// Result of `PUT /profile`.
 class UpdateProfileOutcome {
@@ -298,6 +299,16 @@ class ProfileRepository {
     final u = Map<String, dynamic>.from(user);
     for (final e in u.entries) {
       if (e.value != null) merged[e.key] = e.value;
+    }
+    _normalizeAvatarUrlInMap(merged);
+  }
+
+  void _normalizeAvatarUrlInMap(Map<String, dynamic> map) {
+    final raw = map['avatar_url'];
+    if (raw is! String || raw.trim().isEmpty) return;
+    final resolved = normalizeAvatarUrlForStorage(raw);
+    if (resolved != null && resolved.isNotEmpty) {
+      map['avatar_url'] = resolved;
     }
   }
 }
