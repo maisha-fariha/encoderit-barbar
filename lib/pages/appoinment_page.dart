@@ -2927,10 +2927,13 @@ class _RecurringPreviewRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final dateTimeLabel = item.dateTimeLabelFor(languageCode);
+    final reasonLabel = item.reasonLabelFor(languageCode);
     final alt = item.alternativeBarbers.isNotEmpty
         ? item.alternativeBarbers.first.name.trim()
         : '';
-    final hasReason = item.reason.trim().isNotEmpty;
+    final hasReason = reasonLabel.isNotEmpty;
     final nextSlot = item.nextAvailableSlot?.trim() ?? '';
     final nextDate = item.nextAvailableDate?.trim() ?? '';
 
@@ -2992,9 +2995,7 @@ class _RecurringPreviewRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.dateTimeString.isNotEmpty
-                      ? item.dateTimeString
-                      : '${item.date} ${item.time}',
+                  dateTimeLabel,
                   style: GoogleFonts.inter(
                     color: const Color(0xFFDDDDDD),
                     fontSize: 14,
@@ -3016,7 +3017,7 @@ class _RecurringPreviewRow extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          item.reason,
+                          reasonLabel,
                           style: GoogleFonts.inter(
                             color: const Color(0xFFEF4444),
                             fontSize: 13,
