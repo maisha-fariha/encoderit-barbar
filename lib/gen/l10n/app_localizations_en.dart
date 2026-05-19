@@ -389,6 +389,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'No slots available for selected date.';
 
   @override
+  String get selectTimeRequired =>
+      'Please select an available time slot before continuing.';
+
+  @override
+  String get slotsStillLoading =>
+      'Please wait while available times are loading.';
+
+  @override
   String get nextSlotLabel => 'Next slot';
 
   @override

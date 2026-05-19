@@ -58,11 +58,15 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   late final ServiceListController _serviceController;
   late final BarberListController _barberController;
 
+  bool get _hasAvailableSlots =>
+      _slots.any((slot) => slot.available && slot.time.trim().isNotEmpty);
+
   String? get _selectedSlotTime {
     if (_selectedTime < 0 || _selectedTime >= _slots.length) return null;
     final slot = _slots[_selectedTime];
     if (!slot.available) return null;
-    return slot.time;
+    final time = slot.time.trim();
+    return time.isEmpty ? null : time;
   }
 
   int? get _selectedShopIdAsInt => int.tryParse(_selectedShopId ?? '');
@@ -419,7 +423,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
     final time = _selectedSlotTime ?? '';
     if (time.isEmpty) {
-      _showErrorMessage(l10n.bookingGenericError);
+      _showErrorMessage(l10n.selectTimeRequired);
       return;
     }
 
@@ -586,11 +590,13 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       return;
     }
     if (_step == 4) {
-      if (_selectedSlotTime == null || _selectedSlotTime!.isEmpty) {
-        _showPageMessage(AppLocalizations.of(context)!.bookingGenericError);
+      final l10n = AppLocalizations.of(context)!;
+
+      if (_isLoadingSlots) {
+        _showPageMessage(l10n.slotsStillLoading);
         return;
       }
-      final l10n = AppLocalizations.of(context)!;
+
       if (_recurringEnabled) {
         final missingInterval = _recurringIndex < 0;
         final missingQuantity = _howManyBookings < 1;
@@ -607,6 +613,17 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
           return;
         }
       }
+
+      if (!_hasAvailableSlots) {
+        _showPageMessage(l10n.noSlotsAvailableForSelectedDate);
+        return;
+      }
+
+      if (_selectedSlotTime == null) {
+        _showPageMessage(l10n.selectTimeRequired);
+        return;
+      }
+
       setState(() => _step = 5);
       return;
     }

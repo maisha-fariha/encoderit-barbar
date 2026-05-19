@@ -392,6 +392,14 @@ class AppLocalizationsIt extends AppLocalizations {
       'Nessuna fascia oraria disponibile per la data selezionata.';
 
   @override
+  String get selectTimeRequired =>
+      'Seleziona una fascia oraria disponibile prima di continuare.';
+
+  @override
+  String get slotsStillLoading =>
+      'Attendi il caricamento degli orari disponibili.';
+
+  @override
   String get nextSlotLabel => 'Prossimo slot';
 
   @override

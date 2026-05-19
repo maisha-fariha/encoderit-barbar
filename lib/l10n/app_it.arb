@@ -142,6 +142,8 @@
   "noReservationsFound": "Nessuna prenotazione trovata.",
   "retryLabel": "Riprova",
   "noSlotsAvailableForSelectedDate": "Nessuna fascia oraria disponibile per la data selezionata.",
+  "selectTimeRequired": "Seleziona una fascia oraria disponibile prima di continuare.",
+  "slotsStillLoading": "Attendi il caricamento degli orari disponibili.",
   "nextSlotLabel": "Prossimo slot",
   "nextDateLabel": "Data",
   "reservationListTitle": "Elenco prenotazioni",

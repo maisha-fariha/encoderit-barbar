@@ -812,6 +812,18 @@ abstract class AppLocalizations {
   /// **'No slots available for selected date.'**
   String get noSlotsAvailableForSelectedDate;
 
+  /// No description provided for @selectTimeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an available time slot before continuing.'**
+  String get selectTimeRequired;
+
+  /// No description provided for @slotsStillLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait while available times are loading.'**
+  String get slotsStillLoading;
+
   /// No description provided for @nextSlotLabel.
   ///
   /// In en, this message translates to:
