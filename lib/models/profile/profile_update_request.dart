@@ -4,7 +4,7 @@ import 'dart:io';
 ///
 /// Text fields are always sent. When [avatarFile] is set, the request uses
 /// `multipart/form-data` with form field `avatar` (File, per Postman). The API
-/// responds with `avatar_url` as a URL string. When [avatarFile] is null, only
+/// responds with `avatar` as a URL string. When [avatarFile] is null, only
 /// text fields are sent (JSON or multipart without file).
 class ProfileUpdateRequest {
   const ProfileUpdateRequest({

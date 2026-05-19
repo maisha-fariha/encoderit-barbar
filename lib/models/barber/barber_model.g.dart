@@ -14,7 +14,6 @@ _$BarberModelImpl _$$BarberModelImplFromJson(Map<String, dynamic> json) =>
       phone: json['phone'] as String? ?? '',
       gender: json['gender'] as String?,
       avatar: json['avatar'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
       isActive: json['is_active'] as bool? ?? false,
       services:
           (json['services'] as List<dynamic>?)
@@ -31,7 +30,6 @@ Map<String, dynamic> _$$BarberModelImplToJson(_$BarberModelImpl instance) =>
       'phone': instance.phone,
       'gender': instance.gender,
       'avatar': instance.avatar,
-      'avatar_url': instance.avatarUrl,
       'is_active': instance.isActive,
       'services': instance.services,
     };

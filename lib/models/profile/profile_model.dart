@@ -12,8 +12,7 @@ class ProfileModel with _$ProfileModel implements BaseModel {
     @Default('') String name,
     @Default('') String email,
     @Default('') String phone,
-    // ignore: invalid_annotation_target
-    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    String? avatar,
     @Default('') String role,
     // ignore: invalid_annotation_target
     @JsonKey(name: 'selected_shop_id', fromJson: _nullableIdFromJson)
@@ -54,7 +53,7 @@ DateTime? _dateTimeFromJson(dynamic value) {
 
 extension ProfileDisplay on ProfileModel {
   bool get isEmailVerified => emailVerifiedAt != null;
-  bool get hasAvatar => (avatarUrl ?? '').isNotEmpty;
+  bool get hasAvatar => (avatar ?? '').isNotEmpty;
   String get initials {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty || parts.first.isEmpty) return '';

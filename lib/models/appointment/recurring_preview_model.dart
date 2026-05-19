@@ -2,18 +2,18 @@ class RecurringPreviewAlternativeBarber {
   const RecurringPreviewAlternativeBarber({
     required this.id,
     required this.name,
-    this.avatarUrl,
+    this.avatar,
   });
 
   final int id;
   final String name;
-  final String? avatarUrl;
+  final String? avatar;
 
   factory RecurringPreviewAlternativeBarber.fromJson(Map<String, dynamic> json) {
     return RecurringPreviewAlternativeBarber(
       id: (json['id'] is num) ? (json['id'] as num).toInt() : 0,
       name: (json['name'] ?? '').toString(),
-      avatarUrl: json['avatar_url']?.toString(),
+      avatar: json['avatar']?.toString(),
     );
   }
 }

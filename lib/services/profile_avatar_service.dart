@@ -104,6 +104,17 @@ class ProfileAvatarService {
     return null;
   }
 
+  /// Removes the on-device pick so the UI can show the server [avatar] URL.
+  Future<void> clearLocalAvatar() async {
+    final key = _currentUserKey ??= await _readUserKey();
+    if (key == null) return;
+    final f = await _userAvatarFile(key);
+    if (await f.exists()) {
+      await f.delete();
+    }
+    revision.value++;
+  }
+
   Future<AvatarPickResult> pickFromGallery() =>
       _pickAndStore(ImageSource.gallery);
   Future<AvatarPickResult> pickFromCamera() =>

@@ -30,8 +30,6 @@ mixin _$BarberModel {
   String? get gender => throw _privateConstructorUsedError;
   String? get avatar =>
       throw _privateConstructorUsedError; // ignore: invalid_annotation_target
-  @JsonKey(name: 'avatar_url')
-  String? get avatarUrl => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(name: 'is_active')
   bool get isActive => throw _privateConstructorUsedError;
   List<ServiceModel> get services => throw _privateConstructorUsedError;
@@ -60,7 +58,6 @@ abstract class $BarberModelCopyWith<$Res> {
     String phone,
     String? gender,
     String? avatar,
-    @JsonKey(name: 'avatar_url') String? avatarUrl,
     @JsonKey(name: 'is_active') bool isActive,
     List<ServiceModel> services,
   });
@@ -87,7 +84,6 @@ class _$BarberModelCopyWithImpl<$Res, $Val extends BarberModel>
     Object? phone = null,
     Object? gender = freezed,
     Object? avatar = freezed,
-    Object? avatarUrl = freezed,
     Object? isActive = null,
     Object? services = null,
   }) {
@@ -116,10 +112,6 @@ class _$BarberModelCopyWithImpl<$Res, $Val extends BarberModel>
             avatar: freezed == avatar
                 ? _value.avatar
                 : avatar // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            avatarUrl: freezed == avatarUrl
-                ? _value.avatarUrl
-                : avatarUrl // ignore: cast_nullable_to_non_nullable
                       as String?,
             isActive: null == isActive
                 ? _value.isActive
@@ -151,7 +143,6 @@ abstract class _$$BarberModelImplCopyWith<$Res>
     String phone,
     String? gender,
     String? avatar,
-    @JsonKey(name: 'avatar_url') String? avatarUrl,
     @JsonKey(name: 'is_active') bool isActive,
     List<ServiceModel> services,
   });
@@ -177,7 +168,6 @@ class __$$BarberModelImplCopyWithImpl<$Res>
     Object? phone = null,
     Object? gender = freezed,
     Object? avatar = freezed,
-    Object? avatarUrl = freezed,
     Object? isActive = null,
     Object? services = null,
   }) {
@@ -207,10 +197,6 @@ class __$$BarberModelImplCopyWithImpl<$Res>
             ? _value.avatar
             : avatar // ignore: cast_nullable_to_non_nullable
                   as String?,
-        avatarUrl: freezed == avatarUrl
-            ? _value.avatarUrl
-            : avatarUrl // ignore: cast_nullable_to_non_nullable
-                  as String?,
         isActive: null == isActive
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
@@ -234,7 +220,6 @@ class _$BarberModelImpl implements _BarberModel {
     this.phone = '',
     this.gender,
     this.avatar,
-    @JsonKey(name: 'avatar_url') this.avatarUrl,
     @JsonKey(name: 'is_active') this.isActive = false,
     final List<ServiceModel> services = const <ServiceModel>[],
   }) : _services = services;
@@ -261,10 +246,6 @@ class _$BarberModelImpl implements _BarberModel {
   final String? avatar;
   // ignore: invalid_annotation_target
   @override
-  @JsonKey(name: 'avatar_url')
-  final String? avatarUrl;
-  // ignore: invalid_annotation_target
-  @override
   @JsonKey(name: 'is_active')
   final bool isActive;
   final List<ServiceModel> _services;
@@ -278,7 +259,7 @@ class _$BarberModelImpl implements _BarberModel {
 
   @override
   String toString() {
-    return 'BarberModel(id: $id, name: $name, email: $email, phone: $phone, gender: $gender, avatar: $avatar, avatarUrl: $avatarUrl, isActive: $isActive, services: $services)';
+    return 'BarberModel(id: $id, name: $name, email: $email, phone: $phone, gender: $gender, avatar: $avatar, isActive: $isActive, services: $services)';
   }
 
   @override
@@ -292,8 +273,6 @@ class _$BarberModelImpl implements _BarberModel {
             (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.gender, gender) || other.gender == gender) &&
             (identical(other.avatar, avatar) || other.avatar == avatar) &&
-            (identical(other.avatarUrl, avatarUrl) ||
-                other.avatarUrl == avatarUrl) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
             const DeepCollectionEquality().equals(other._services, _services));
@@ -309,7 +288,6 @@ class _$BarberModelImpl implements _BarberModel {
     phone,
     gender,
     avatar,
-    avatarUrl,
     isActive,
     const DeepCollectionEquality().hash(_services),
   );
@@ -336,7 +314,6 @@ abstract class _BarberModel implements BarberModel {
     final String phone,
     final String? gender,
     final String? avatar,
-    @JsonKey(name: 'avatar_url') final String? avatarUrl,
     @JsonKey(name: 'is_active') final bool isActive,
     final List<ServiceModel> services,
   }) = _$BarberModelImpl;
@@ -358,9 +335,6 @@ abstract class _BarberModel implements BarberModel {
   String? get gender;
   @override
   String? get avatar; // ignore: invalid_annotation_target
-  @override
-  @JsonKey(name: 'avatar_url')
-  String? get avatarUrl; // ignore: invalid_annotation_target
   @override
   @JsonKey(name: 'is_active')
   bool get isActive;

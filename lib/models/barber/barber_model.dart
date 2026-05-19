@@ -17,8 +17,6 @@ class BarberModel with _$BarberModel implements BaseModel {
     String? gender,
     String? avatar,
     // ignore: invalid_annotation_target
-    @JsonKey(name: 'avatar_url') String? avatarUrl,
-    // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
     @Default(<ServiceModel>[]) List<ServiceModel> services,
   }) = _BarberModel;

@@ -5,51 +5,60 @@ void main() {
   const apiBase = 'https://iconico.encoder-test-vpn.space/api/v1';
 
   group('resolveAvatarDisplayUrl', () {
-    test('returns absolute https URLs unchanged', () {
-      const url = 'https://iconico.encoder-test-vpn.space/storage/a.jpg';
+    test('returns full backend https URLs unchanged', () {
+      const url =
+          'https://iconico.encoder-test-vpn.space/storage/avatars/a.jpg';
       expect(
-        resolveAvatarDisplayUrl(url, apiBaseOverride: apiBase),
+        resolveAvatarDisplayUrl(url, assetOriginOverride: apiBase),
         url,
       );
     });
 
-    test('does not double-prefix when URL already includes API base', () {
+    test('does not double-prefix when URL already absolute', () {
       const url =
           'https://iconico.encoder-test-vpn.space/api/v1/storage/a.jpg';
       expect(
-        resolveAvatarDisplayUrl(url, apiBaseOverride: apiBase),
+        resolveAvatarDisplayUrl(url, assetOriginOverride: apiBase),
         url,
       );
     });
 
-    test('resolves root-relative storage paths against host', () {
+    test('resolves root-relative paths against site origin not api/v1', () {
       expect(
-        resolveAvatarDisplayUrl('/storage/avatars/a.jpg',
-            apiBaseOverride: apiBase),
+        resolveAvatarDisplayUrl(
+          '/storage/avatars/a.jpg',
+          assetOriginOverride: apiBase,
+        ),
         'https://iconico.encoder-test-vpn.space/storage/avatars/a.jpg',
       );
     });
 
-    test('resolves relative paths against API base', () {
+    test('resolves relative paths against site origin not api/v1', () {
       expect(
-        resolveAvatarDisplayUrl('storage/avatars/a.jpg',
-            apiBaseOverride: apiBase),
-        'https://iconico.encoder-test-vpn.space/api/v1/storage/avatars/a.jpg',
+        resolveAvatarDisplayUrl(
+          'storage/avatars/a.jpg',
+          assetOriginOverride: apiBase,
+        ),
+        'https://iconico.encoder-test-vpn.space/storage/avatars/a.jpg',
       );
     });
 
-    test('resolves path that already starts with api segment without doubling',
-        () {
+    test('uses default origin when override is empty', () {
       expect(
-        resolveAvatarDisplayUrl('api/v1/storage/a.jpg',
-            apiBaseOverride: apiBase),
-        'https://iconico.encoder-test-vpn.space/api/v1/storage/a.jpg',
+        resolveAvatarDisplayUrl('/storage/a.jpg', assetOriginOverride: ''),
+        'https://iconico.encoder-test-vpn.space/storage/a.jpg',
       );
     });
 
     test('returns null for empty input', () {
-      expect(resolveAvatarDisplayUrl(null, apiBaseOverride: apiBase), isNull);
-      expect(resolveAvatarDisplayUrl('', apiBaseOverride: apiBase), isNull);
+      expect(
+        resolveAvatarDisplayUrl(null, assetOriginOverride: apiBase),
+        isNull,
+      );
+      expect(
+        resolveAvatarDisplayUrl('', assetOriginOverride: apiBase),
+        isNull,
+      );
     });
   });
 }

@@ -49,7 +49,6 @@ _$AppointmentBarberImpl _$$AppointmentBarberImplFromJson(
   phone: json['phone'] as String? ?? '',
   gender: json['gender'] as String?,
   avatar: json['avatar'] as String?,
-  avatarUrl: json['avatar_url'] as String?,
   isActive: json['is_active'] as bool? ?? false,
 );
 
@@ -62,7 +61,6 @@ Map<String, dynamic> _$$AppointmentBarberImplToJson(
   'phone': instance.phone,
   'gender': instance.gender,
   'avatar': instance.avatar,
-  'avatar_url': instance.avatarUrl,
   'is_active': instance.isActive,
 };
 

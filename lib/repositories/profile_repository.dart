@@ -20,12 +20,14 @@ class UpdateProfileOutcome {
     required this.message,
     this.errors,
     this.isNetworkError = false,
+    this.avatarUrl,
   });
 
   final bool success;
   final String message;
   final Map<String, dynamic>? errors;
   final bool isNetworkError;
+  final String? avatarUrl;
 }
 
 class ProfileRepository {
@@ -83,10 +85,14 @@ class ProfileRepository {
       _logPutProfileResponse(response);
 
       if (response.success) {
-        await _mergeStoredUser(request.toFormFields(), response.data);
+        final avatarUrl = await _mergeStoredUser(
+          request.toFormFields(),
+          response.data,
+        );
         return UpdateProfileOutcome(
           success: true,
-          message: (response.message ?? '').trim(),
+          message: _successMessageFromResponse(response),
+          avatarUrl: avatarUrl,
         );
       }
 
@@ -166,7 +172,7 @@ class ProfileRepository {
         }
       }
       buffer.writeln(
-        '  note: API returns avatar_url (string) in JSON response; '
+        '  note: API returns avatar (string URL) in JSON response; '
         'upload uses file part key "avatar" (Postman).',
       );
     } else if (body is Map) {
@@ -248,12 +254,12 @@ class ProfileRepository {
     return '';
   }
 
-  Future<void> _mergeStoredUser(
+  Future<String?> _mergeStoredUser(
     Map<String, dynamic> sent,
     dynamic responseData,
   ) async {
     final auth = await authService.getStoredAuth();
-    if (auth == null) return;
+    if (auth == null) return null;
 
     final merged = Map<String, dynamic>.from(auth.userData ?? {});
 
@@ -278,37 +284,98 @@ class ProfileRepository {
       ),
     );
 
-    if (Get.isRegistered<ProfileAvatarService>()) {
+    final displayAvatar =
+        resolveAvatarDisplayUrl(sessionAvatarFromUserData(merged));
+    if (displayAvatar != null &&
+        displayAvatar.isNotEmpty &&
+        Get.isRegistered<ProfileAvatarService>()) {
+      await Get.find<ProfileAvatarService>().clearLocalAvatar();
+    } else if (Get.isRegistered<ProfileAvatarService>()) {
       Get.find<ProfileAvatarService>().revision.value++;
     }
+
+    return displayAvatar;
+  }
+
+  /// Supports `{ data: { id, avatar, … } }`, `{ user: … }`, or a flat profile map.
+  Map<String, dynamic>? _profilePayloadFromResponse(dynamic responseData) {
+    if (responseData is! Map) return null;
+    final root = Map<String, dynamic>.from(responseData);
+
+    if (root['user'] is Map) {
+      return Map<String, dynamic>.from(root['user'] as Map);
+    }
+
+    final data = root['data'];
+    if (data is Map) {
+      final dataMap = Map<String, dynamic>.from(data);
+      if (dataMap['user'] is Map) {
+        return Map<String, dynamic>.from(dataMap['user'] as Map);
+      }
+      if (_looksLikeProfilePayload(dataMap)) return dataMap;
+    }
+
+    if (_looksLikeProfilePayload(root)) return root;
+
+    return null;
+  }
+
+  bool _looksLikeProfilePayload(Map<String, dynamic> map) {
+    return map.containsKey('id') ||
+        map.containsKey('email') ||
+        map.containsKey('avatar') ||
+        map.containsKey('avatar_url');
   }
 
   void _applyResponseUserMap(
     Map<String, dynamic> merged,
     dynamic responseData,
   ) {
-    if (responseData == null) return;
-    if (responseData is! Map) return;
-    final root = Map<String, dynamic>.from(responseData);
-    dynamic user = root['user'];
-    if (user == null && root['data'] is Map) {
-      final data = Map<String, dynamic>.from(root['data'] as Map);
-      user = data['user'] ?? data;
+    final payload = _profilePayloadFromResponse(responseData);
+    if (payload == null) {
+      if (kDebugMode) {
+        debugPrint(
+          '[ProfileRepository] Could not parse profile payload from: $responseData',
+        );
+      }
+      return;
     }
-    if (user is! Map) return;
-    final u = Map<String, dynamic>.from(user);
-    for (final e in u.entries) {
+
+    for (final e in payload.entries) {
+      if (e.key == 'user_details') continue;
       if (e.value != null) merged[e.key] = e.value;
     }
+
+    final details = payload['user_details'];
+    if (details is Map) {
+      for (final e in Map<String, dynamic>.from(details).entries) {
+        if (e.value != null) merged[e.key] = e.value;
+      }
+    }
+
     _normalizeAvatarUrlInMap(merged);
   }
 
+  String _successMessageFromResponse(ApiResponse<dynamic> response) {
+    final fromField = (response.message ?? '').trim();
+    if (fromField.isNotEmpty) return fromField;
+    final data = response.data;
+    if (data is Map) {
+      final message = data['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+    }
+    return '';
+  }
+
   void _normalizeAvatarUrlInMap(Map<String, dynamic> map) {
-    final raw = map['avatar_url'];
+    final raw = map['avatar'] ?? map['avatar_url'];
     if (raw is! String || raw.trim().isEmpty) return;
     final resolved = normalizeAvatarUrlForStorage(raw);
     if (resolved != null && resolved.isNotEmpty) {
-      map['avatar_url'] = resolved;
+      map['avatar'] = resolved;
+      map.remove('avatar_url');
     }
   }
 }

@@ -26,10 +26,8 @@ mixin _$ProfileModel {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
-  String get phone =>
-      throw _privateConstructorUsedError; // ignore: invalid_annotation_target
-  @JsonKey(name: 'avatar_url')
-  String? get avatarUrl => throw _privateConstructorUsedError;
+  String get phone => throw _privateConstructorUsedError;
+  String? get avatar => throw _privateConstructorUsedError;
   String get role =>
       throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(name: 'selected_shop_id', fromJson: _nullableIdFromJson)
@@ -61,7 +59,7 @@ abstract class $ProfileModelCopyWith<$Res> {
     String name,
     String email,
     String phone,
-    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    String? avatar,
     String role,
     @JsonKey(name: 'selected_shop_id', fromJson: _nullableIdFromJson)
     String? selectedShopId,
@@ -91,7 +89,7 @@ class _$ProfileModelCopyWithImpl<$Res, $Val extends ProfileModel>
     Object? name = null,
     Object? email = null,
     Object? phone = null,
-    Object? avatarUrl = freezed,
+    Object? avatar = freezed,
     Object? role = null,
     Object? selectedShopId = freezed,
     Object? emailVerifiedAt = freezed,
@@ -115,9 +113,9 @@ class _$ProfileModelCopyWithImpl<$Res, $Val extends ProfileModel>
                 ? _value.phone
                 : phone // ignore: cast_nullable_to_non_nullable
                       as String,
-            avatarUrl: freezed == avatarUrl
-                ? _value.avatarUrl
-                : avatarUrl // ignore: cast_nullable_to_non_nullable
+            avatar: freezed == avatar
+                ? _value.avatar
+                : avatar // ignore: cast_nullable_to_non_nullable
                       as String?,
             role: null == role
                 ? _value.role
@@ -155,7 +153,7 @@ abstract class _$$ProfileModelImplCopyWith<$Res>
     String name,
     String email,
     String phone,
-    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    String? avatar,
     String role,
     @JsonKey(name: 'selected_shop_id', fromJson: _nullableIdFromJson)
     String? selectedShopId,
@@ -184,7 +182,7 @@ class __$$ProfileModelImplCopyWithImpl<$Res>
     Object? name = null,
     Object? email = null,
     Object? phone = null,
-    Object? avatarUrl = freezed,
+    Object? avatar = freezed,
     Object? role = null,
     Object? selectedShopId = freezed,
     Object? emailVerifiedAt = freezed,
@@ -208,9 +206,9 @@ class __$$ProfileModelImplCopyWithImpl<$Res>
             ? _value.phone
             : phone // ignore: cast_nullable_to_non_nullable
                   as String,
-        avatarUrl: freezed == avatarUrl
-            ? _value.avatarUrl
-            : avatarUrl // ignore: cast_nullable_to_non_nullable
+        avatar: freezed == avatar
+            ? _value.avatar
+            : avatar // ignore: cast_nullable_to_non_nullable
                   as String?,
         role: null == role
             ? _value.role
@@ -241,7 +239,7 @@ class _$ProfileModelImpl implements _ProfileModel {
     this.name = '',
     this.email = '',
     this.phone = '',
-    @JsonKey(name: 'avatar_url') this.avatarUrl,
+    this.avatar,
     this.role = '',
     @JsonKey(name: 'selected_shop_id', fromJson: _nullableIdFromJson)
     this.selectedShopId,
@@ -266,10 +264,8 @@ class _$ProfileModelImpl implements _ProfileModel {
   @override
   @JsonKey()
   final String phone;
-  // ignore: invalid_annotation_target
   @override
-  @JsonKey(name: 'avatar_url')
-  final String? avatarUrl;
+  final String? avatar;
   @override
   @JsonKey()
   final String role;
@@ -288,7 +284,7 @@ class _$ProfileModelImpl implements _ProfileModel {
 
   @override
   String toString() {
-    return 'ProfileModel(id: $id, name: $name, email: $email, phone: $phone, avatarUrl: $avatarUrl, role: $role, selectedShopId: $selectedShopId, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt)';
+    return 'ProfileModel(id: $id, name: $name, email: $email, phone: $phone, avatar: $avatar, role: $role, selectedShopId: $selectedShopId, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt)';
   }
 
   @override
@@ -300,8 +296,7 @@ class _$ProfileModelImpl implements _ProfileModel {
             (identical(other.name, name) || other.name == name) &&
             (identical(other.email, email) || other.email == email) &&
             (identical(other.phone, phone) || other.phone == phone) &&
-            (identical(other.avatarUrl, avatarUrl) ||
-                other.avatarUrl == avatarUrl) &&
+            (identical(other.avatar, avatar) || other.avatar == avatar) &&
             (identical(other.role, role) || other.role == role) &&
             (identical(other.selectedShopId, selectedShopId) ||
                 other.selectedShopId == selectedShopId) &&
@@ -319,7 +314,7 @@ class _$ProfileModelImpl implements _ProfileModel {
     name,
     email,
     phone,
-    avatarUrl,
+    avatar,
     role,
     selectedShopId,
     emailVerifiedAt,
@@ -346,7 +341,7 @@ abstract class _ProfileModel implements ProfileModel {
     final String name,
     final String email,
     final String phone,
-    @JsonKey(name: 'avatar_url') final String? avatarUrl,
+    final String? avatar,
     final String role,
     @JsonKey(name: 'selected_shop_id', fromJson: _nullableIdFromJson)
     final String? selectedShopId,
@@ -368,10 +363,9 @@ abstract class _ProfileModel implements ProfileModel {
   @override
   String get email;
   @override
-  String get phone; // ignore: invalid_annotation_target
+  String get phone;
   @override
-  @JsonKey(name: 'avatar_url')
-  String? get avatarUrl;
+  String? get avatar;
   @override
   String get role; // ignore: invalid_annotation_target
   @override

@@ -1,14 +1,27 @@
 import 'package:gems_core/gems_core.dart';
 
-/// Builds a displayable URL from API `avatar_url` (relative path or absolute).
+/// Site origin for avatar/media URLs (no `/api/v1` — backend usually returns full URLs).
+const String defaultAvatarAssetOrigin =
+    'https://iconico.encoder-test-vpn.space';
+
+/// Reads `avatar` from stored user JSON (falls back to legacy `avatar_url`).
+String? sessionAvatarFromUserData(Map<String, dynamic>? userData) {
+  if (userData == null) return null;
+  final avatar = userData['avatar'];
+  if (avatar is String && avatar.trim().isNotEmpty) return avatar.trim();
+  final legacy = userData['avatar_url'];
+  if (legacy is String && legacy.trim().isNotEmpty) return legacy.trim();
+  return null;
+}
+
+/// Builds a displayable URL from API `avatar`.
 ///
-/// - Absolute `http(s)://…` values are returned unchanged.
-/// - Root-relative paths (`/storage/…`) are resolved against the API host only.
-/// - Other relative paths (`avatars/…`, `storage/…`) are resolved against
-///   [Environment.apiBaseUrl] (e.g. `…/api/v1/avatars/…`).
+/// Backend responses normally include a full `https://…` URL; those are returned
+/// unchanged. Relative paths are resolved against the site origin only (not
+/// [Environment.apiBaseUrl] / `api/v1`).
 String? resolveAvatarDisplayUrl(
   String? raw, {
-  String? apiBaseOverride,
+  String? assetOriginOverride,
 }) {
   if (raw == null) return null;
   final trimmed = raw.trim();
@@ -19,83 +32,75 @@ String? resolveAvatarDisplayUrl(
     return trimmed;
   }
 
+  final origin = _avatarAssetOrigin(assetOriginOverride: assetOriginOverride);
+
   if (trimmed.startsWith('//')) {
-    final baseUri = _parseApiBase(apiBaseOverride);
-    final scheme =
-        baseUri?.scheme.isNotEmpty == true ? baseUri!.scheme : 'https';
-    return '$scheme:$trimmed';
+    return '${origin.scheme}:$trimmed';
   }
 
-  final baseUri = _parseApiBase(apiBaseOverride);
-  if (baseUri == null) return trimmed;
-
-  if (_alreadyAbsoluteForBase(trimmed, baseUri)) {
+  if (_alreadyHasOrigin(trimmed, origin)) {
     return trimmed.startsWith('http://') || trimmed.startsWith('https://')
         ? trimmed
         : Uri(
-            scheme: baseUri.scheme,
-            host: baseUri.host,
-            port: baseUri.hasPort ? baseUri.port : null,
+            scheme: origin.scheme,
+            host: origin.host,
+            port: origin.hasPort ? origin.port : null,
             path: trimmed.startsWith('/') ? trimmed : '/$trimmed',
           ).toString();
   }
 
-  if (_isHostAbsolutePath(trimmed, baseUri.host)) {
-    final path = trimmed.startsWith(baseUri.host)
-        ? trimmed.substring(baseUri.host.length)
+  if (_isHostAbsolutePath(trimmed, origin.host)) {
+    final path = trimmed.startsWith(origin.host)
+        ? trimmed.substring(origin.host.length)
         : trimmed;
     final normalizedPath = path.startsWith('/') ? path : '/$path';
     return Uri(
-      scheme: baseUri.scheme,
-      host: baseUri.host,
-      port: baseUri.hasPort ? baseUri.port : null,
+      scheme: origin.scheme,
+      host: origin.host,
+      port: origin.hasPort ? origin.port : null,
       path: normalizedPath,
     ).toString();
   }
 
   if (trimmed.startsWith('/')) {
     return Uri(
-      scheme: baseUri.scheme,
-      host: baseUri.host,
-      port: baseUri.hasPort ? baseUri.port : null,
+      scheme: origin.scheme,
+      host: origin.host,
+      port: origin.hasPort ? origin.port : null,
       path: trimmed,
     ).toString();
   }
 
-  return _resolveRelativeToApiBase(baseUri, trimmed);
+  final rel = trimmed.replaceAll(RegExp(r'^/+'), '');
+  return origin.resolve(rel).toString();
 }
 
 /// Persists a normalized absolute URL when saving API user payloads.
 String? normalizeAvatarUrlForStorage(
   String? raw, {
-  String? apiBaseOverride,
+  String? assetOriginOverride,
 }) =>
-    resolveAvatarDisplayUrl(raw, apiBaseOverride: apiBaseOverride);
+    resolveAvatarDisplayUrl(raw, assetOriginOverride: assetOriginOverride);
 
-Uri? _parseApiBase(String? apiBaseOverride) {
-  final apiBase =
-      (apiBaseOverride ?? Environment.instance.apiBaseUrl).trim();
-  if (apiBase.isEmpty) return null;
-
-  final withSlash = apiBase.endsWith('/') ? apiBase : '$apiBase/';
-  final uri = Uri.tryParse(withSlash);
-  if (uri == null || !uri.hasScheme || uri.host.isEmpty) return null;
-  return uri;
+Uri _avatarAssetOrigin({String? assetOriginOverride}) {
+  final raw = (assetOriginOverride ?? Environment.instance.apiBaseUrl).trim();
+  if (raw.isNotEmpty) {
+    final uri = Uri.tryParse(raw);
+    if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
+      return Uri(
+        scheme: uri.scheme,
+        host: uri.host,
+        port: uri.hasPort ? uri.port : null,
+      );
+    }
+  }
+  return Uri.parse(defaultAvatarAssetOrigin);
 }
 
-bool _alreadyAbsoluteForBase(String value, Uri baseUri) {
-  final origin = baseUri.origin;
-  if (value.startsWith(origin)) return true;
-
-  final baseNoSlash = baseUri.toString().replaceAll(RegExp(r'/+$'), '');
-  if (value == baseNoSlash || value.startsWith('$baseNoSlash/')) {
-    return true;
-  }
-
-  final apiPath = baseUri.path.replaceAll(RegExp(r'^/+|/+$'), '');
-  if (apiPath.isEmpty) return false;
-  final rel = value.replaceAll(RegExp(r'^/+'), '');
-  return rel == apiPath || rel.startsWith('$apiPath/');
+bool _alreadyHasOrigin(String value, Uri origin) {
+  if (value.startsWith(origin.origin)) return true;
+  final host = origin.host;
+  return value.startsWith('$host/') || value == host || value.startsWith('$host:');
 }
 
 bool _isHostAbsolutePath(String value, String host) {
@@ -103,20 +108,4 @@ bool _isHostAbsolutePath(String value, String host) {
   return value.startsWith('$host/') ||
       value == host ||
       value.startsWith('$host:');
-}
-
-String _resolveRelativeToApiBase(Uri baseUri, String relative) {
-  final rel = relative.replaceAll(RegExp(r'^/+'), '');
-  final apiPath = baseUri.path.replaceAll(RegExp(r'^/+|/+$'), '');
-
-  if (apiPath.isNotEmpty && (rel == apiPath || rel.startsWith('$apiPath/'))) {
-    return Uri(
-      scheme: baseUri.scheme,
-      host: baseUri.host,
-      port: baseUri.hasPort ? baseUri.port : null,
-      path: '/$rel',
-    ).toString();
-  }
-
-  return baseUri.resolve(rel).toString();
 }

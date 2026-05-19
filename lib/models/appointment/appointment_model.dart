@@ -53,8 +53,6 @@ class AppointmentBarber with _$AppointmentBarber {
     String? gender,
     String? avatar,
     // ignore: invalid_annotation_target
-    @JsonKey(name: 'avatar_url') String? avatarUrl,
-    // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
   }) = _AppointmentBarber;
 

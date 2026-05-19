@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> {
       _userName = displayName;
       _userId = id;
       _avatarUrl =
-          resolveAvatarDisplayUrl(u['avatar_url'] as String?)?.trim() ?? '';
+          resolveAvatarDisplayUrl(sessionAvatarFromUserData(u))?.trim() ?? '';
     });
   }
 

@@ -39,7 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final _province = TextEditingController();
   final _country = TextEditingController();
 
-  /// Remote `avatar_url` string from session/API (for display after GET).
+  /// Remote `avatar` URL string from session/API (for display after GET).
   String _avatarUrl = '';
 
   /// New photo chosen in this session; sent as multipart `avatar` (file) on PUT.
@@ -253,7 +253,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _province.text = _stringField(u, ['province']);
       _country.text = _stringField(u, ['country']);
       _avatarUrl =
-          resolveAvatarDisplayUrl(u['avatar_url'] as String?)?.trim() ?? '';
+          resolveAvatarDisplayUrl(sessionAvatarFromUserData(u))?.trim() ?? '';
     });
   }
 
@@ -444,6 +444,10 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _pendingAvatarFile = null;
         _avatarDirty = false;
+        final remote = outcome.avatarUrl?.trim();
+        if (remote != null && remote.isNotEmpty) {
+          _avatarUrl = remote;
+        }
       });
       await _loadFromSession();
       if (Get.isRegistered<ProfileAvatarService>()) {
