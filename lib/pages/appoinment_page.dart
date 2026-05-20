@@ -44,6 +44,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   String _previewErrorMessage = '';
   List<RecurringPreviewDateItem> _previewItems = const <RecurringPreviewDateItem>[];
   final Set<String> _waitlistedOriginalDates = <String>{};
+  bool _pendingStep4WorkingDayAlign = false;
 
   static DateTime _today() {
     final n = DateTime.now();
@@ -104,18 +105,66 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   bool get _hasAvailableSlots => _slots.any(_isSlotSelectable);
 
+  /// When the currently selected day has no available slots, move forward and
+  /// pick the next working day that has at least one selectable slot.
+  Future<void> _selectNextDateWithAvailableSlots({int searchDays = 45}) async {
+    if (!_hasBarberWorkingSchedule) return;
+    if (_hasAvailableSlots) return;
+
+    final base = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+    for (int offset = 1; offset <= searchDays; offset++) {
+      final candidate = base.add(Duration(days: offset));
+      if (!_isBarberWorkingDay(candidate)) continue;
+
+      if (!mounted) return;
+      setState(() {
+        _selectedDate = candidate;
+        _selectedTime = -1;
+      });
+
+      await _loadSlotsForSelection(showLoading: false);
+      if (!mounted) return;
+      if (_hasAvailableSlots) {
+        await _loadRecurringPreview();
+        return;
+      }
+    }
+  }
+
   void _alignSelectedDateToNextWorkingDay() {
-    final barber = _selectedBarberModel;
-    if (barber == null || barber.workingDayOfWeekValues.isEmpty) return;
+    if (!_hasBarberWorkingSchedule) return;
     if (_isBarberWorkingDay(_selectedDate)) return;
 
     for (int offset = 0; offset < 370; offset++) {
       final candidate = _today().add(Duration(days: offset));
-      if (barber.isWorkingDay(candidate)) {
+      if (_isBarberWorkingDay(candidate)) {
         _selectedDate = candidate;
         return;
       }
     }
+  }
+
+  /// Runs after build when step 4 is shown so [BarberModel.hours] arriving after
+  /// cache (or a stale selection) still snaps the pill selection to a valid day.
+  void _scheduleStep4WorkingDayAlignment() {
+    if (_step != 4) return;
+    if (_pendingStep4WorkingDayAlign) return;
+    _pendingStep4WorkingDayAlign = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _pendingStep4WorkingDayAlign = false;
+      if (!mounted || _step != 4) return;
+      if (!_hasBarberWorkingSchedule) return;
+      if (_isBarberWorkingDay(_selectedDate)) return;
+
+      final before = _selectedDate;
+      setState(() {
+        _alignSelectedDateToNextWorkingDay();
+      });
+      if (!mounted || before == _selectedDate) return;
+
+      await _loadSlotsForSelection(showLoading: false);
+      await _loadRecurringPreview();
+    });
   }
 
   String? get _selectedSlotTime {
@@ -655,6 +704,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         _isLoadingPreview = false;
       });
       await _loadSlotsForSelection(showLoading: false);
+      await _selectNextDateWithAvailableSlots();
+      _scheduleStep4WorkingDayAlignment();
       return;
     }
     if (_step == 4) {
@@ -710,6 +761,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   void _onBack() {
     if (_step <= 1) return;
+    if (_step == 4) {
+      _pendingStep4WorkingDayAlign = false;
+    }
     setState(() => _step -= 1);
   }
 
@@ -1551,7 +1605,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                         },
                       )
                     : _step == 4
-                    ? SingleChildScrollView(
+                    ? GetBuilder<BarberListController>(
+                        id: 'barber-selection',
+                        builder: (_) {
+                          _scheduleStep4WorkingDayAlignment();
+                          return SingleChildScrollView(
                         key: const ValueKey('step4'),
                         padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 18),
                         child: Builder(
@@ -1709,6 +1767,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             );
                           },
                         ),
+                      );
+                        },
                       )
                     : SingleChildScrollView(
                         key: const ValueKey('step5'),
