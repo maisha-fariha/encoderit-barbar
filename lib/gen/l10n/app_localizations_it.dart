@@ -392,6 +392,10 @@ class AppLocalizationsIt extends AppLocalizations {
       'Nessuna fascia oraria disponibile per la data selezionata.';
 
   @override
+  String get noBarberWorkingDays =>
+      'Questo barbiere non ha giorni lavorativi configurati. Scegli un altro barbiere o una data diversa.';
+
+  @override
   String get selectTimeRequired =>
       'Seleziona una fascia oraria disponibile prima di continuare.';
 

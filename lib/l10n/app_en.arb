@@ -142,6 +142,7 @@
   "noReservationsFound": "No reservations found.",
   "retryLabel": "Retry",
   "noSlotsAvailableForSelectedDate": "No slots available for selected date.",
+  "noBarberWorkingDays": "This barber has no working days configured. Choose another barber or date.",
   "selectTimeRequired": "Please select an available time slot before continuing.",
   "slotsStillLoading": "Please wait while available times are loading.",
   "nextSlotLabel": "Next slot",

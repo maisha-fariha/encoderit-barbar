@@ -812,6 +812,12 @@ abstract class AppLocalizations {
   /// **'No slots available for selected date.'**
   String get noSlotsAvailableForSelectedDate;
 
+  /// No description provided for @noBarberWorkingDays.
+  ///
+  /// In en, this message translates to:
+  /// **'This barber has no working days configured. Choose another barber or date.'**
+  String get noBarberWorkingDays;
+
   /// No description provided for @selectTimeRequired.
   ///
   /// In en, this message translates to:

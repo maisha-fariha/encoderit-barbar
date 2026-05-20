@@ -13,6 +13,7 @@ import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/availability_slot_model.dart';
 import '../models/appointment/appointment_model.dart';
 import '../models/appointment/recurring_preview_model.dart';
+import '../models/barber/barber_model.dart';
 import '../models/shop/shop_model.dart';
 import '../repositories/availability_repository.dart';
 import '../repositories/appointment_repository.dart';
@@ -52,8 +53,70 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   late final ServiceListController _serviceController;
   late final BarberListController _barberController;
 
-  bool get _hasAvailableSlots =>
-      _slots.any((slot) => slot.available && slot.time.trim().isNotEmpty);
+  BarberModel? get _selectedBarberModel {
+    final list = _barberController.items;
+    if (list.isEmpty ||
+        _selectedBarber < 0 ||
+        _selectedBarber >= list.length) {
+      return null;
+    }
+    return list[_selectedBarber];
+  }
+
+  bool get _hasBarberWorkingSchedule {
+    final barber = _selectedBarberModel;
+    return barber != null && barber.workingDayOfWeekValues.isNotEmpty;
+  }
+
+  bool _isBarberWorkingDay(DateTime date) {
+    final day = DateTime(date.year, date.month, date.day);
+    if (day.isBefore(_today())) return false;
+    final barber = _selectedBarberModel;
+    if (barber == null) return false;
+    return barber.isWorkingDay(day);
+  }
+
+  static int _minutesFromClock(String raw) {
+    final parts = raw.trim().split(':');
+    if (parts.isEmpty) return 0;
+    final h = int.tryParse(parts.first) ?? 0;
+    final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+    return h * 60 + m;
+  }
+
+  static bool _isClockTimeWithinRange(
+    String time,
+    String start,
+    String end,
+  ) {
+    final t = _minutesFromClock(time);
+    final s = _minutesFromClock(start);
+    final e = _minutesFromClock(end);
+    return t >= s && t <= e;
+  }
+
+  bool _isSlotSelectable(AvailabilitySlot slot) {
+    if (!slot.available || slot.time.trim().isEmpty) return false;
+    final hour = _selectedBarberModel?.workingHourForDate(_selectedDate);
+    if (hour == null) return false;
+    return _isClockTimeWithinRange(slot.time, hour.startTime, hour.endTime);
+  }
+
+  bool get _hasAvailableSlots => _slots.any(_isSlotSelectable);
+
+  void _alignSelectedDateToNextWorkingDay() {
+    final barber = _selectedBarberModel;
+    if (barber == null || barber.workingDayOfWeekValues.isEmpty) return;
+    if (_isBarberWorkingDay(_selectedDate)) return;
+
+    for (int offset = 0; offset < 370; offset++) {
+      final candidate = _today().add(Duration(days: offset));
+      if (barber.isWorkingDay(candidate)) {
+        _selectedDate = candidate;
+        return;
+      }
+    }
+  }
 
   String? get _selectedSlotTime {
     if (_selectedTime < 0 || _selectedTime >= _slots.length) return null;
@@ -196,6 +259,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       return;
     }
 
+    if (!_isBarberWorkingDay(_selectedDate)) {
+      setState(() {
+        _slots = const <AvailabilitySlot>[];
+        _selectedTime = -1;
+        _slotsErrorMessage = '';
+        _isLoadingSlots = false;
+      });
+      return;
+    }
+
     if (showLoading) {
       setState(() {
         _isLoadingSlots = true;
@@ -217,9 +290,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         int index = _selectedTime;
         final invalid = index < 0 ||
             index >= slots.length ||
-            (index >= 0 && index < slots.length && !slots[index].available);
+            (index >= 0 && index < slots.length && !_isSlotSelectable(slots[index]));
         if (invalid) {
-          index = slots.indexWhere((e) => e.available);
+          index = slots.indexWhere(_isSlotSelectable);
         }
         setState(() {
           _slots = slots;
@@ -569,6 +642,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         _step = 4;
         _selectedTime = -1;
         _selectedDate = _today();
+        _alignSelectedDateToNextWorkingDay();
         _recurringEnabled = true;
         _recurringIndex = -1;
         _howManyBookings = 0;
@@ -585,6 +659,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     }
     if (_step == 4) {
       final l10n = AppLocalizations.of(context)!;
+
+      if (!_hasBarberWorkingSchedule) {
+        _showPageMessage(l10n.noBarberWorkingDays);
+        return;
+      }
+
+      if (!_isBarberWorkingDay(_selectedDate)) {
+        _showPageMessage(l10n.noBarberWorkingDays);
+        return;
+      }
 
       if (_isLoadingSlots) {
         _showPageMessage(l10n.slotsStillLoading);
@@ -759,17 +843,28 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return '$dow, $mon $day';
   }
 
+  /// First selectable working day for the picker, or [fallback] if none found.
+  DateTime _initialDateForPicker({required DateTime fallback}) {
+    if (_isBarberWorkingDay(_selectedDate)) return _selectedDate;
+    final barber = _selectedBarberModel;
+    if (barber == null) return fallback;
+    for (int offset = 0; offset < 370; offset++) {
+      final candidate = _today().add(Duration(days: offset));
+      if (barber.isWorkingDay(candidate)) return candidate;
+    }
+    return fallback;
+  }
+
+  /// Opens the month calendar. The header icon is always tappable; only working
+  /// weekdays are selectable inside the dialog.
   Future<void> _pickStep3Date() async {
-    final initial = _selectedDate;
+    final initial = _initialDateForPicker(fallback: _selectedDate);
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
       firstDate: DateTime(2020, 1, 1),
       lastDate: DateTime(2035, 12, 31),
-      selectableDayPredicate: (d) {
-        final day = DateTime(d.year, d.month, d.day);
-        return !day.isBefore(_today());
-      },
+      selectableDayPredicate: (d) => _isBarberWorkingDay(d),
       builder: (context, child) {
         final base = Theme.of(context);
         const surface = Color(0xFF242424);
@@ -817,7 +912,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
               ),
               todayForegroundColor: const WidgetStatePropertyAll(onSurface),
               todayBorder: const BorderSide(color: primary, width: 1),
-              dayForegroundColor: const WidgetStatePropertyAll(onSurface),
+              dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return const Color(0xFF6C6C6C);
+                }
+                return onSurface;
+              }),
               dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) return primary;
                 return Colors.transparent;
@@ -846,7 +946,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       },
     );
 
-    if (picked == null) return;
+    if (picked == null || !_isBarberWorkingDay(picked)) return;
     setState(() {
       _selectedDate = picked;
       _syncRecurringDates();
@@ -1465,7 +1565,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 Localizations.localeOf(context),
                               ),
                               selectedDate: _selectedDate,
+                              isPillDayEnabled: _isBarberWorkingDay,
+                              isSlotSelectable: _isSlotSelectable,
                               onSelectDate: (d) async {
+                                if (!_isBarberWorkingDay(d)) return;
                                 setState(() {
                                   _selectedDate = d;
                                   _syncRecurringDates();
@@ -1479,6 +1582,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               slotsErrorMessage: _slotsErrorMessage,
                               onRetrySlots: _loadSlotsForSelection,
                               onSelectTime: (i) async {
+                                if (i < 0 ||
+                                    i >= _slots.length ||
+                                    !_isSlotSelectable(_slots[i])) {
+                                  return;
+                                }
                                 setState(() {
                                   _selectedTime = i;
                                   _syncRecurringDates();
@@ -2338,6 +2446,8 @@ class _Step3CalendarCard extends StatelessWidget {
   const _Step3CalendarCard({
     required this.monthLabel,
     required this.selectedDate,
+    required this.isPillDayEnabled,
+    required this.isSlotSelectable,
     required this.onSelectDate,
     required this.selectedTimeIndex,
     required this.slots,
@@ -2350,6 +2460,9 @@ class _Step3CalendarCard extends StatelessWidget {
 
   final String monthLabel;
   final DateTime selectedDate;
+  /// Enables/disables the horizontal day pills only (not the calendar icon).
+  final bool Function(DateTime date) isPillDayEnabled;
+  final bool Function(AvailabilitySlot slot) isSlotSelectable;
   final ValueChanged<DateTime> onSelectDate;
   final int selectedTimeIndex;
   final List<AvailabilitySlot> slots;
@@ -2408,14 +2521,21 @@ class _Step3CalendarCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              InkWell(
-                onTap: onTapCalendar,
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: SvgPicture.asset(
-                    'assets/icons/calendar.svg',
-                    width: 24,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTapCalendar,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: SvgPicture.asset(
+                      'assets/icons/calendar.svg',
+                      width: 24,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFFDDDDDD),
+                        BlendMode.srcIn,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -2429,8 +2549,6 @@ class _Step3CalendarCard extends StatelessWidget {
               builder: (context) {
                 final locale = Localizations.localeOf(context);
                 final days = _dayWindow(selectedDate);
-                final now = DateTime.now();
-                final today = DateTime(now.year, now.month, now.day);
                 return Row(
                   children: [
                     for (int i = 0; i < days.length; i++) ...[
@@ -2438,7 +2556,7 @@ class _Step3CalendarCard extends StatelessWidget {
                       Builder(
                         builder: (_) {
                           final d = days[i];
-                          final isSelectable = !d.isBefore(today);
+                          final isSelectable = isPillDayEnabled(d);
                           final isSelected = _sameDate(d, selectedDate);
                           return _DayChip(
                             day: _dayShort(d, locale),
@@ -2520,7 +2638,7 @@ class _Step3CalendarCard extends StatelessWidget {
                 childAspectRatio: 2.35,
               ),
               itemBuilder: (context, i) {
-                final isDisabled = !slots[i].available;
+                final isDisabled = !isSlotSelectable(slots[i]);
                 final selected = i == selectedTimeIndex;
                 final bg = isDisabled
                     ? Color(0xFF242424).withValues(alpha: 0.30)

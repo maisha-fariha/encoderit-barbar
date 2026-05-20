@@ -389,6 +389,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No slots available for selected date.';
 
   @override
+  String get noBarberWorkingDays =>
+      'This barber has no working days configured. Choose another barber or date.';
+
+  @override
   String get selectTimeRequired =>
       'Please select an available time slot before continuing.';
 
