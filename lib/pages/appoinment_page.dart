@@ -60,27 +60,11 @@ double _gridAspectRatioLikeMediumTwoColumn(
   return cellWidth / mediumCellHeight;
 }
 
-/// Typography / spacing scale inside shop & barber cards.
-double _appointmentCardContentScale(BuildContext context) {
-  if (ResponsiveHelper.isLargeDevice(context) && !isCompactScreen(context)) {
-    return 1.10;
-  }
-  return ResponsiveHelper.getResponsiveValue<double>(
-    context,
-    small: 1.0,
-    medium: 1.10,
-    large: 1.10,
-  );
-}
-
-bool _useMediumCardLayout(BuildContext context) {
-  return ResponsiveHelper.isLargeDevice(context) && !isCompactScreen(context);
-}
-
+/// ~4:5 width:height shop cards (reference design).
 double _shopGridChildAspectRatio(BuildContext context) {
   final columns = _appointmentGridCrossAxisCount(context);
-  const twoColRatio = 0.66;
-  final compactTwoCol = 0.61;
+  const twoColRatio = 0.72;
+  final compactTwoCol = 0.68;
   final referenceRatio =
       isCompactScreen(context) ? compactTwoCol : twoColRatio;
   if (columns > 2) {
@@ -93,10 +77,11 @@ double _shopGridChildAspectRatio(BuildContext context) {
   return referenceRatio;
 }
 
+/// ~4:5 width:height barber cards (reference design, aligned with shop cards).
 double _barberGridChildAspectRatio(BuildContext context) {
   final columns = _appointmentGridCrossAxisCount(context);
-  const twoColRatio = 0.70;
-  final compactTwoCol = 0.65;
+  const twoColRatio = 0.72;
+  final compactTwoCol = 0.68;
   final referenceRatio =
       isCompactScreen(context) ? compactTwoCol : twoColRatio;
   if (columns > 2) {
@@ -2341,122 +2326,130 @@ class _ShopCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  static const _radius = 32.0;
+  static const _unselectedBg = Color(0xFF262626);
+  static const _unselectedPillBg = Color(0xFF3A3A3C);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final compact = isCompactScreen(context);
-    final mediumLayout = _useMediumCardLayout(context);
-    final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
-    final title = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
-    final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
-    final scale = _appointmentCardContentScale(context);
-    final titleSize = compactOneStepSmallerFont(context, 16 * scale);
-    final addressSize = compactOneStepSmallerFont(context, 12 * scale);
-    final buttonSize = compactOneStepSmallerFont(context, 14 * scale);
-    final iconSize = compact ? 52.0 : (mediumLayout ? 56.0 : 60.0);
-    final gapAfterIcon = compact ? 12.0 : (mediumLayout ? 14.0 : 16.0);
-    final gapBeforeAction = compact ? 20.0 : (mediumLayout ? 24.0 : 30.0);
-    final selectButtonHeight = compact ? 34.0 : (mediumLayout ? 36.0 : 39.0);
-    final checkSize = compact ? 36.0 : (mediumLayout ? 38.0 : 40.0);
-    final cardPadding = compact
-        ? const EdgeInsets.fromLTRB(18, 16, 18, 12)
-        : mediumLayout
-        ? const EdgeInsets.fromLTRB(18, 18, 18, 14)
-        : const EdgeInsets.fromLTRB(18, 20, 18, 16);
+    final titleColor =
+        selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+    final addressColor =
+        selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
+    final titleSize = compactOneStepSmallerFont(context, compact ? 14 : 16);
+    final addressSize = compactOneStepSmallerFont(context, compact ? 11 : 12);
+    final selectFontSize = compactOneStepSmallerFont(context, compact ? 13 : 14);
+    final iconSize = compact ? 64.0 : 72.0;
+    final cardPadding = compact ? 16.0 : 20.0;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: cardPadding,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: Color(0xFF242424)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 4,
-              offset: const Offset(0, 0),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cellHeight = constraints.maxHeight;
+        return InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(_radius),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            height: cellHeight.isFinite ? cellHeight : null,
+            width: constraints.maxWidth,
+            padding: EdgeInsets.all(cardPadding),
+            decoration: BoxDecoration(
+              color: selected ? Colors.white : _unselectedBg,
+              borderRadius: BorderRadius.circular(_radius),
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Image.asset('assets/images/shop.png', width: iconSize),
-            SizedBox(height: gapAfterIcon),
-            Text(
-              item.name,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                color: title,
-                fontSize: titleSize,
-                fontWeight: FontWeight.w600,
-                height: compact ? 1.35 : 1.5,
-              ),
-            ),
-            SizedBox(height: compact ? 6 : 8),
-            Flexible(
-              child: Text(
-                '${item.addressLine1}\n${item.addressLine2}',
-                textAlign: TextAlign.center,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  color: sub,
-                  fontSize: addressSize,
-                  fontWeight: FontWeight.w600,
-                  height: compact ? 1.35 : 1.5,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/shop.png',
+                  width: iconSize,
+                  height: iconSize,
+                  fit: BoxFit.contain,
                 ),
-              ),
-            ),
-            SizedBox(height: gapBeforeAction),
-            if (selected)
-              Container(
-                width: checkSize,
-                height: checkSize,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEEEEE),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFDDDDDD), width: 1),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      item.name,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: titleColor,
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                      ),
+                    ),
+                    SizedBox(height: compact ? 6 : 8),
+                    Text(
+                      '${item.addressLine1}\n${item.addressLine2}',
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: addressColor,
+                        fontSize: addressSize,
+                        fontWeight: FontWeight.w500,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SvgPicture.asset(
-                    'assets/icons/checked.svg',
-                    width: compact ? 20 : 24,
-                  ),
-                ),
-              )
-            else
-              Container(
-                height: selectButtonHeight,
-                padding: EdgeInsets.symmetric(horizontal: compact ? 18 : 22),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.30),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: const Color(0xFF242424), width: 1),
-                ),
-                child: Center(
-                  child: Text(
-                    l10n.select,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF797979),
-                      fontSize: buttonSize,
-                      fontWeight: FontWeight.w600,
-                      height: compact ? 1.35 : 1.5,
+                if (selected)
+                  Container(
+                    width: compact ? 40 : 44,
+                    height: compact ? 40 : 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFD1D1D6),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/icons/checked.svg',
+                        width: compact ? 20 : 22,
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    height: compact ? 38 : 40,
+                    decoration: BoxDecoration(
+                      color: _unselectedPillBg,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      l10n.select,
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF8E8E93),
+                        fontSize: selectFontSize,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
                     ),
                   ),
-                ),
-              ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -2472,131 +2465,132 @@ class _BarberCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  static const _radius = 32.0;
+  static const _unselectedBg = Color(0xFF262626);
+  static const _unselectedPillBg = Color(0xFF3A3A3C);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final compact = isCompactScreen(context);
-    final mediumLayout = _useMediumCardLayout(context);
-    final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
-    final name = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
-    final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
-    final scale = _appointmentCardContentScale(context);
-    final nameSize = compactOneStepSmallerFont(context, 16 * scale);
-    final subtitleSize = compactOneStepSmallerFont(context, 12 * scale);
-    final buttonSize = compactOneStepSmallerFont(context, 14 * scale);
-    final avatarSize = compact ? 68.0 : (mediumLayout ? 72.0 : 80.0);
-    final avatarRadius = avatarSize / 2;
-    final gapAfterAvatar = compact ? 12.0 : (mediumLayout ? 14.0 : 16.0);
-    final checkSize = compact ? 36.0 : (mediumLayout ? 38.0 : 40.0);
-    final selectButtonHeight = compact ? 34.0 : (mediumLayout ? 36.0 : 40.0);
-    final cardPadding = compact
-        ? const EdgeInsets.fromLTRB(16, 16, 16, 12)
-        : mediumLayout
-        ? const EdgeInsets.fromLTRB(16, 18, 16, 14)
-        : const EdgeInsets.fromLTRB(16, 20, 16, 16);
+    final nameColor =
+        selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+    final subtitleColor =
+        selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
+    final nameSize = compactOneStepSmallerFont(context, compact ? 14 : 16);
+    final subtitleSize = compactOneStepSmallerFont(context, compact ? 11 : 12);
+    final selectFontSize = compactOneStepSmallerFont(context, compact ? 13 : 14);
+    final avatarSize = compact ? 72.0 : 80.0;
+    final cardPadding = compact ? 16.0 : 20.0;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: cardPadding,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Column(
-          children: [
-            Container(
-              height: avatarSize,
-              width: avatarSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  width: selected ? 2 : 0,
-                  color: const Color(0xFF242424),
-                ),
-              ),
-              child: CircleAvatar(
-                radius: avatarRadius,
-                backgroundColor: Colors.black.withValues(
-                  alpha: selected ? 0.06 : 0.10,
-                ),
-                backgroundImage: AssetImage(item.imageAsset),
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cellHeight = constraints.maxHeight;
+        return InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(_radius),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            height: cellHeight.isFinite ? cellHeight : null,
+            width: constraints.maxWidth,
+            padding: EdgeInsets.all(cardPadding),
+            decoration: BoxDecoration(
+              color: selected ? Colors.white : _unselectedBg,
+              borderRadius: BorderRadius.circular(_radius),
             ),
-            SizedBox(height: gapAfterAvatar),
-            Flexible(
-              child: Text(
-                item.name,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  color: name,
-                  fontSize: nameSize,
-                  fontWeight: FontWeight.w600,
-                  height: compact ? 1.35 : 1.5,
-                ),
-              ),
-            ),
-            SizedBox(height: compact ? 6 : 8),
-            Flexible(
-              child: Text(
-                item.subtitle,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  color: sub,
-                  fontSize: subtitleSize,
-                  fontWeight: FontWeight.w600,
-                  height: compact ? 1.15 : 1.15,
-                ),
-              ),
-            ),
-            const Spacer(),
-            if (selected)
-              Container(
-                width: checkSize,
-                height: checkSize,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEEEEE),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFDDDDDD)),
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/icons/checked.svg',
-                    width: compact ? 20 : 24,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ClipOval(
+                  child: Image.asset(
+                    item.imageAsset,
+                    width: avatarSize,
+                    height: avatarSize,
+                    fit: BoxFit.cover,
                   ),
                 ),
-              )
-            else
-              Container(
-                height: selectButtonHeight,
-                padding: EdgeInsets.symmetric(horizontal: compact ? 18 : 22),
-                decoration: BoxDecoration(
-                  color: Color(0xFF000000).withValues(alpha: 0.30),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: const Color(0xFF242424), width: 1),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      item.name,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: nameColor,
+                        fontSize: nameSize,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                      ),
+                    ),
+                    SizedBox(height: compact ? 6 : 8),
+                    Text(
+                      item.subtitle,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        color: subtitleColor,
+                        fontSize: subtitleSize,
+                        fontWeight: FontWeight.w500,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Center(
-                  child: Text(
-                    l10n.select,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF797979),
-                      fontSize: buttonSize,
-                      fontWeight: FontWeight.w600,
-                      height: compact ? 1.35 : 1.5,
+                if (selected)
+                  Container(
+                    width: compact ? 40 : 44,
+                    height: compact ? 40 : 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFFD1D1D6),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/icons/checked.svg',
+                        width: compact ? 20 : 22,
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    height: compact ? 38 : 40,
+                    decoration: BoxDecoration(
+                      color: _unselectedPillBg,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      l10n.select,
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF8E8E93),
+                        fontSize: selectFontSize,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
                     ),
                   ),
-                ),
-              ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
