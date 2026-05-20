@@ -43,16 +43,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   List<RecurringPreviewDateItem> _previewItems = const <RecurringPreviewDateItem>[];
   final Set<String> _waitlistedOriginalDates = <String>{};
 
-  static bool _isBlockedWeekday(DateTime d) =>
-      d.weekday == DateTime.wednesday || d.weekday == DateTime.friday;
-
   static DateTime _today() {
     final n = DateTime.now();
-    var d = DateTime(n.year, n.month, n.day);
-    while (_isBlockedWeekday(d)) {
-      d = d.add(const Duration(days: 1));
-    }
-    return d;
+    return DateTime(n.year, n.month, n.day);
   }
   late final ShopListController _shopController;
   late final ServiceListController _serviceController;
@@ -766,7 +759,10 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       initialDate: initial,
       firstDate: DateTime(2020, 1, 1),
       lastDate: DateTime(2035, 12, 31),
-      selectableDayPredicate: (d) => !_isBlockedWeekday(d),
+      selectableDayPredicate: (d) {
+        final day = DateTime(d.year, d.month, d.day);
+        return !day.isBefore(_today());
+      },
       builder: (context, child) {
         final base = Theme.of(context);
         const surface = Color(0xFF242424);
@@ -2435,11 +2431,7 @@ class _Step3CalendarCard extends StatelessWidget {
                       Builder(
                         builder: (_) {
                           final d = days[i];
-                          final isBlockedDow =
-                              d.weekday == DateTime.wednesday ||
-                                  d.weekday == DateTime.friday;
-                          final isSelectable =
-                              !d.isBefore(today) && !isBlockedDow;
+                          final isSelectable = !d.isBefore(today);
                           final isSelected = _sameDate(d, selectedDate);
                           return _DayChip(
                             day: _dayShort(d, locale),
