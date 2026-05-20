@@ -10,6 +10,7 @@ import '../models/appointment/appointment_model.dart';
 
 import '../routes/app_pages.dart';
 import '../utils/api_date_time_format.dart';
+import '../utils/compact_screen_utils.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
 
 class ReservationListPage extends StatefulWidget {
@@ -741,6 +742,10 @@ class _ReservationCard extends StatelessWidget {
       _ReservationMode.cancelled => l10n.cancelled,
     };
     final showDelete = mode == _ReservationMode.booked;
+    final compact = isCompactScreen(context);
+    final chipGap = compact ? 6.0 : 8.0;
+    final actionGap = compact ? 8.0 : 12.0;
+    final deleteSize = compact ? 32.0 : 36.0;
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFFFFFFFF).withValues(alpha: 0.15),
@@ -817,51 +822,64 @@ class _ReservationCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+            padding: EdgeInsets.fromLTRB(15, 15, 15, compact ? 12 : 15),
             child: Row(
               children: [
-                _SmallChip(label: statusLabel),
-                const Spacer(),
-                if (item.recurring)
-                  InkWell(
-                    onTap: onTap,
-                    borderRadius: BorderRadius.circular(18),
-                    child: _SmallChip(
-                      label: AppLocalizations.of(context)!.recurring,
-                      trailing: Icon(
-                        expanded
-                            ? Icons.keyboard_arrow_up_rounded
-                            : Icons.keyboard_arrow_down_rounded,
-                        size: 18,
-                        color: const Color(0xFF797979),
-                      ),
-                    ),
-                  ),
-                const SizedBox(width: 12),
-                if (showDelete)
-                  Padding(
-                    padding: const EdgeInsets.all(5.0),
-                    child: InkWell(
-                      onTap: onDelete,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        height: 36,
-                        width: 36,
-                        decoration: BoxDecoration(
-                          color: Color(0xFFEF4444),
-                          borderRadius: BorderRadius.circular(10),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: _SmallChip(
+                          label: statusLabel,
+                          compact: compact,
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: SvgPicture.asset(
-                            'assets/icons/delete.svg',
-                            width: 20,
-                            height: 20,
+                      ),
+                      if (item.recurring) ...[
+                        SizedBox(width: chipGap),
+                        Flexible(
+                          child: InkWell(
+                            onTap: onTap,
+                            borderRadius: BorderRadius.circular(18),
+                            child: _SmallChip(
+                              label: l10n.recurring,
+                              compact: compact,
+                              trailing: Icon(
+                                expanded
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                size: compact ? 16 : 18,
+                                color: const Color(0xFF797979),
+                              ),
+                            ),
                           ),
                         ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (showDelete) ...[
+                  SizedBox(width: actionGap),
+                  InkWell(
+                    onTap: onDelete,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      height: deleteSize,
+                      width: deleteSize,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(compact ? 6 : 8),
+                        child: SvgPicture.asset(
+                          'assets/icons/delete.svg',
+                          width: compact ? 18 : 20,
+                          height: compact ? 18 : 20,
+                        ),
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ),
@@ -936,32 +954,49 @@ class _ReservaTime extends StatelessWidget {
 }
 
 class _SmallChip extends StatelessWidget {
-  const _SmallChip({required this.label, this.trailing});
+  const _SmallChip({
+    required this.label,
+    this.trailing,
+    this.compact = false,
+  });
 
   final String label;
   final Widget? trailing;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final fontSize = compactOneStepSmallerFont(context, compact ? 11 : 12);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 15,
+        vertical: compact ? 4 : 5,
+      ),
       decoration: BoxDecoration(
         color: Color(0xFF797979).withValues(alpha: 0.20),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Color(0xFF797979)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: const Color(0xFFFFFFFF),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              height: 1.5,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                color: const Color(0xFFFFFFFF),
+                fontSize: fontSize,
+                fontWeight: FontWeight.w600,
+                height: compact ? 1.35 : 1.5,
+              ),
             ),
           ),
-          if (trailing != null) ...[const SizedBox(width: 6), trailing!],
+          if (trailing != null) ...[
+            SizedBox(width: compact ? 4 : 6),
+            trailing!,
+          ],
         ],
       ),
     );

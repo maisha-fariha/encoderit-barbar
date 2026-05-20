@@ -21,7 +21,93 @@ import '../repositories/availability_repository.dart';
 import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
+import '../utils/compact_screen_utils.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
+
+int _appointmentGridCrossAxisCount(BuildContext context) {
+  return ResponsiveHelper.getResponsiveValue<int>(
+    context,
+    small: 2,
+    medium: 2,
+    large: 4,
+  );
+}
+
+/// Reference width for a medium 2-column grid (tablet portrait).
+const double _kMediumGridReferenceWidth = 600;
+const double _kMediumGridHorizontalPadding = 18;
+
+/// Large screens: 4 columns, cell height capped to medium 2-column size.
+double _gridAspectRatioLikeMediumTwoColumn(
+  BuildContext context, {
+  required int crossAxisCount,
+  required double twoColumnAspectRatio,
+}) {
+  const spacing = 16.0;
+  const refColumns = 2;
+  final mediumGridWidth =
+      _kMediumGridReferenceWidth - 2 * _kMediumGridHorizontalPadding;
+  final mediumCellWidth =
+      (mediumGridWidth - spacing * (refColumns - 1)) / refColumns;
+  final mediumCellHeight = mediumCellWidth / twoColumnAspectRatio;
+
+  final screenWidth = MediaQuery.sizeOf(context).width;
+  final hPad = screenWidth >= 600 ? 28.0 : 18.0;
+  final gridWidth = screenWidth - 2 * hPad;
+  final cellWidth =
+      (gridWidth - spacing * (crossAxisCount - 1)) / crossAxisCount;
+
+  return cellWidth / mediumCellHeight;
+}
+
+/// Typography / spacing scale inside shop & barber cards.
+double _appointmentCardContentScale(BuildContext context) {
+  if (ResponsiveHelper.isLargeDevice(context) && !isCompactScreen(context)) {
+    return 1.10;
+  }
+  return ResponsiveHelper.getResponsiveValue<double>(
+    context,
+    small: 1.0,
+    medium: 1.10,
+    large: 1.10,
+  );
+}
+
+bool _useMediumCardLayout(BuildContext context) {
+  return ResponsiveHelper.isLargeDevice(context) && !isCompactScreen(context);
+}
+
+double _shopGridChildAspectRatio(BuildContext context) {
+  final columns = _appointmentGridCrossAxisCount(context);
+  const twoColRatio = 0.66;
+  final compactTwoCol = 0.61;
+  final referenceRatio =
+      isCompactScreen(context) ? compactTwoCol : twoColRatio;
+  if (columns > 2) {
+    return _gridAspectRatioLikeMediumTwoColumn(
+      context,
+      crossAxisCount: columns,
+      twoColumnAspectRatio: referenceRatio,
+    );
+  }
+  return referenceRatio;
+}
+
+double _barberGridChildAspectRatio(BuildContext context) {
+  final columns = _appointmentGridCrossAxisCount(context);
+  const twoColRatio = 0.70;
+  final compactTwoCol = 0.65;
+  final referenceRatio =
+      isCompactScreen(context) ? compactTwoCol : twoColRatio;
+  if (columns > 2) {
+    return _gridAspectRatioLikeMediumTwoColumn(
+      context,
+      crossAxisCount: columns,
+      twoColumnAspectRatio: referenceRatio,
+    );
+  }
+  return referenceRatio;
+}
 
 class AppoinmentPage extends StatefulWidget {
   const AppoinmentPage({super.key});
@@ -1433,17 +1519,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount:
-                                      ResponsiveHelper.getResponsiveValue<int>(
-                                        context,
-                                        small: 2,
-                                        large: 3,
-                                      ),
+                                      _appointmentGridCrossAxisCount(context),
                                   mainAxisSpacing: 16,
                                   crossAxisSpacing: 16,
                                   childAspectRatio:
-                                      ResponsiveHelper.getResponsiveValue<
-                                        double
-                                      >(context, small: 0.66, large: 0.86),
+                                      _shopGridChildAspectRatio(context),
                                 ),
                             itemCount: controller.items.length,
                             itemBuilder: (context, i) {
@@ -1602,17 +1682,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount:
-                                      ResponsiveHelper.getResponsiveValue<int>(
-                                        context,
-                                        small: 2,
-                                        large: 3,
-                                      ),
+                                      _appointmentGridCrossAxisCount(context),
                                   mainAxisSpacing: 16,
                                   crossAxisSpacing: 16,
                                   childAspectRatio:
-                                      ResponsiveHelper.getResponsiveValue<
-                                        double
-                                      >(context, small: 0.70, large: 0.88),
+                                      _barberGridChildAspectRatio(context),
                                 ),
                             itemCount: _barbers.length,
                             itemBuilder: (context, i) {
@@ -2270,15 +2344,25 @@ class _ShopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final compact = isCompactScreen(context);
+    final mediumLayout = _useMediumCardLayout(context);
     final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
     final title = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
     final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
-    final scale = ResponsiveHelper.getResponsiveValue<double>(
-      context,
-      small: 1.0,
-      medium: 1.10,
-      large: 1.18,
-    );
+    final scale = _appointmentCardContentScale(context);
+    final titleSize = compactOneStepSmallerFont(context, 16 * scale);
+    final addressSize = compactOneStepSmallerFont(context, 12 * scale);
+    final buttonSize = compactOneStepSmallerFont(context, 14 * scale);
+    final iconSize = compact ? 52.0 : (mediumLayout ? 56.0 : 60.0);
+    final gapAfterIcon = compact ? 12.0 : (mediumLayout ? 14.0 : 16.0);
+    final gapBeforeAction = compact ? 20.0 : (mediumLayout ? 24.0 : 30.0);
+    final selectButtonHeight = compact ? 34.0 : (mediumLayout ? 36.0 : 39.0);
+    final checkSize = compact ? 36.0 : (mediumLayout ? 38.0 : 40.0);
+    final cardPadding = compact
+        ? const EdgeInsets.fromLTRB(18, 16, 18, 12)
+        : mediumLayout
+        ? const EdgeInsets.fromLTRB(18, 18, 18, 14)
+        : const EdgeInsets.fromLTRB(18, 20, 18, 16);
 
     return InkWell(
       onTap: onTap,
@@ -2286,7 +2370,7 @@ class _ShopCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+        padding: cardPadding,
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(30),
@@ -2302,8 +2386,8 @@ class _ShopCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Image.asset('assets/images/shop.png', width: 60),
-            const SizedBox(height: 16),
+            Image.asset('assets/images/shop.png', width: iconSize),
+            SizedBox(height: gapAfterIcon),
             Text(
               item.name,
               textAlign: TextAlign.center,
@@ -2311,12 +2395,12 @@ class _ShopCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
                 color: title,
-                fontSize: 16 * scale,
+                fontSize: titleSize,
                 fontWeight: FontWeight.w600,
-                height: 1.5,
+                height: compact ? 1.35 : 1.5,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: compact ? 6 : 8),
             Flexible(
               child: Text(
                 '${item.addressLine1}\n${item.addressLine2}',
@@ -2325,17 +2409,17 @@ class _ShopCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                   color: sub,
-                  fontSize: 12 * scale,
+                  fontSize: addressSize,
                   fontWeight: FontWeight.w600,
-                  height: 1.5,
+                  height: compact ? 1.35 : 1.5,
                 ),
               ),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: gapBeforeAction),
             if (selected)
               Container(
-                width: 40,
-                height: 40,
+                width: checkSize,
+                height: checkSize,
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEEEEE),
                   shape: BoxShape.circle,
@@ -2345,14 +2429,14 @@ class _ShopCard extends StatelessWidget {
                   padding: const EdgeInsets.all(8.0),
                   child: SvgPicture.asset(
                     'assets/icons/checked.svg',
-                    width: 24,
+                    width: compact ? 20 : 24,
                   ),
                 ),
               )
             else
               Container(
-                height: 39,
-                padding: const EdgeInsets.symmetric(horizontal: 22),
+                height: selectButtonHeight,
+                padding: EdgeInsets.symmetric(horizontal: compact ? 18 : 22),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.30),
                   borderRadius: BorderRadius.circular(15),
@@ -2363,9 +2447,9 @@ class _ShopCard extends StatelessWidget {
                     l10n.select,
                     style: GoogleFonts.inter(
                       color: const Color(0xFF797979),
-                      fontSize: 14 * scale,
+                      fontSize: buttonSize,
                       fontWeight: FontWeight.w600,
-                      height: 1.5,
+                      height: compact ? 1.35 : 1.5,
                     ),
                   ),
                 ),
@@ -2391,22 +2475,33 @@ class _BarberCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final compact = isCompactScreen(context);
+    final mediumLayout = _useMediumCardLayout(context);
     final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
     final name = selected ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
     final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
-    final scale = ResponsiveHelper.getResponsiveValue<double>(
-      context,
-      small: 1.0,
-      medium: 1.10,
-      large: 1.18,
-    );
+    final scale = _appointmentCardContentScale(context);
+    final nameSize = compactOneStepSmallerFont(context, 16 * scale);
+    final subtitleSize = compactOneStepSmallerFont(context, 12 * scale);
+    final buttonSize = compactOneStepSmallerFont(context, 14 * scale);
+    final avatarSize = compact ? 68.0 : (mediumLayout ? 72.0 : 80.0);
+    final avatarRadius = avatarSize / 2;
+    final gapAfterAvatar = compact ? 12.0 : (mediumLayout ? 14.0 : 16.0);
+    final checkSize = compact ? 36.0 : (mediumLayout ? 38.0 : 40.0);
+    final selectButtonHeight = compact ? 34.0 : (mediumLayout ? 36.0 : 40.0);
+    final cardPadding = compact
+        ? const EdgeInsets.fromLTRB(16, 16, 16, 12)
+        : mediumLayout
+        ? const EdgeInsets.fromLTRB(16, 18, 16, 14)
+        : const EdgeInsets.fromLTRB(16, 20, 16, 16);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(30),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+        padding: cardPadding,
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(30),
@@ -2414,8 +2509,8 @@ class _BarberCard extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              height: 80,
-              width: 80,
+              height: avatarSize,
+              width: avatarSize,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
@@ -2424,14 +2519,14 @@ class _BarberCard extends StatelessWidget {
                 ),
               ),
               child: CircleAvatar(
-                radius: 40,
+                radius: avatarRadius,
                 backgroundColor: Colors.black.withValues(
                   alpha: selected ? 0.06 : 0.10,
                 ),
                 backgroundImage: AssetImage(item.imageAsset),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: gapAfterAvatar),
             Flexible(
               child: Text(
                 item.name,
@@ -2440,13 +2535,13 @@ class _BarberCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                   color: name,
-                  fontSize: 16 * scale,
+                  fontSize: nameSize,
                   fontWeight: FontWeight.w600,
-                  height: 1.5,
+                  height: compact ? 1.35 : 1.5,
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: compact ? 6 : 8),
             Flexible(
               child: Text(
                 item.subtitle,
@@ -2455,17 +2550,17 @@ class _BarberCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
                   color: sub,
-                  fontSize: 12 * scale,
+                  fontSize: subtitleSize,
                   fontWeight: FontWeight.w600,
-                  height: 1.15,
+                  height: compact ? 1.15 : 1.15,
                 ),
               ),
             ),
             const Spacer(),
             if (selected)
               Container(
-                width: 40,
-                height: 40,
+                width: checkSize,
+                height: checkSize,
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEEEEE),
                   shape: BoxShape.circle,
@@ -2474,14 +2569,14 @@ class _BarberCard extends StatelessWidget {
                 child: Center(
                   child: SvgPicture.asset(
                     'assets/icons/checked.svg',
-                    width: 24,
+                    width: compact ? 20 : 24,
                   ),
                 ),
               )
             else
               Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 22),
+                height: selectButtonHeight,
+                padding: EdgeInsets.symmetric(horizontal: compact ? 18 : 22),
                 decoration: BoxDecoration(
                   color: Color(0xFF000000).withValues(alpha: 0.30),
                   borderRadius: BorderRadius.circular(15),
@@ -2492,9 +2587,9 @@ class _BarberCard extends StatelessWidget {
                     l10n.select,
                     style: GoogleFonts.inter(
                       color: const Color(0xFF797979),
-                      fontSize: 14 * scale,
+                      fontSize: buttonSize,
                       fontWeight: FontWeight.w600,
-                      height: 1.5,
+                      height: compact ? 1.35 : 1.5,
                     ),
                   ),
                 ),
