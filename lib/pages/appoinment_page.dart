@@ -933,7 +933,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: primary,
+                foregroundColor: Colors.white,
+                disabledForegroundColor: Colors.white.withValues(alpha: 0.38),
                 textStyle: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
