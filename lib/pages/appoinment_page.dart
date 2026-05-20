@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_responsive/gems_responsive.dart';
@@ -31,10 +33,10 @@ class AppoinmentPage extends StatefulWidget {
 class _AppoinmentPageState extends State<AppoinmentPage> {
   int _step = 1;
   int _selectedService = 0;
-  int _selectedBarber = 0;
+  int _selectedBarber = -1;
   int _selectedTime = -1;
   DateTime _selectedDate = _today();
-  bool _recurringEnabled = true;
+  bool _recurringEnabled = false;
   int _recurringIndex = -1; // -1 = nothing selected; otherwise 0..3
   int _howManyBookings = 0; // 0 = nothing selected; otherwise 1..52
   List<AvailabilitySlot> _slots = const <AvailabilitySlot>[];
@@ -268,7 +270,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       _selectedService = 0;
     }
     _barberController.items.clear();
-    _selectedBarber = 0;
+    _selectedBarber = -1;
   }
 
   Future<void> _loadBarbersForSelection() async {
@@ -285,7 +287,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       serviceId: serviceId,
     );
     if (_selectedBarber >= _barberController.items.length) {
-      _selectedBarber = 0;
+      _selectedBarber = -1;
     }
   }
 
@@ -649,6 +651,47 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     _showErrorMessage(errMsg);
   }
 
+  /// Step 4 entry after a specific barber is chosen (grid tap or random).
+  Future<void> _enterStep4WithBarber(int barberIndex) async {
+    if (_barberController.items.isEmpty) {
+      _showPageMessage('No barbers available');
+      return;
+    }
+    final index = barberIndex.clamp(0, _barberController.items.length - 1);
+
+    setState(() {
+      _selectedBarber = index;
+      _step = 4;
+      _selectedTime = -1;
+      _selectedDate = _today();
+      _alignSelectedDateToNextWorkingDay();
+      _recurringEnabled = false;
+      _recurringIndex = -1;
+      _howManyBookings = 0;
+      _slots = const <AvailabilitySlot>[];
+      _slotsErrorMessage = '';
+      _isLoadingSlots = true;
+      _previewItems = const <RecurringPreviewDateItem>[];
+      _waitlistedOriginalDates.clear();
+      _previewErrorMessage = '';
+      _isLoadingPreview = false;
+    });
+    await _loadSlotsForSelection(showLoading: false);
+    await _selectNextDateWithAvailableSlots();
+    _scheduleStep4WorkingDayAlignment();
+  }
+
+  /// "Someone available" — pick a random barber from the loaded list, then step 4.
+  Future<void> _onSomeoneAvailableTap() async {
+    final items = _barberController.items;
+    if (items.isEmpty) {
+      _showPageMessage('No barbers available');
+      return;
+    }
+    final index = Random().nextInt(items.length);
+    await _enterStep4WithBarber(index);
+  }
+
   Future<void> _onContinue() async {
     if (_step == 1) {
       if (_shopController.items.isEmpty) {
@@ -678,34 +721,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       }
       setState(() {
         _step = 3;
-        _selectedBarber = 0;
+        _selectedBarber = -1;
       });
       return;
     }
     if (_step == 3) {
-      if (_barberController.items.isEmpty) {
-        _showPageMessage('No barbers available');
-        return;
-      }
-      setState(() {
-        _step = 4;
-        _selectedTime = -1;
-        _selectedDate = _today();
-        _alignSelectedDateToNextWorkingDay();
-        _recurringEnabled = true;
-        _recurringIndex = -1;
-        _howManyBookings = 0;
-        _slots = const <AvailabilitySlot>[];
-        _slotsErrorMessage = '';
-        _isLoadingSlots = true;
-        _previewItems = const <RecurringPreviewDateItem>[];
-        _waitlistedOriginalDates.clear();
-        _previewErrorMessage = '';
-        _isLoadingPreview = false;
-      });
-      await _loadSlotsForSelection(showLoading: false);
-      await _selectNextDateWithAvailableSlots();
-      _scheduleStep4WorkingDayAlignment();
+      await _onSomeoneAvailableTap();
       return;
     }
     if (_step == 4) {
@@ -1597,8 +1618,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               return _BarberCard(
                                 item: item,
                                 selected: selected,
-                                onTap: () =>
-                                    setState(() => _selectedBarber = i),
+                                onTap: () => _enterStep4WithBarber(i),
                               );
                             },
                           );
@@ -1872,7 +1892,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(32),
-                              onTap: _step == 5 ? _showConfirmDialog : _onContinue,
+                              onTap: _step == 5
+                                  ? _showConfirmDialog
+                                  : _step == 3
+                                  ? _onSomeoneAvailableTap
+                                  : _onContinue,
                               child: Center(
                                 child: Text(
                                   _step == 3
