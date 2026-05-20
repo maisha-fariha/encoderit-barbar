@@ -782,10 +782,13 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   void _onBack() {
     if (_step <= 1) return;
-    if (_step == 4) {
-      _pendingStep4WorkingDayAlign = false;
-    }
-    setState(() => _step -= 1);
+    setState(() {
+      if (_step == 4) {
+        _pendingStep4WorkingDayAlign = false;
+        _selectedBarber = -1;
+      }
+      _step -= 1;
+    });
   }
 
   String _monthLabel(DateTime date, Locale locale) {
