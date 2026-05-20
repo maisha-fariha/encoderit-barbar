@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:gems_core/gems_core.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
+import 'package:get/get.dart';
 
+import '../controllers/appointment_ui_refresh_controller.dart';
 import '../models/appointment/appointment_model.dart';
 import '../models/appointment/recurring_preview_model.dart';
 import '../utils/api_endpoints.dart';
@@ -391,9 +393,10 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
   Future<Result<AppointmentPageResult>> getPage(
     int page, {
     bool useCache = true,
+    bool forceNetwork = false,
   }) async {
     try {
-      if (useCache && page == 1) {
+      if (useCache && !forceNetwork && page == 1) {
         final cached = _readCache();
         if (cached != null) {
           _refreshInBackground();
@@ -438,6 +441,19 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
         ApiError(message: response.message ?? 'Failed to fetch appointments'),
       );
     } catch (e, stackTrace) {
+      if (useCache && page == 1) {
+        final cached = _readCache();
+        if (cached != null) {
+          return Result.success(
+            AppointmentPageResult(
+              items: cached,
+              currentPage: 1,
+              lastPage: 1,
+              total: cached.length,
+            ),
+          );
+        }
+      }
       return Result.failure(NetworkError.fromException(e, stackTrace));
     }
   }
@@ -478,8 +494,15 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
       );
       if (response.success && response.data != null) {
         await _saveCache(_parsePage(response.data).items);
+        _notifyAppointmentsCacheUpdated();
       }
     } catch (_) {}
+  }
+
+  void _notifyAppointmentsCacheUpdated() {
+    if (Get.isRegistered<AppointmentUiRefreshController>()) {
+      Get.find<AppointmentUiRefreshController>().notifyAppointmentsChanged();
+    }
   }
 
   List<AppointmentModel>? _readCache() {

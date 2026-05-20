@@ -4,6 +4,7 @@ import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../controllers/appointment_ui_refresh_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/appointment_model.dart';
@@ -26,6 +27,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
   int _navIndex = 1; // Prenotazione selected
   late final ReservationListController _controller;
   late final ScrollController _scrollController;
+  Worker? _appointmentRefreshWorker;
 
   @override
   void initState() {
@@ -33,10 +35,21 @@ class _ReservationListPageState extends State<ReservationListPage> {
     _controller = Get.find<ReservationListController>();
     _scrollController = ScrollController()..addListener(_onListScroll);
     _controller.loadItems();
+    if (Get.isRegistered<AppointmentUiRefreshController>()) {
+      _appointmentRefreshWorker = ever(
+        Get.find<AppointmentUiRefreshController>().revision,
+        (_) {
+          if (mounted) {
+            _controller.reloadItemsFromNetwork();
+          }
+        },
+      );
+    }
   }
 
   @override
   void dispose() {
+    _appointmentRefreshWorker?.dispose();
     _scrollController.removeListener(_onListScroll);
     _scrollController.dispose();
     super.dispose();

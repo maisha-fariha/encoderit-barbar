@@ -135,16 +135,11 @@ class _HomePageState extends State<HomePage> {
       _upcomingError = '';
     });
     final repository = AppServices.getIt<AppointmentRepository>();
-    final totalResult = await repository.getPage(1, useCache: false);
-    if (!mounted) return;
-    totalResult.when(
-      success: (page) => _totalAppointmentsCount = page.total,
-      failure: (_) => _totalAppointmentsCount = 0,
-    );
-    final result = await repository.getPage(1, useCache: false);
+    final result = await repository.getPage(1, forceNetwork: true);
     if (!mounted) return;
     result.when(
       success: (page) {
+        _totalAppointmentsCount = page.total;
         final items = page.items
             .where((item) => _normalizeStatus(item.status) == 'booked')
             .toList(growable: false);
@@ -165,6 +160,7 @@ class _HomePageState extends State<HomePage> {
           _upcomingError = error.message;
           _isLoadingUpcoming = false;
           _expandedIndex = -1;
+          _totalAppointmentsCount = 0;
         });
       },
     );

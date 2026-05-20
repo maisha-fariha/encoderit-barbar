@@ -15,24 +15,31 @@ class ReservationListController extends BaseListController<AppointmentModel>
   bool hasMore = true;
   int currentPage = 1;
 
+  void _applyPage(AppointmentPageResult page) {
+    items
+      ..clear()
+      ..addAll(page.items);
+    currentPage = page.currentPage;
+    hasMore = page.currentPage < page.lastPage;
+  }
+
+  /// Loads page 1 from the network; falls back to cache when offline.
+  Future<void> _fetchFirstPageFromNetwork() async {
+    final result = await repository.getPage(1, forceNetwork: true);
+    result.when(
+      success: _applyPage,
+      failure: (error) => setError(error.message),
+    );
+  }
+
   @override
   Future<void> loadItems() async {
-    items.clear();
     hasMore = true;
     currentPage = 1;
-    setLoading(true);
+    setLoading(items.isEmpty);
     setError('');
     try {
-      final result = await repository.getPage(1, useCache: false);
-      result.when(
-        success: (page) {
-          items.clear();
-          items.addAll(page.items);
-          currentPage = page.currentPage;
-          hasMore = page.currentPage < page.lastPage;
-        },
-        failure: (error) => setError(error.message),
-      );
+      await _fetchFirstPageFromNetwork();
     } finally {
       setLoading(false);
     }
@@ -45,17 +52,7 @@ class ReservationListController extends BaseListController<AppointmentModel>
   Future<void> reloadItemsFromNetwork() async {
     setError('');
     try {
-      final result = await repository.getPage(1, useCache: false);
-      result.when(
-        success: (page) {
-          items
-            ..clear()
-            ..addAll(page.items);
-          currentPage = page.currentPage;
-          hasMore = page.currentPage < page.lastPage;
-        },
-        failure: (error) => setError(error.message),
-      );
+      await _fetchFirstPageFromNetwork();
     } finally {
       update(['reservation-list']);
     }
