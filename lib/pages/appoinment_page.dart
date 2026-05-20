@@ -18,6 +18,7 @@ import '../repositories/availability_repository.dart';
 import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
+import '../widgets/delete_appointment_confirm_dialog.dart';
 
 class AppoinmentPage extends StatefulWidget {
   const AppoinmentPage({super.key});
@@ -687,6 +688,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   void _syncRecurringDates() {
     // Recurring dates are now provided by the preview API.
+  }
+
+  Future<void> _confirmRemoveRecurringDateAt(int index) async {
+    final confirmed = await showDeleteAppointmentConfirmDialog(context);
+    if (confirmed != true || !mounted) return;
+    _removeRecurringDateAt(index);
   }
 
   void _removeRecurringDateAt(int index) {
@@ -1543,7 +1550,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                       errorMessage: _previewErrorMessage,
                                       onRetry: _loadRecurringPreview,
                                       selectedBarberName: _selectedBarberName,
-                                      onRemoveAt: _removeRecurringDateAt,
+                                      onRemoveAt: _confirmRemoveRecurringDateAt,
                                       waitlistedOriginalDates:
                                           _waitlistedOriginalDates,
                                       onToggleWaitlist: _toggleWaitlistForDate,
@@ -1653,7 +1660,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               previewErrorMessage: _previewErrorMessage,
                               isLoadingPreview: _isLoadingPreview,
                               onRetryPreview: _loadRecurringPreview,
-                              onRemoveRecurringAt: _removeRecurringDateAt,
+                              onRemoveRecurringAt: _confirmRemoveRecurringDateAt,
                             );
                             if (!isLarge) return card;
                             return Align(
