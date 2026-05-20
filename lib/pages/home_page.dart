@@ -13,6 +13,7 @@ import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
+import '../utils/api_date_time_format.dart';
 import '../utils/avatar_url_resolver.dart';
 import '../widgets/session_user_avatar.dart';
 
@@ -147,7 +148,11 @@ class _HomePageState extends State<HomePage> {
         final items = page.items
             .where((item) => _normalizeStatus(item.status) == 'booked')
             .toList(growable: false);
-        final mapped = _mapUpcomingItems(items);
+        final languageCode = Localizations.localeOf(context).languageCode;
+        final mapped = _mapUpcomingItems(
+          items,
+          languageCode: languageCode,
+        );
         setState(() {
           _upcomingItems = mapped;
           _isLoadingUpcoming = false;
@@ -187,7 +192,10 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  List<_UpcomingItem> _mapUpcomingItems(List<AppointmentModel> items) {
+  List<_UpcomingItem> _mapUpcomingItems(
+    List<AppointmentModel> items, {
+    required String languageCode,
+  }) {
     final grouped = <String, List<AppointmentModel>>{};
     final singles = <AppointmentModel>[];
     for (final item in items) {
@@ -214,7 +222,10 @@ class _HomePageState extends State<HomePage> {
           subtitle: first.barber.name.trim().isNotEmpty
               ? 'con ${first.barber.name.trim()}'
               : 'con Barber',
-          dateText: _formatDateText(first.startsAt),
+          dateText: formatApiDateTimeDisplay(
+            first.startsAt,
+            languageCode: languageCode,
+          ),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: true,
           sortAt: groupItems
@@ -223,7 +234,10 @@ class _HomePageState extends State<HomePage> {
           occurrences: groupItems
               .map(
                 (e) => _UpcomingOccurrence(
-                  dateText: _formatDateText(e.startsAt),
+                  dateText: formatApiDateTimeDisplay(
+                    e.startsAt,
+                    languageCode: languageCode,
+                  ),
                   barberText: e.barber.name.trim().isNotEmpty
                       ? 'con ${e.barber.name.trim()}'
                       : 'con Barber',
@@ -241,13 +255,19 @@ class _HomePageState extends State<HomePage> {
         _UpcomingItem(
           title: serviceName.isNotEmpty ? serviceName : 'Service',
           subtitle: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
-          dateText: _formatDateText(item.startsAt),
+          dateText: formatApiDateTimeDisplay(
+            item.startsAt,
+            languageCode: languageCode,
+          ),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: false,
           sortAt: item.activitySortTime,
           occurrences: <_UpcomingOccurrence>[
             _UpcomingOccurrence(
-              dateText: _formatDateText(item.startsAt),
+              dateText: formatApiDateTimeDisplay(
+                item.startsAt,
+                languageCode: languageCode,
+              ),
               barberText: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
             ),
           ],
@@ -259,28 +279,6 @@ class _HomePageState extends State<HomePage> {
       (a, b) => (b.sortAt ?? DateTime(1970)).compareTo(a.sortAt ?? DateTime(1970)),
     );
     return result;
-  }
-
-  String _formatDateText(DateTime? dateTime) {
-    if (dateTime == null) return '';
-    const months = <String>[
-      'gennaio',
-      'febbraio',
-      'marzo',
-      'aprile',
-      'maggio',
-      'giugno',
-      'luglio',
-      'agosto',
-      'settembre',
-      'ottobre',
-      'novembre',
-      'dicembre',
-    ];
-    final d = dateTime.toLocal();
-    final month = months[(d.month - 1).clamp(0, 11)];
-    final minute = d.minute.toString().padLeft(2, '0');
-    return '${d.day} $month ${d.year}, ${d.hour}:$minute';
   }
 
   @override

@@ -9,6 +9,7 @@ import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/appointment_model.dart';
 
 import '../routes/app_pages.dart';
+import '../utils/api_date_time_format.dart';
 
 class ReservationListPage extends StatefulWidget {
   const ReservationListPage({super.key});
@@ -47,7 +48,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
     }
   }
 
-  List<_ReservationItem> _mapItems(List<AppointmentModel> items) {
+  List<_ReservationItem> _mapItems(
+    List<AppointmentModel> items, {
+    required String languageCode,
+  }) {
     final grouped = <String, List<AppointmentModel>>{};
     final singles = <AppointmentModel>[];
     for (final item in items) {
@@ -73,7 +77,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
           .map(
             (e) => _ReservationOccurrence(
               appointmentId: e.id,
-              dateText: _formatDateText(e.startsAt),
+              dateText: formatApiDateTimeDisplay(
+                e.startsAt,
+                languageCode: languageCode,
+              ),
               barberText: e.barber.name.isNotEmpty
                   ? 'con ${e.barber.name}'
                   : 'con Barber',
@@ -87,7 +94,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
           subtitle: first.barber.name.isNotEmpty
               ? 'con ${first.barber.name}'
               : 'con Barber',
-          dateText: _formatDateText(first.startsAt),
+          dateText: formatApiDateTimeDisplay(
+            first.startsAt,
+            languageCode: languageCode,
+          ),
           price: '€${first.service.price.toStringAsFixed(0)}',
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: true,
@@ -106,7 +116,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
           id: e.id,
           title: e.service.name.isNotEmpty ? e.service.name : 'Service',
           subtitle: e.barber.name.isNotEmpty ? 'con ${e.barber.name}' : 'con Barber',
-          dateText: _formatDateText(e.startsAt),
+          dateText: formatApiDateTimeDisplay(
+            e.startsAt,
+            languageCode: languageCode,
+          ),
           price: '€${e.service.price.toStringAsFixed(0)}',
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
@@ -115,7 +128,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
           occurrences: <_ReservationOccurrence>[
             _ReservationOccurrence(
               appointmentId: e.id,
-              dateText: _formatDateText(e.startsAt),
+              dateText: formatApiDateTimeDisplay(
+                e.startsAt,
+                languageCode: languageCode,
+              ),
               barberText: e.barber.name.isNotEmpty ? 'con ${e.barber.name}' : 'con Barber',
             ),
           ],
@@ -427,28 +443,6 @@ class _ReservationListPageState extends State<ReservationListPage> {
     );
   }
 
-  String _formatDateText(DateTime? dateTime) {
-    if (dateTime == null) return '';
-    const months = <String>[
-      'gennaio',
-      'febbraio',
-      'marzo',
-      'aprile',
-      'maggio',
-      'giugno',
-      'luglio',
-      'agosto',
-      'settembre',
-      'ottobre',
-      'novembre',
-      'dicembre',
-    ];
-    final d = dateTime.toLocal();
-    final month = months[(d.month - 1).clamp(0, 11)];
-    final minute = d.minute.toString().padLeft(2, '0');
-    return '${d.day} $month ${d.year}, ${d.hour}:$minute';
-  }
-
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
@@ -515,9 +509,19 @@ class _ReservationListPageState extends State<ReservationListPage> {
       body: GetBuilder<ReservationListController>(
         id: 'reservation-list',
         builder: (controller) {
-          final booked = _mapItems(controller.byStatus('booked'));
-          final completed = _mapItems(controller.byStatus('completed'));
-          final cancelled = _mapItems(controller.byStatus('cancelled'));
+          final languageCode = Localizations.localeOf(context).languageCode;
+          final booked = _mapItems(
+            controller.byStatus('booked'),
+            languageCode: languageCode,
+          );
+          final completed = _mapItems(
+            controller.byStatus('completed'),
+            languageCode: languageCode,
+          );
+          final cancelled = _mapItems(
+            controller.byStatus('cancelled'),
+            languageCode: languageCode,
+          );
           final list = _tab == 0
               ? booked
               : _tab == 1
