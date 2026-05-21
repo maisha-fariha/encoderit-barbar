@@ -686,6 +686,12 @@ abstract class AppLocalizations {
   /// **'No barber available'**
   String get noBarberAvailable;
 
+  /// No description provided for @noBarbersForSelectedService.
+  ///
+  /// In en, this message translates to:
+  /// **'No barbers available for this service.'**
+  String get noBarbersForSelectedService;
+
   /// No description provided for @waitlistMe.
   ///
   /// In en, this message translates to:

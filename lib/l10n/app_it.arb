@@ -116,6 +116,7 @@
   },
   "select": "Selezionare",
   "noBarberAvailable": "Nessun barbiere disponibile",
+  "noBarbersForSelectedService": "Nessun barbiere disponibile per questo servizio.",
   "waitlistMe": "Tienimi in lista d'attesa",
   "selectPreferredTime": "Seleziona la fascia oraria che preferisci",
   "recurringAppointments": "Appuntamenti ricorrenti",

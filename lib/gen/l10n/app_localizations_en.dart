@@ -319,6 +319,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noBarberAvailable => 'No barber available';
 
   @override
+  String get noBarbersForSelectedService =>
+      'No barbers available for this service.';
+
+  @override
   String get waitlistMe => 'Add me to the waitlist';
 
   @override

@@ -867,7 +867,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   /// Step 4 entry after a specific barber is chosen (grid tap or random).
   Future<void> _enterStep4WithBarber(int barberIndex) async {
     if (_barberController.items.isEmpty) {
-      _showPageMessage('No barbers available');
+      _showPageMessage(AppLocalizations.of(context)!.noBarberAvailable);
       return;
     }
     final index = barberIndex.clamp(0, _barberController.items.length - 1);
@@ -906,7 +906,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   Future<void> _onSomeoneAvailableTap() async {
     final items = _barberController.items;
     if (items.isEmpty) {
-      _showPageMessage('No barbers available');
+      _showPageMessage(AppLocalizations.of(context)!.noBarberAvailable);
       return;
     }
     final index = Random().nextInt(items.length);
@@ -914,6 +914,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   }
 
   Future<void> _onContinue() async {
+    final l10n = AppLocalizations.of(context)!;
+
     if (_step == 1) {
       if (_shopController.items.isEmpty) {
         _showPageMessage('No shops available right now');
@@ -937,7 +939,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       }
       await _loadBarbersForSelection();
       if (_barberController.items.isEmpty) {
-        _showPageMessage('No barbers available for selected service');
+        _showPageMessage(l10n.noBarbersForSelectedService);
         return;
       }
       setState(() {
@@ -951,8 +953,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       return;
     }
     if (_step == 4) {
-      final l10n = AppLocalizations.of(context)!;
-
       if (!_hasBarberWorkingSchedule) {
         _showPageMessage(l10n.noBarberWorkingDays);
         return;
@@ -1829,7 +1829,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               child: Padding(
                                 padding: EdgeInsets.symmetric(horizontal: hPad),
                                 child: Text(
-                                  'No barber found for this service.',
+                                  l10n.noBarbersForSelectedService,
                                   textAlign: TextAlign.center,
                                   style: GoogleFonts.inter(
                                     color: const Color(0xFFDDDDDD),
@@ -3455,6 +3455,7 @@ class _RecurringPreviewRow extends StatelessWidget {
     final languageCode = Localizations.localeOf(context).languageCode;
     final dateTimeLabel = item.dateTimeLabelFor(languageCode);
     final reasonLabel = item.reasonLabelFor(languageCode);
+    final statusLabel = item.statusLabelFor(languageCode);
     final hasAlternatives = item.alternativeBarbers.isNotEmpty;
     final hasReason = reasonLabel.isNotEmpty;
     final nextSlot = item.nextAvailableSlot?.trim() ?? '';
@@ -3510,7 +3511,7 @@ class _RecurringPreviewRow extends StatelessWidget {
       );
     } else if (hasAlternatives) {
       statusWidget = Text(
-        item.status,
+        statusLabel,
         style: GoogleFonts.inter(
           color: const Color(0xFFDDDDDD),
           fontSize: 13,
@@ -3520,7 +3521,7 @@ class _RecurringPreviewRow extends StatelessWidget {
       );
     } else {
       statusWidget = Text(
-        item.status,
+        statusLabel,
         style: GoogleFonts.inter(
           color: const Color(0xFFDDDDDD),
           fontSize: 13,

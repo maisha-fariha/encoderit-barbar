@@ -25,6 +25,7 @@ class RecurringPreviewDateItem {
     required this.dateTimeString,
     required this.dateTimeStringIt,
     required this.status,
+    required this.statusIt,
     required this.reason,
     required this.reasonIt,
     required this.nextAvailableSlot,
@@ -37,6 +38,7 @@ class RecurringPreviewDateItem {
   final String dateTimeString;
   final String dateTimeStringIt;
   final String status;
+  final String statusIt;
   final String reason;
   final String reasonIt;
   final String? nextAvailableSlot;
@@ -60,6 +62,17 @@ class RecurringPreviewDateItem {
     if (d.isEmpty) return t;
     if (t.isEmpty) return d;
     return '$d $t';
+  }
+
+  /// Italian by default; English when [languageCode] is `en`.
+  String statusLabelFor(String languageCode) {
+    final isEn = languageCode.toLowerCase() == 'en';
+    if (isEn) {
+      if (status.trim().isNotEmpty) return status.trim();
+      return statusIt.trim();
+    }
+    if (statusIt.trim().isNotEmpty) return statusIt.trim();
+    return status.trim();
   }
 
   /// Italian by default; English when [languageCode] is `en`.
@@ -91,6 +104,7 @@ class RecurringPreviewDateItem {
       dateTimeString: (json['date_time_string'] ?? '').toString(),
       dateTimeStringIt: (json['date_time_string_it'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
+      statusIt: (json['status_it'] ?? '').toString(),
       reason: (json['reason'] ?? '').toString(),
       reasonIt: (json['reason_it'] ?? '').toString(),
       nextAvailableSlot: json['next_available_slot']?.toString(),

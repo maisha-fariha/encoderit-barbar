@@ -116,6 +116,7 @@
   },
   "select": "Select",
   "noBarberAvailable": "No barber available",
+  "noBarbersForSelectedService": "No barbers available for this service.",
   "waitlistMe": "Add me to the waitlist",
   "selectPreferredTime": "Select the time slot you prefer",
   "recurringAppointments": "Recurring appointments",
