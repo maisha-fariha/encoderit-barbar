@@ -502,6 +502,21 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
+  String get alternativeBarbersTitle => 'Barbieri alternativi';
+
+  @override
+  String get selectAlternativeBarber => 'Seleziona barbiere alternativo';
+
+  @override
+  String selectedAlternativeBarber(String name) {
+    return 'Selezionato: $name';
+  }
+
+  @override
+  String get recurringAlternativeBarberRequired =>
+      'Seleziona un barbiere alternativo per ogni appuntamento non disponibile.';
+
+  @override
   String get recurringSuccess => 'Appuntamenti ricorrenti elaborati.';
 
   @override

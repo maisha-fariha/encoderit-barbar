@@ -13,7 +13,7 @@ class RecurringPreviewAlternativeBarber {
     return RecurringPreviewAlternativeBarber(
       id: (json['id'] is num) ? (json['id'] as num).toInt() : 0,
       name: (json['name'] ?? '').toString(),
-      avatar: json['avatar']?.toString(),
+      avatar: (json['avatar'] ?? json['avatar_url'])?.toString(),
     );
   }
 }

@@ -184,6 +184,15 @@
       "name": { "type": "String" }
     }
   },
+  "alternativeBarbersTitle": "Barbieri alternativi",
+  "selectAlternativeBarber": "Seleziona barbiere alternativo",
+  "selectedAlternativeBarber": "Selezionato: {name}",
+  "@selectedAlternativeBarber": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "recurringAlternativeBarberRequired": "Seleziona un barbiere alternativo per ogni appuntamento non disponibile.",
   "recurringSuccess": "Appuntamenti ricorrenti elaborati.",
   "recurringMissingSelection": "Seleziona un intervallo ricorrente e il numero di prenotazioni.",
   "recurringIntervalRequired": "Seleziona la frequenza della ripetizione prima di continuare.",

@@ -1004,6 +1004,30 @@ abstract class AppLocalizations {
   /// **'Alternative barber with {name}'**
   String alternativeBarberLabel(String name);
 
+  /// No description provided for @alternativeBarbersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Alternative barbers'**
+  String get alternativeBarbersTitle;
+
+  /// No description provided for @selectAlternativeBarber.
+  ///
+  /// In en, this message translates to:
+  /// **'Select alternative barber'**
+  String get selectAlternativeBarber;
+
+  /// No description provided for @selectedAlternativeBarber.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected: {name}'**
+  String selectedAlternativeBarber(String name);
+
+  /// No description provided for @recurringAlternativeBarberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an alternative barber for each unavailable appointment.'**
+  String get recurringAlternativeBarberRequired;
+
   /// No description provided for @recurringSuccess.
   ///
   /// In en, this message translates to:

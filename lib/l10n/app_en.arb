@@ -184,6 +184,15 @@
       "name": { "type": "String" }
     }
   },
+  "alternativeBarbersTitle": "Alternative barbers",
+  "selectAlternativeBarber": "Select alternative barber",
+  "selectedAlternativeBarber": "Selected: {name}",
+  "@selectedAlternativeBarber": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "recurringAlternativeBarberRequired": "Please select an alternative barber for each unavailable appointment.",
   "recurringSuccess": "Recurring appointments processed.",
   "recurringMissingSelection": "Please choose a recurring interval and number of bookings.",
   "recurringIntervalRequired": "Please select how often the appointment repeats before continuing.",
