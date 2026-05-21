@@ -242,24 +242,27 @@ class _ContactPageState extends State<ContactPage> {
                                     message: l10n.contactNoShopsHint,
                                   );
                                 }
-                                return Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    if (shop.name.trim().isNotEmpty) ...[
-                                      Text(
-                                        shop.name,
-                                        style: GoogleFonts.inter(
-                                          color: const Color(0xFFFFFFFF),
-                                          fontSize: 18 * fontScale,
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.35,
+                                return Padding(
+                                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      if (shop.name.trim().isNotEmpty) ...[
+                                        Text(
+                                          shop.name,
+                                          style: GoogleFonts.inter(
+                                            color: const Color(0xFFFFFFFF),
+                                            fontSize: 18 * fontScale,
+                                            fontWeight: FontWeight.w700,
+                                            height: 1.35,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 12),
+                                        const SizedBox(height: 12),
+                                      ],
+                                      _MapPreviewCard(shop: shop, l10n: l10n),
                                     ],
-                                    _MapPreviewCard(shop: shop, l10n: l10n),
-                                  ],
+                                  ),
                                 );
                               },
                             );
