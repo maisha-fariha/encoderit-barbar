@@ -11,6 +11,7 @@ import '../models/appointment/appointment_model.dart';
 
 import '../routes/app_pages.dart';
 import '../utils/api_date_time_format.dart';
+import '../utils/appointment_barber_display.dart';
 import '../utils/compact_screen_utils.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
 
@@ -66,6 +67,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
   List<_ReservationItem> _mapItems(
     List<AppointmentModel> items, {
     required String languageCode,
+    required AppLocalizations l10n,
   }) {
     final grouped = <String, List<AppointmentModel>>{};
     final singles = <AppointmentModel>[];
@@ -88,27 +90,29 @@ class _ReservationListPageState extends State<ReservationListPage> {
         ),
       );
       final first = groupItems.first;
+      final firstBarber = AppointmentBarberDisplay.fromAppointment(first, l10n);
       final occurrences = groupItems
           .map(
-            (e) => _ReservationOccurrence(
-              appointmentId: e.id,
-              dateText: formatAppointmentDateTime(
-                e.startsAt,
-                languageCode: languageCode,
-              ),
-              barberText: e.barber.name.isNotEmpty
-                  ? 'con ${e.barber.name}'
-                  : 'con Barber',
-            ),
+            (e) {
+              final barber = AppointmentBarberDisplay.fromAppointment(e, l10n);
+              return _ReservationOccurrence(
+                appointmentId: e.id,
+                dateText: formatAppointmentDateTime(
+                  e.startsAt,
+                  languageCode: languageCode,
+                ),
+                barberText: barber.pillText,
+                isAlternativeBarber: barber.isAlternativeBarber,
+              );
+            },
           )
           .toList(growable: false);
       result.add(
         _ReservationItem(
           id: first.id,
           title: first.service.name.isNotEmpty ? first.service.name : 'Service',
-          subtitle: first.barber.name.isNotEmpty
-              ? 'con ${first.barber.name}'
-              : 'con Barber',
+          subtitle: firstBarber.pillText,
+          subtitleIsAlternativeBarber: firstBarber.isAlternativeBarber,
           dateText: formatAppointmentDateTime(
             first.startsAt,
             languageCode: languageCode,
@@ -126,11 +130,13 @@ class _ReservationListPageState extends State<ReservationListPage> {
     }
 
     for (final e in singles) {
+      final barber = AppointmentBarberDisplay.fromAppointment(e, l10n);
       result.add(
         _ReservationItem(
           id: e.id,
           title: e.service.name.isNotEmpty ? e.service.name : 'Service',
-          subtitle: e.barber.name.isNotEmpty ? 'con ${e.barber.name}' : 'con Barber',
+          subtitle: barber.pillText,
+          subtitleIsAlternativeBarber: barber.isAlternativeBarber,
           dateText: formatAppointmentDateTime(
             e.startsAt,
             languageCode: languageCode,
@@ -147,7 +153,8 @@ class _ReservationListPageState extends State<ReservationListPage> {
                 e.startsAt,
                 languageCode: languageCode,
               ),
-              barberText: e.barber.name.isNotEmpty ? 'con ${e.barber.name}' : 'con Barber',
+              barberText: barber.pillText,
+              isAlternativeBarber: barber.isAlternativeBarber,
             ),
           ],
         ),
@@ -320,17 +327,21 @@ class _ReservationListPageState extends State<ReservationListPage> {
         id: 'reservation-list',
         builder: (controller) {
           final languageCode = Localizations.localeOf(context).languageCode;
+          final l10n = AppLocalizations.of(context)!;
           final booked = _mapItems(
             controller.byStatus('booked'),
             languageCode: languageCode,
+            l10n: l10n,
           );
           final completed = _mapItems(
             controller.byStatus('completed'),
             languageCode: languageCode,
+            l10n: l10n,
           );
           final cancelled = _mapItems(
             controller.byStatus('cancelled'),
             languageCode: languageCode,
+            l10n: l10n,
           );
           final list = _tab == 0
               ? booked
@@ -1068,6 +1079,7 @@ class _ReservationRecurrence extends StatelessWidget {
           (entry) => _RecurrenceRow(
             text: entry.dateText,
             pillText: entry.barberText,
+            isAlternativeBarber: entry.isAlternativeBarber,
             onDelete: showDelete
                 ? () => onDeleteOccurrence(entry.appointmentId)
                 : null,
@@ -1082,11 +1094,13 @@ class _RecurrenceRow extends StatelessWidget {
   const _RecurrenceRow({
     required this.text,
     required this.pillText,
+    this.isAlternativeBarber = false,
     this.onDelete,
   });
 
   final String text;
   final String pillText;
+  final bool isAlternativeBarber;
   final VoidCallback? onDelete;
 
   @override
@@ -1122,15 +1136,19 @@ class _RecurrenceRow extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Color(0xFF797979).withValues(alpha: 0.20),
+                    color: const Color(0xFF797979).withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(10),
+                    border: isAlternativeBarber
+                        ? Border.all(color: const Color(0xFF185C5C), width: 1)
+                        : null,
                   ),
                   child: Text(
                     pillText,
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
                       fontSize: 14 * fontScale,
-                      fontWeight: FontWeight.w500,
+                      fontWeight:
+                          isAlternativeBarber ? FontWeight.w600 : FontWeight.w500,
                       height: 1.5,
                     ),
                   ),
@@ -1161,11 +1179,13 @@ class _ReservationOccurrence {
     required this.appointmentId,
     required this.dateText,
     required this.barberText,
+    this.isAlternativeBarber = false,
   });
 
   final String appointmentId;
   final String dateText;
   final String barberText;
+  final bool isAlternativeBarber;
 }
 
 class _ReservationItem {
@@ -1173,6 +1193,7 @@ class _ReservationItem {
     required this.id,
     required this.title,
     required this.subtitle,
+    this.subtitleIsAlternativeBarber = false,
     required this.dateText,
     required this.price,
     required this.imageAsset,
@@ -1185,6 +1206,7 @@ class _ReservationItem {
   final String id;
   final String title;
   final String subtitle;
+  final bool subtitleIsAlternativeBarber;
   final String dateText;
   final String price;
   final String imageAsset;

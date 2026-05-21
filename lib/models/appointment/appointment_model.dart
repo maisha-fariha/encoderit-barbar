@@ -12,6 +12,8 @@ class AppointmentModel with _$AppointmentModel implements BaseModel {
     // ignore: invalid_annotation_target
     @JsonKey(fromJson: _idFromJson) required String id,
     required AppointmentBarber barber,
+    // ignore: invalid_annotation_target
+    @JsonKey(name: 'alternative_barber') AppointmentBarber? alternativeBarber,
     required AppointmentService service,
     AppointmentShop? shop,
     // ignore: invalid_annotation_target
@@ -44,6 +46,20 @@ extension AppointmentModelActivitySort on AppointmentModel {
       DateTime.fromMillisecondsSinceEpoch(0);
 }
 
+extension AppointmentModelListDisplay on AppointmentModel {
+  String get primaryBarberName {
+    final name = barber.name.trim();
+    return name.isNotEmpty ? name : 'Barber';
+  }
+
+  String? get alternativeBarberName {
+    final name = alternativeBarber?.name.trim() ?? '';
+    return name.isNotEmpty ? name : null;
+  }
+
+  bool get hasAlternativeBarber => alternativeBarberName != null;
+}
+
 @freezed
 class AppointmentBarber with _$AppointmentBarber {
   const factory AppointmentBarber({
@@ -55,7 +71,11 @@ class AppointmentBarber with _$AppointmentBarber {
     String? gender,
     String? avatar,
     // ignore: invalid_annotation_target
-    @JsonKey(name: 'is_active') @Default(false) bool isActive,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    // ignore: invalid_annotation_target
+    @JsonKey(name: 'is_active', fromJson: _nullableBoolFromJson)
+    @Default(false)
+    bool isActive,
   }) = _AppointmentBarber;
 
   factory AppointmentBarber.fromJson(Map<String, dynamic> json) =>
@@ -210,6 +230,14 @@ double? _nullableDoubleFromJson(dynamic value) {
   if (value is num) return value.toDouble();
   if (value is String && value.isNotEmpty) return double.tryParse(value);
   return null;
+}
+
+bool _nullableBoolFromJson(dynamic value) {
+  if (value == null) return false;
+  if (value is bool) return value;
+  if (value is String) return value.toLowerCase() == 'true' || value == '1';
+  if (value is num) return value != 0;
+  return false;
 }
 
 DateTime? _dateTimeFromJson(dynamic value) => parseApiWallClockDateTime(value);

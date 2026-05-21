@@ -2095,6 +2095,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               isLoadingPreview: _isLoadingPreview,
                               onRetryPreview: _loadRecurringPreview,
                               onRemoveRecurringAt: _confirmRemoveRecurringDateAt,
+                              alternativeBarberByDate:
+                                  _selectedAlternativeBarberByDate,
+                              waitlistedOriginalDates: _waitlistedOriginalDates,
                             );
                             if (!isLarge) return card;
                             return Align(
@@ -2211,6 +2214,8 @@ class _Step4SummaryCard extends StatelessWidget {
     required this.isLoadingPreview,
     required this.onRetryPreview,
     required this.onRemoveRecurringAt,
+    this.alternativeBarberByDate = const <String, int>{},
+    this.waitlistedOriginalDates = const <String>{},
   });
 
   final _ServiceItem service;
@@ -2226,6 +2231,8 @@ class _Step4SummaryCard extends StatelessWidget {
   final bool isLoadingPreview;
   final Future<void> Function() onRetryPreview;
   final ValueChanged<int> onRemoveRecurringAt;
+  final Map<String, int> alternativeBarberByDate;
+  final Set<String> waitlistedOriginalDates;
 
   @override
   Widget build(BuildContext context) {
@@ -2269,7 +2276,8 @@ class _Step4SummaryCard extends StatelessWidget {
               onRetry: onRetryPreview,
               selectedBarberName: selectedBarberName,
               onRemoveAt: onRemoveRecurringAt,
-              waitlistedOriginalDates: const <String>{},
+              waitlistedOriginalDates: waitlistedOriginalDates,
+              alternativeBarberByDate: alternativeBarberByDate,
               decorateContainer: false,
             ),
             const SizedBox(height: 25),
@@ -3533,7 +3541,9 @@ class _RecurringPreviewRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 statusWidget,
-                if (hasAlternatives && !item.isAvailable) ...[
+                if (hasAlternatives &&
+                    !item.isAvailable &&
+                    canSelectAlternative) ...[
                   const SizedBox(height: 12),
                   Text(
                     l10n.alternativeBarbersTitle,
@@ -3552,18 +3562,16 @@ class _RecurringPreviewRow extends StatelessWidget {
                           selectedAlternativeBarberId ==
                               item.alternativeBarbers.first.id ||
                           selectedAlternative != null,
-                      enabled: canSelectAlternative,
-                      onTap: canSelectAlternative
-                          ? () => onSelectAlternativeBarber!(
-                              item.alternativeBarbers.first.id,
-                            )
-                          : null,
+                      enabled: true,
+                      onTap: () => onSelectAlternativeBarber!(
+                        item.alternativeBarbers.first.id,
+                      ),
                     )
                   else
                     _AlternativeBarberDropdown(
                       alternatives: item.alternativeBarbers,
                       selectedBarberId: selectedAlternativeBarberId,
-                      enabled: canSelectAlternative,
+                      enabled: true,
                       onSelect: onSelectAlternativeBarber!,
                     ),
                 ],

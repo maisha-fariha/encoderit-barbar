@@ -11,6 +11,11 @@ _$AppointmentModelImpl _$$AppointmentModelImplFromJson(
 ) => _$AppointmentModelImpl(
   id: _idFromJson(json['id']),
   barber: AppointmentBarber.fromJson(json['barber'] as Map<String, dynamic>),
+  alternativeBarber: json['alternative_barber'] == null
+      ? null
+      : AppointmentBarber.fromJson(
+          json['alternative_barber'] as Map<String, dynamic>,
+        ),
   service: AppointmentService.fromJson(json['service'] as Map<String, dynamic>),
   shop: json['shop'] == null
       ? null
@@ -29,6 +34,7 @@ Map<String, dynamic> _$$AppointmentModelImplToJson(
 ) => <String, dynamic>{
   'id': instance.id,
   'barber': instance.barber,
+  'alternative_barber': instance.alternativeBarber,
   'service': instance.service,
   'shop': instance.shop,
   'starts_at': instance.startsAt?.toIso8601String(),
@@ -49,7 +55,10 @@ _$AppointmentBarberImpl _$$AppointmentBarberImplFromJson(
   phone: json['phone'] as String? ?? '',
   gender: json['gender'] as String?,
   avatar: json['avatar'] as String?,
-  isActive: json['is_active'] as bool? ?? false,
+  avatarUrl: json['avatar_url'] as String?,
+  isActive: json['is_active'] == null
+      ? false
+      : _nullableBoolFromJson(json['is_active']),
 );
 
 Map<String, dynamic> _$$AppointmentBarberImplToJson(
@@ -61,6 +70,7 @@ Map<String, dynamic> _$$AppointmentBarberImplToJson(
   'phone': instance.phone,
   'gender': instance.gender,
   'avatar': instance.avatar,
+  'avatar_url': instance.avatarUrl,
   'is_active': instance.isActive,
 };
 

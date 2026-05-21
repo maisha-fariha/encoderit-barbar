@@ -24,7 +24,11 @@ mixin _$AppointmentModel {
   // ignore: invalid_annotation_target
   @JsonKey(fromJson: _idFromJson)
   String get id => throw _privateConstructorUsedError;
-  AppointmentBarber get barber => throw _privateConstructorUsedError;
+  AppointmentBarber get barber =>
+      throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  @JsonKey(name: 'alternative_barber')
+  AppointmentBarber? get alternativeBarber =>
+      throw _privateConstructorUsedError;
   AppointmentService get service => throw _privateConstructorUsedError;
   AppointmentShop? get shop =>
       throw _privateConstructorUsedError; // ignore: invalid_annotation_target
@@ -62,6 +66,7 @@ abstract class $AppointmentModelCopyWith<$Res> {
   $Res call({
     @JsonKey(fromJson: _idFromJson) String id,
     AppointmentBarber barber,
+    @JsonKey(name: 'alternative_barber') AppointmentBarber? alternativeBarber,
     AppointmentService service,
     AppointmentShop? shop,
     @JsonKey(name: 'starts_at', fromJson: _dateTimeFromJson) DateTime? startsAt,
@@ -76,6 +81,7 @@ abstract class $AppointmentModelCopyWith<$Res> {
   });
 
   $AppointmentBarberCopyWith<$Res> get barber;
+  $AppointmentBarberCopyWith<$Res>? get alternativeBarber;
   $AppointmentServiceCopyWith<$Res> get service;
   $AppointmentShopCopyWith<$Res>? get shop;
 }
@@ -97,6 +103,7 @@ class _$AppointmentModelCopyWithImpl<$Res, $Val extends AppointmentModel>
   $Res call({
     Object? id = null,
     Object? barber = null,
+    Object? alternativeBarber = freezed,
     Object? service = null,
     Object? shop = freezed,
     Object? startsAt = freezed,
@@ -117,6 +124,10 @@ class _$AppointmentModelCopyWithImpl<$Res, $Val extends AppointmentModel>
                 ? _value.barber
                 : barber // ignore: cast_nullable_to_non_nullable
                       as AppointmentBarber,
+            alternativeBarber: freezed == alternativeBarber
+                ? _value.alternativeBarber
+                : alternativeBarber // ignore: cast_nullable_to_non_nullable
+                      as AppointmentBarber?,
             service: null == service
                 ? _value.service
                 : service // ignore: cast_nullable_to_non_nullable
@@ -172,6 +183,20 @@ class _$AppointmentModelCopyWithImpl<$Res, $Val extends AppointmentModel>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
+  $AppointmentBarberCopyWith<$Res>? get alternativeBarber {
+    if (_value.alternativeBarber == null) {
+      return null;
+    }
+
+    return $AppointmentBarberCopyWith<$Res>(_value.alternativeBarber!, (value) {
+      return _then(_value.copyWith(alternativeBarber: value) as $Val);
+    });
+  }
+
+  /// Create a copy of AppointmentModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
   $AppointmentServiceCopyWith<$Res> get service {
     return $AppointmentServiceCopyWith<$Res>(_value.service, (value) {
       return _then(_value.copyWith(service: value) as $Val);
@@ -205,6 +230,7 @@ abstract class _$$AppointmentModelImplCopyWith<$Res>
   $Res call({
     @JsonKey(fromJson: _idFromJson) String id,
     AppointmentBarber barber,
+    @JsonKey(name: 'alternative_barber') AppointmentBarber? alternativeBarber,
     AppointmentService service,
     AppointmentShop? shop,
     @JsonKey(name: 'starts_at', fromJson: _dateTimeFromJson) DateTime? startsAt,
@@ -220,6 +246,8 @@ abstract class _$$AppointmentModelImplCopyWith<$Res>
 
   @override
   $AppointmentBarberCopyWith<$Res> get barber;
+  @override
+  $AppointmentBarberCopyWith<$Res>? get alternativeBarber;
   @override
   $AppointmentServiceCopyWith<$Res> get service;
   @override
@@ -242,6 +270,7 @@ class __$$AppointmentModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? barber = null,
+    Object? alternativeBarber = freezed,
     Object? service = null,
     Object? shop = freezed,
     Object? startsAt = freezed,
@@ -262,6 +291,10 @@ class __$$AppointmentModelImplCopyWithImpl<$Res>
             ? _value.barber
             : barber // ignore: cast_nullable_to_non_nullable
                   as AppointmentBarber,
+        alternativeBarber: freezed == alternativeBarber
+            ? _value.alternativeBarber
+            : alternativeBarber // ignore: cast_nullable_to_non_nullable
+                  as AppointmentBarber?,
         service: null == service
             ? _value.service
             : service // ignore: cast_nullable_to_non_nullable
@@ -309,6 +342,7 @@ class _$AppointmentModelImpl implements _AppointmentModel {
   const _$AppointmentModelImpl({
     @JsonKey(fromJson: _idFromJson) required this.id,
     required this.barber,
+    @JsonKey(name: 'alternative_barber') this.alternativeBarber,
     required this.service,
     this.shop,
     @JsonKey(name: 'starts_at', fromJson: _dateTimeFromJson) this.startsAt,
@@ -329,6 +363,10 @@ class _$AppointmentModelImpl implements _AppointmentModel {
   final String id;
   @override
   final AppointmentBarber barber;
+  // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'alternative_barber')
+  final AppointmentBarber? alternativeBarber;
   @override
   final AppointmentService service;
   @override
@@ -361,7 +399,7 @@ class _$AppointmentModelImpl implements _AppointmentModel {
 
   @override
   String toString() {
-    return 'AppointmentModel(id: $id, barber: $barber, service: $service, shop: $shop, startsAt: $startsAt, endsAt: $endsAt, status: $status, notes: $notes, recurringGroupId: $recurringGroupId, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'AppointmentModel(id: $id, barber: $barber, alternativeBarber: $alternativeBarber, service: $service, shop: $shop, startsAt: $startsAt, endsAt: $endsAt, status: $status, notes: $notes, recurringGroupId: $recurringGroupId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -371,6 +409,8 @@ class _$AppointmentModelImpl implements _AppointmentModel {
             other is _$AppointmentModelImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.barber, barber) || other.barber == barber) &&
+            (identical(other.alternativeBarber, alternativeBarber) ||
+                other.alternativeBarber == alternativeBarber) &&
             (identical(other.service, service) || other.service == service) &&
             (identical(other.shop, shop) || other.shop == shop) &&
             (identical(other.startsAt, startsAt) ||
@@ -392,6 +432,7 @@ class _$AppointmentModelImpl implements _AppointmentModel {
     runtimeType,
     id,
     barber,
+    alternativeBarber,
     service,
     shop,
     startsAt,
@@ -424,6 +465,8 @@ abstract class _AppointmentModel implements AppointmentModel {
   const factory _AppointmentModel({
     @JsonKey(fromJson: _idFromJson) required final String id,
     required final AppointmentBarber barber,
+    @JsonKey(name: 'alternative_barber')
+    final AppointmentBarber? alternativeBarber,
     required final AppointmentService service,
     final AppointmentShop? shop,
     @JsonKey(name: 'starts_at', fromJson: _dateTimeFromJson)
@@ -447,7 +490,10 @@ abstract class _AppointmentModel implements AppointmentModel {
   @JsonKey(fromJson: _idFromJson)
   String get id;
   @override
-  AppointmentBarber get barber;
+  AppointmentBarber get barber; // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'alternative_barber')
+  AppointmentBarber? get alternativeBarber;
   @override
   AppointmentService get service;
   @override
@@ -495,7 +541,9 @@ mixin _$AppointmentBarber {
   String? get gender => throw _privateConstructorUsedError;
   String? get avatar =>
       throw _privateConstructorUsedError; // ignore: invalid_annotation_target
-  @JsonKey(name: 'is_active')
+  @JsonKey(name: 'avatar_url')
+  String? get avatarUrl => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  @JsonKey(name: 'is_active', fromJson: _nullableBoolFromJson)
   bool get isActive => throw _privateConstructorUsedError;
 
   /// Serializes this AppointmentBarber to a JSON map.
@@ -522,7 +570,8 @@ abstract class $AppointmentBarberCopyWith<$Res> {
     String? phone,
     String? gender,
     String? avatar,
-    @JsonKey(name: 'is_active') bool isActive,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    @JsonKey(name: 'is_active', fromJson: _nullableBoolFromJson) bool isActive,
   });
 }
 
@@ -547,6 +596,7 @@ class _$AppointmentBarberCopyWithImpl<$Res, $Val extends AppointmentBarber>
     Object? phone = freezed,
     Object? gender = freezed,
     Object? avatar = freezed,
+    Object? avatarUrl = freezed,
     Object? isActive = null,
   }) {
     return _then(
@@ -575,6 +625,10 @@ class _$AppointmentBarberCopyWithImpl<$Res, $Val extends AppointmentBarber>
                 ? _value.avatar
                 : avatar // ignore: cast_nullable_to_non_nullable
                       as String?,
+            avatarUrl: freezed == avatarUrl
+                ? _value.avatarUrl
+                : avatarUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
             isActive: null == isActive
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
@@ -601,7 +655,8 @@ abstract class _$$AppointmentBarberImplCopyWith<$Res>
     String? phone,
     String? gender,
     String? avatar,
-    @JsonKey(name: 'is_active') bool isActive,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    @JsonKey(name: 'is_active', fromJson: _nullableBoolFromJson) bool isActive,
   });
 }
 
@@ -625,6 +680,7 @@ class __$$AppointmentBarberImplCopyWithImpl<$Res>
     Object? phone = freezed,
     Object? gender = freezed,
     Object? avatar = freezed,
+    Object? avatarUrl = freezed,
     Object? isActive = null,
   }) {
     return _then(
@@ -653,6 +709,10 @@ class __$$AppointmentBarberImplCopyWithImpl<$Res>
             ? _value.avatar
             : avatar // ignore: cast_nullable_to_non_nullable
                   as String?,
+        avatarUrl: freezed == avatarUrl
+            ? _value.avatarUrl
+            : avatarUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
         isActive: null == isActive
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
@@ -672,7 +732,9 @@ class _$AppointmentBarberImpl implements _AppointmentBarber {
     this.phone = '',
     this.gender,
     this.avatar,
-    @JsonKey(name: 'is_active') this.isActive = false,
+    @JsonKey(name: 'avatar_url') this.avatarUrl,
+    @JsonKey(name: 'is_active', fromJson: _nullableBoolFromJson)
+    this.isActive = false,
   });
 
   factory _$AppointmentBarberImpl.fromJson(Map<String, dynamic> json) =>
@@ -697,12 +759,16 @@ class _$AppointmentBarberImpl implements _AppointmentBarber {
   final String? avatar;
   // ignore: invalid_annotation_target
   @override
-  @JsonKey(name: 'is_active')
+  @JsonKey(name: 'avatar_url')
+  final String? avatarUrl;
+  // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'is_active', fromJson: _nullableBoolFromJson)
   final bool isActive;
 
   @override
   String toString() {
-    return 'AppointmentBarber(id: $id, name: $name, email: $email, phone: $phone, gender: $gender, avatar: $avatar, isActive: $isActive)';
+    return 'AppointmentBarber(id: $id, name: $name, email: $email, phone: $phone, gender: $gender, avatar: $avatar, avatarUrl: $avatarUrl, isActive: $isActive)';
   }
 
   @override
@@ -716,6 +782,8 @@ class _$AppointmentBarberImpl implements _AppointmentBarber {
             (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.gender, gender) || other.gender == gender) &&
             (identical(other.avatar, avatar) || other.avatar == avatar) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive));
   }
@@ -730,6 +798,7 @@ class _$AppointmentBarberImpl implements _AppointmentBarber {
     phone,
     gender,
     avatar,
+    avatarUrl,
     isActive,
   );
 
@@ -758,7 +827,9 @@ abstract class _AppointmentBarber implements AppointmentBarber {
     final String? phone,
     final String? gender,
     final String? avatar,
-    @JsonKey(name: 'is_active') final bool isActive,
+    @JsonKey(name: 'avatar_url') final String? avatarUrl,
+    @JsonKey(name: 'is_active', fromJson: _nullableBoolFromJson)
+    final bool isActive,
   }) = _$AppointmentBarberImpl;
 
   factory _AppointmentBarber.fromJson(Map<String, dynamic> json) =
@@ -779,7 +850,10 @@ abstract class _AppointmentBarber implements AppointmentBarber {
   @override
   String? get avatar; // ignore: invalid_annotation_target
   @override
-  @JsonKey(name: 'is_active')
+  @JsonKey(name: 'avatar_url')
+  String? get avatarUrl; // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'is_active', fromJson: _nullableBoolFromJson)
   bool get isActive;
 
   /// Create a copy of AppointmentBarber

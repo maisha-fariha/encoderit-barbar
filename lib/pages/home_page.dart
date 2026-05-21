@@ -14,6 +14,7 @@ import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/api_date_time_format.dart';
+import '../utils/appointment_barber_display.dart';
 import '../utils/avatar_url_resolver.dart';
 import '../widgets/app_scroll_behavior.dart';
 import '../widgets/session_user_avatar.dart';
@@ -145,9 +146,11 @@ class _HomePageState extends State<HomePage> {
             .where((item) => _normalizeStatus(item.status) == 'booked')
             .toList(growable: false);
         final languageCode = Localizations.localeOf(context).languageCode;
+        final l10n = AppLocalizations.of(context)!;
         final mapped = _mapUpcomingItems(
           items,
           languageCode: languageCode,
+          l10n: l10n,
         );
         setState(() {
           _upcomingItems = mapped;
@@ -192,6 +195,7 @@ class _HomePageState extends State<HomePage> {
   List<_UpcomingItem> _mapUpcomingItems(
     List<AppointmentModel> items, {
     required String languageCode,
+    required AppLocalizations l10n,
   }) {
     final grouped = <String, List<AppointmentModel>>{};
     final singles = <AppointmentModel>[];
@@ -211,14 +215,14 @@ class _HomePageState extends State<HomePage> {
             (a.startsAt ?? DateTime(1970)).compareTo(b.startsAt ?? DateTime(1970)),
       );
       final first = groupItems.first;
+      final firstBarber = AppointmentBarberDisplay.fromAppointment(first, l10n);
       result.add(
         _UpcomingItem(
           title: first.service.name.trim().isNotEmpty
               ? first.service.name.trim()
               : 'Service',
-          subtitle: first.barber.name.trim().isNotEmpty
-              ? 'con ${first.barber.name.trim()}'
-              : 'con Barber',
+          subtitle: firstBarber.pillText,
+          subtitleIsAlternativeBarber: firstBarber.isAlternativeBarber,
           dateText: formatAppointmentDateTime(
             first.startsAt,
             languageCode: languageCode,
@@ -230,15 +234,17 @@ class _HomePageState extends State<HomePage> {
               .reduce((a, b) => a.isAfter(b) ? a : b),
           occurrences: groupItems
               .map(
-                (e) => _UpcomingOccurrence(
-                  dateText: formatAppointmentDateTime(
-                    e.startsAt,
-                    languageCode: languageCode,
-                  ),
-                  barberText: e.barber.name.trim().isNotEmpty
-                      ? 'con ${e.barber.name.trim()}'
-                      : 'con Barber',
-                ),
+                (e) {
+                  final barber = AppointmentBarberDisplay.fromAppointment(e, l10n);
+                  return _UpcomingOccurrence(
+                    dateText: formatAppointmentDateTime(
+                      e.startsAt,
+                      languageCode: languageCode,
+                    ),
+                    barberText: barber.pillText,
+                    isAlternativeBarber: barber.isAlternativeBarber,
+                  );
+                },
               )
               .toList(growable: false),
         ),
@@ -247,11 +253,12 @@ class _HomePageState extends State<HomePage> {
 
     for (final item in singles) {
       final serviceName = item.service.name.trim();
-      final barberName = item.barber.name.trim();
+      final barber = AppointmentBarberDisplay.fromAppointment(item, l10n);
       result.add(
         _UpcomingItem(
           title: serviceName.isNotEmpty ? serviceName : 'Service',
-          subtitle: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
+          subtitle: barber.pillText,
+          subtitleIsAlternativeBarber: barber.isAlternativeBarber,
           dateText: formatAppointmentDateTime(
             item.startsAt,
             languageCode: languageCode,
@@ -265,7 +272,8 @@ class _HomePageState extends State<HomePage> {
                 item.startsAt,
                 languageCode: languageCode,
               ),
-              barberText: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
+              barberText: barber.pillText,
+              isAlternativeBarber: barber.isAlternativeBarber,
             ),
           ],
         ),
@@ -757,6 +765,7 @@ class _UpcomingAccordionItem extends StatelessWidget {
                       child: _RecurrenceRow(
                         text: entry.dateText,
                         pillText: entry.barberText,
+                        isAlternativeBarber: entry.isAlternativeBarber,
                       ),
                     ),
                   ),
@@ -812,10 +821,15 @@ class _HomeDivider extends StatelessWidget {
 }
 
 class _RecurrenceRow extends StatelessWidget {
-  const _RecurrenceRow({required this.text, required this.pillText});
+  const _RecurrenceRow({
+    required this.text,
+    required this.pillText,
+    this.isAlternativeBarber = false,
+  });
 
   final String text;
   final String pillText;
+  final bool isAlternativeBarber;
 
   @override
   Widget build(BuildContext context) {
@@ -850,15 +864,19 @@ class _RecurrenceRow extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Color(0xFF797979).withValues(alpha: 0.20),
+                    color: const Color(0xFF797979).withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(14),
+                    border: isAlternativeBarber
+                        ? Border.all(color: const Color(0xFF185C5C), width: 1)
+                        : null,
                   ),
                   child: Text(
                     pillText,
                     style: GoogleFonts.inter(
                       color: const Color(0xFFDDDDDD),
                       fontSize: 14 * fontScale,
-                      fontWeight: FontWeight.w500,
+                      fontWeight:
+                          isAlternativeBarber ? FontWeight.w600 : FontWeight.w500,
                       height: 1.5,
                     ),
                   ),
@@ -876,6 +894,7 @@ class _UpcomingItem {
   const _UpcomingItem({
     required this.title,
     required this.subtitle,
+    this.subtitleIsAlternativeBarber = false,
     required this.dateText,
     required this.imageAsset,
     required this.hasRecurrence,
@@ -885,6 +904,7 @@ class _UpcomingItem {
 
   final String title;
   final String subtitle;
+  final bool subtitleIsAlternativeBarber;
   final String dateText;
   final String imageAsset;
   final bool hasRecurrence;
@@ -893,10 +913,15 @@ class _UpcomingItem {
 }
 
 class _UpcomingOccurrence {
-  const _UpcomingOccurrence({required this.dateText, required this.barberText});
+  const _UpcomingOccurrence({
+    required this.dateText,
+    required this.barberText,
+    this.isAlternativeBarber = false,
+  });
 
   final String dateText;
   final String barberText;
+  final bool isAlternativeBarber;
 }
 
 class _BottomNavBar extends StatelessWidget {
