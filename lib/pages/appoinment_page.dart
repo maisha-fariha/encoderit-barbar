@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gems_core/gems_core.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,9 +17,13 @@ import '../models/appointment/availability_slot_model.dart';
 import '../models/appointment/appointment_model.dart';
 import '../models/appointment/recurring_preview_model.dart';
 import '../models/barber/barber_model.dart';
+import '../models/schedule/shop_holiday_model.dart';
+import '../models/schedule/vacation_period_model.dart';
 import '../models/shop/shop_model.dart';
 import '../repositories/availability_repository.dart';
 import '../repositories/appointment_repository.dart';
+import '../repositories/barber_repository.dart';
+import '../repositories/shop_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../utils/compact_screen_utils.dart';
@@ -118,6 +123,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   List<RecurringPreviewDateItem> _previewItems = const <RecurringPreviewDateItem>[];
   final Set<String> _waitlistedOriginalDates = <String>{};
   bool _pendingStep4WorkingDayAlign = false;
+  List<ShopHoliday> _shopHolidays = const <ShopHoliday>[];
+  List<VacationPeriod> _barberVacations = const <VacationPeriod>[];
+  List<VacationPeriod> _shopVacations = const <VacationPeriod>[];
 
   static DateTime _today() {
     final n = DateTime.now();
@@ -142,12 +150,73 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return barber != null && barber.workingDayOfWeekValues.isNotEmpty;
   }
 
+  bool _isShopHoliday(DateTime date) {
+    for (final holiday in _shopHolidays) {
+      if (holiday.blocksDate(date)) return true;
+    }
+    return false;
+  }
+
+  bool _isVacationDay(DateTime date) {
+    for (final vacation in _barberVacations) {
+      if (vacation.blocksDate(date)) return true;
+    }
+    final shopId = _selectedShopIdAsInt;
+    if (shopId == null) return false;
+    for (final vacation in _shopVacations) {
+      if (!vacation.appliesToShop(shopId)) continue;
+      if (vacation.blocksDate(date)) return true;
+    }
+    return false;
+  }
+
   bool _isBarberWorkingDay(DateTime date) {
     final day = DateTime(date.year, date.month, date.day);
     if (day.isBefore(_today())) return false;
     final barber = _selectedBarberModel;
     if (barber == null) return false;
-    return barber.isWorkingDay(day);
+    if (!barber.isWorkingDay(day)) return false;
+    if (_isShopHoliday(day)) return false;
+    if (_isVacationDay(day)) return false;
+    return true;
+  }
+
+  Future<void> _loadScheduleConstraints() async {
+    final shopId = _selectedShopId;
+    final barberId = _selectedBarberModel?.id;
+    if (shopId == null || shopId.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _shopHolidays = const <ShopHoliday>[];
+        _barberVacations = const <VacationPeriod>[];
+        _shopVacations = const <VacationPeriod>[];
+      });
+      return;
+    }
+
+    final shopRepo = AppServices.getIt<ShopRepository>();
+    final holidaysFuture = shopRepo.getHolidays(shopId);
+    final vacationsFuture = barberId != null && barberId.isNotEmpty
+        ? AppServices.getIt<BarberRepository>().getVacations(barberId)
+        : Future.value(Result.success(BarberVacationsResult.empty));
+
+    final holidaysOutcome = await holidaysFuture;
+    final vacationsOutcome = await vacationsFuture;
+    if (!mounted) return;
+
+    setState(() {
+      _shopHolidays = holidaysOutcome.isSuccess
+          ? (holidaysOutcome.value ?? const <ShopHoliday>[])
+          : const <ShopHoliday>[];
+      final vacations = vacationsOutcome.value;
+      if (vacationsOutcome.isSuccess && vacations != null) {
+        _barberVacations = vacations.barberVacations;
+        _shopVacations = vacations.shopVacations;
+      } else {
+        _barberVacations = const <VacationPeriod>[];
+        _shopVacations = const <VacationPeriod>[];
+      }
+    });
   }
 
   static int _minutesFromClock(String raw) {
@@ -746,7 +815,13 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       _waitlistedOriginalDates.clear();
       _previewErrorMessage = '';
       _isLoadingPreview = false;
+      _shopHolidays = const <ShopHoliday>[];
+      _barberVacations = const <VacationPeriod>[];
+      _shopVacations = const <VacationPeriod>[];
     });
+    await _loadScheduleConstraints();
+    if (!mounted) return;
+    setState(_alignSelectedDateToNextWorkingDay);
     await _loadSlotsForSelection(showLoading: false);
     await _selectNextDateWithAvailableSlots();
     _scheduleStep4WorkingDayAlignment();
@@ -995,11 +1070,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   /// First selectable working day for the picker, or [fallback] if none found.
   DateTime _initialDateForPicker({required DateTime fallback}) {
     if (_isBarberWorkingDay(_selectedDate)) return _selectedDate;
-    final barber = _selectedBarberModel;
-    if (barber == null) return fallback;
     for (int offset = 0; offset < 370; offset++) {
       final candidate = _today().add(Duration(days: offset));
-      if (barber.isWorkingDay(candidate)) return candidate;
+      if (_isBarberWorkingDay(candidate)) return candidate;
     }
     return fallback;
   }

@@ -4,6 +4,7 @@ import 'package:gems_core/gems_core.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 
 import '../models/barber/barber_model.dart';
+import '../models/schedule/vacation_period_model.dart';
 import '../utils/api_endpoints.dart';
 
 class BarberRepository extends BaseRepository<BarberModel> {
@@ -90,6 +91,39 @@ class BarberRepository extends BaseRepository<BarberModel> {
       key,
       jsonEncode(values.map((e) => e.toJson()).toList()),
     );
+  }
+
+  Future<Result<BarberVacationsResult>> getVacations(String barberId) async {
+    try {
+      final response = await apiService.get<dynamic>(
+        ApiEndpoints.barberVacations(barberId),
+      );
+      if (response.success && response.data != null) {
+        return Result.success(_parseVacationsPayload(response.data));
+      }
+      return Result.failure(
+        ApiError(message: response.message ?? 'Failed to fetch barber vacations'),
+      );
+    } catch (e, stackTrace) {
+      return Result.failure(NetworkError.fromException(e, stackTrace));
+    }
+  }
+
+  BarberVacationsResult _parseVacationsPayload(dynamic raw) {
+    if (raw is Map) {
+      final map = Map<String, dynamic>.from(raw);
+      final data = map['data'];
+      if (data is Map) {
+        return BarberVacationsResult.fromJson(
+          Map<String, dynamic>.from(data),
+        );
+      }
+      if (map.containsKey('barber_vacations') ||
+          map.containsKey('shop_vacations')) {
+        return BarberVacationsResult.fromJson(map);
+      }
+    }
+    return BarberVacationsResult.empty;
   }
 
   List<BarberModel> _parseList(dynamic raw) {

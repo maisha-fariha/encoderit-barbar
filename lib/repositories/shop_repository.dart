@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:gems_core/gems_core.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 
+import '../models/schedule/shop_holiday_model.dart';
 import '../models/shop/shop_model.dart';
 import '../utils/api_endpoints.dart';
 
@@ -78,6 +79,42 @@ class ShopRepository extends BaseRepository<Shop> {
       _shopsCacheKey,
       jsonEncode(shops.map((e) => e.toJson()).toList()),
     );
+  }
+
+  Future<Result<List<ShopHoliday>>> getHolidays(String shopId) async {
+    try {
+      final response = await apiService.get<dynamic>(
+        ApiEndpoints.shopHolidays(shopId),
+      );
+      if (response.success && response.data != null) {
+        return Result.success(_parseHolidaysPayload(response.data));
+      }
+      return Result.failure(
+        ApiError(message: response.message ?? 'Failed to fetch shop holidays'),
+      );
+    } catch (e, stackTrace) {
+      return Result.failure(NetworkError.fromException(e, stackTrace));
+    }
+  }
+
+  List<ShopHoliday> _parseHolidaysPayload(dynamic raw) {
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((e) => ShopHoliday.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+    if (raw is Map) {
+      final map = Map<String, dynamic>.from(raw);
+      final list = map['data'];
+      if (list is List) {
+        return list
+            .whereType<Map>()
+            .map((e) => ShopHoliday.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+    }
+    return const <ShopHoliday>[];
   }
 
   List<Shop> _parseShopsPayload(dynamic raw) {

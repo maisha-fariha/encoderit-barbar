@@ -12,6 +12,10 @@ class ApiEndpoints {
   static const shops = '/shops';
   static const services = '/services';
   static const barbers = '/barbers';
+
+  static String shopHolidays(String shopId) => '/shops/$shopId/holidays';
+
+  static String barberVacations(String barberId) => '/barbers/$barberId/vacations';
   static const barbarList = shops;
 
   /// Single appointment booking endpoint.
