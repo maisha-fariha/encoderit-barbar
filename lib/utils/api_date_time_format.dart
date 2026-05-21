@@ -1,49 +1,17 @@
-/// Formats datetimes parsed from API ISO-8601 strings for display.
-///
-/// Uses the date/time components from the payload (as returned by
-/// [DateTime.tryParse] on strings with an offset), without converting to the
-/// device local timezone.
-String formatApiDateTimeDisplay(
+import 'package:intl/intl.dart';
+
+import 'date_range_utils.dart';
+
+/// Formats appointment datetime for list/card display (API wall-clock, no TZ shift).
+String formatAppointmentDateTime(
   DateTime? dateTime, {
   String languageCode = 'it',
+  String? iso,
 }) {
-  if (dateTime == null) return '';
-
-  final months = languageCode == 'en'
-      ? _apiDisplayMonthsEn
-      : _apiDisplayMonthsIt;
-  final month = months[(dateTime.month - 1).clamp(0, 11)];
-  final minute = dateTime.minute.toString().padLeft(2, '0');
-  final hour = dateTime.hour.toString().padLeft(2, '0');
-  return '${dateTime.day} $month ${dateTime.year}, $hour:$minute';
+  final value = iso != null && iso.isNotEmpty
+      ? parseApiWallClockDateTime(iso)
+      : dateTime;
+  if (value == null) return '';
+  final locale = languageCode == 'it' ? 'it_IT' : 'en_US';
+  return DateFormat('d MMMM yyyy, HH:mm', locale).format(value);
 }
-
-const _apiDisplayMonthsIt = <String>[
-  'gennaio',
-  'febbraio',
-  'marzo',
-  'aprile',
-  'maggio',
-  'giugno',
-  'luglio',
-  'agosto',
-  'settembre',
-  'ottobre',
-  'novembre',
-  'dicembre',
-];
-
-const _apiDisplayMonthsEn = <String>[
-  'january',
-  'february',
-  'march',
-  'april',
-  'may',
-  'june',
-  'july',
-  'august',
-  'september',
-  'october',
-  'november',
-  'december',
-];

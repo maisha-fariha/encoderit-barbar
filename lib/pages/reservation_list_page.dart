@@ -92,7 +92,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           .map(
             (e) => _ReservationOccurrence(
               appointmentId: e.id,
-              dateText: formatApiDateTimeDisplay(
+              dateText: formatAppointmentDateTime(
                 e.startsAt,
                 languageCode: languageCode,
               ),
@@ -109,7 +109,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           subtitle: first.barber.name.isNotEmpty
               ? 'con ${first.barber.name}'
               : 'con Barber',
-          dateText: formatApiDateTimeDisplay(
+          dateText: formatAppointmentDateTime(
             first.startsAt,
             languageCode: languageCode,
           ),
@@ -131,7 +131,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           id: e.id,
           title: e.service.name.isNotEmpty ? e.service.name : 'Service',
           subtitle: e.barber.name.isNotEmpty ? 'con ${e.barber.name}' : 'con Barber',
-          dateText: formatApiDateTimeDisplay(
+          dateText: formatAppointmentDateTime(
             e.startsAt,
             languageCode: languageCode,
           ),
@@ -143,7 +143,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           occurrences: <_ReservationOccurrence>[
             _ReservationOccurrence(
               appointmentId: e.id,
-              dateText: formatApiDateTimeDisplay(
+              dateText: formatAppointmentDateTime(
                 e.startsAt,
                 languageCode: languageCode,
               ),

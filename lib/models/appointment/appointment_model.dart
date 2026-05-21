@@ -1,6 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 
+import '../../utils/date_range_utils.dart';
+
 part 'appointment_model.freezed.dart';
 part 'appointment_model.g.dart';
 
@@ -210,9 +212,4 @@ double? _nullableDoubleFromJson(dynamic value) {
   return null;
 }
 
-DateTime? _dateTimeFromJson(dynamic value) {
-  if (value == null) return null;
-  if (value is DateTime) return value;
-  if (value is String && value.isNotEmpty) return DateTime.tryParse(value);
-  return null;
-}
+DateTime? _dateTimeFromJson(dynamic value) => parseApiWallClockDateTime(value);

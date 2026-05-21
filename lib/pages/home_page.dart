@@ -218,7 +218,7 @@ class _HomePageState extends State<HomePage> {
           subtitle: first.barber.name.trim().isNotEmpty
               ? 'con ${first.barber.name.trim()}'
               : 'con Barber',
-          dateText: formatApiDateTimeDisplay(
+          dateText: formatAppointmentDateTime(
             first.startsAt,
             languageCode: languageCode,
           ),
@@ -230,7 +230,7 @@ class _HomePageState extends State<HomePage> {
           occurrences: groupItems
               .map(
                 (e) => _UpcomingOccurrence(
-                  dateText: formatApiDateTimeDisplay(
+                  dateText: formatAppointmentDateTime(
                     e.startsAt,
                     languageCode: languageCode,
                   ),
@@ -251,7 +251,7 @@ class _HomePageState extends State<HomePage> {
         _UpcomingItem(
           title: serviceName.isNotEmpty ? serviceName : 'Service',
           subtitle: barberName.isNotEmpty ? 'con $barberName' : 'con Barber',
-          dateText: formatApiDateTimeDisplay(
+          dateText: formatAppointmentDateTime(
             item.startsAt,
             languageCode: languageCode,
           ),
@@ -260,7 +260,7 @@ class _HomePageState extends State<HomePage> {
           sortAt: item.activitySortTime,
           occurrences: <_UpcomingOccurrence>[
             _UpcomingOccurrence(
-              dateText: formatApiDateTimeDisplay(
+              dateText: formatAppointmentDateTime(
                 item.startsAt,
                 languageCode: languageCode,
               ),
