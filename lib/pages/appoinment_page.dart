@@ -414,7 +414,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     _selectedBarber = -1;
   }
 
-  Future<void> _loadBarbersForSelection() async {
+  Future<void> _loadBarbersForSelection({bool forceNetwork = false}) async {
     final shopId = _selectedShopId;
     final serviceId = _selectedServiceId;
     if (shopId == null ||
@@ -423,13 +423,49 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         serviceId.isEmpty) {
       return;
     }
+    final previousBarberId = _selectedBarberModel?.id;
     await _barberController.loadByShopAndService(
       shopId: shopId,
       serviceId: serviceId,
+      forceNetwork: forceNetwork,
     );
-    if (_selectedBarber >= _barberController.items.length) {
+    if (previousBarberId != null && previousBarberId.isNotEmpty) {
+      final index = _barberController.items.indexWhere(
+        (b) => b.id == previousBarberId,
+      );
+      if (index >= 0) {
+        _selectedBarber = index;
+      } else if (_selectedBarber >= _barberController.items.length) {
+        _selectedBarber = -1;
+      }
+    } else if (_selectedBarber >= _barberController.items.length) {
       _selectedBarber = -1;
     }
+  }
+
+  /// Refreshes barber [hours], holidays, vacations, slots, and preview for step 4.
+  Future<void> _refreshStep4ScheduleData() async {
+    if (_step != 4) return;
+    await _loadBarbersForSelection(forceNetwork: true);
+    await _loadScheduleConstraints();
+    if (!mounted || _step != 4) return;
+
+    final previousDate = _selectedDate;
+    setState(() {
+      if (!_isBarberWorkingDay(_selectedDate)) {
+        _alignSelectedDateToNextWorkingDay();
+      }
+    });
+    if (!mounted || _step != 4) return;
+
+    if (previousDate != _selectedDate) {
+      _selectedTime = -1;
+    }
+    await _loadSlotsForSelection(showLoading: false);
+    if (_recurringEnabled && _recurringIndex >= 0 && _howManyBookings >= 1) {
+      await _loadRecurringPreview(showLoading: false);
+    }
+    _scheduleStep4WorkingDayAlignment();
   }
 
   Future<void> _loadSlotsForSelection({bool showLoading = true}) async {
@@ -857,6 +893,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       _barberVacations = const <VacationPeriod>[];
       _shopVacations = const <VacationPeriod>[];
     });
+    await _loadBarbersForSelection(forceNetwork: true);
     await _loadScheduleConstraints();
     if (!mounted) return;
     setState(_alignSelectedDateToNextWorkingDay);
@@ -962,14 +999,17 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         return;
       }
 
+      await _refreshStep4ScheduleData();
+      if (!mounted || _step != 4) return;
       setState(() => _step = 5);
       return;
     }
     // Next steps can be implemented later.
   }
 
-  void _onBack() {
+  Future<void> _onBack() async {
     if (_step <= 1) return;
+    final returningToStep4 = _step == 5;
     setState(() {
       if (_step == 4) {
         _pendingStep4WorkingDayAlign = false;
@@ -977,6 +1017,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       }
       _step -= 1;
     });
+    if (returningToStep4 && mounted && _step == 4) {
+      await _refreshStep4ScheduleData();
+    }
   }
 
   String _monthLabel(DateTime date, Locale locale) {

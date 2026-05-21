@@ -13,7 +13,7 @@ class BarberListController extends BaseListController<BarberModel>
   String? _serviceId;
 
   @override
-  Future<void> loadItems() async {
+  Future<void> loadItems({bool forceNetwork = false}) async {
     if (_shopId == null ||
         _shopId!.isEmpty ||
         _serviceId == null ||
@@ -27,6 +27,7 @@ class BarberListController extends BaseListController<BarberModel>
       () => repository.getByShopAndService(
         shopId: _shopId!,
         serviceId: _serviceId!,
+        forceNetwork: forceNetwork,
       ),
     );
     update(['barber-selection']);
@@ -35,9 +36,10 @@ class BarberListController extends BaseListController<BarberModel>
   Future<void> loadByShopAndService({
     required String shopId,
     required String serviceId,
+    bool forceNetwork = false,
   }) async {
     _shopId = shopId;
     _serviceId = serviceId;
-    await loadItems();
+    await loadItems(forceNetwork: forceNetwork);
   }
 }

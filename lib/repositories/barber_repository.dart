@@ -20,17 +20,20 @@ class BarberRepository extends BaseRepository<BarberModel> {
   Future<Result<List<BarberModel>>> getByShopAndService({
     required String shopId,
     required String serviceId,
+    bool forceNetwork = false,
   }) async {
     final cacheKey = 'barbers_${shopId}_$serviceId';
     try {
-      final cached = _readCache(cacheKey);
-      if (cached != null) {
-        _refreshInBackground(
-          shopId: shopId,
-          serviceId: serviceId,
-          cacheKey: cacheKey,
-        );
-        return Result.success(cached);
+      if (!forceNetwork) {
+        final cached = _readCache(cacheKey);
+        if (cached != null) {
+          _refreshInBackground(
+            shopId: shopId,
+            serviceId: serviceId,
+            cacheKey: cacheKey,
+          );
+          return Result.success(cached);
+        }
       }
 
       final response = await apiService.get<dynamic>(
