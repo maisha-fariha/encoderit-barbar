@@ -2098,6 +2098,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               alternativeBarberByDate:
                                   _selectedAlternativeBarberByDate,
                               waitlistedOriginalDates: _waitlistedOriginalDates,
+                              onToggleWaitlist: _toggleWaitlistForDate,
+                              onSelectAlternativeBarber:
+                                  _onSelectAlternativeBarberForDate,
                             );
                             if (!isLarge) return card;
                             return Align(
@@ -2216,6 +2219,8 @@ class _Step4SummaryCard extends StatelessWidget {
     required this.onRemoveRecurringAt,
     this.alternativeBarberByDate = const <String, int>{},
     this.waitlistedOriginalDates = const <String>{},
+    this.onToggleWaitlist,
+    this.onSelectAlternativeBarber,
   });
 
   final _ServiceItem service;
@@ -2233,6 +2238,8 @@ class _Step4SummaryCard extends StatelessWidget {
   final ValueChanged<int> onRemoveRecurringAt;
   final Map<String, int> alternativeBarberByDate;
   final Set<String> waitlistedOriginalDates;
+  final void Function(String originalDate, bool value)? onToggleWaitlist;
+  final void Function(String date, int barberId)? onSelectAlternativeBarber;
 
   @override
   Widget build(BuildContext context) {
@@ -2278,6 +2285,8 @@ class _Step4SummaryCard extends StatelessWidget {
               onRemoveAt: onRemoveRecurringAt,
               waitlistedOriginalDates: waitlistedOriginalDates,
               alternativeBarberByDate: alternativeBarberByDate,
+              onToggleWaitlist: onToggleWaitlist,
+              onSelectAlternativeBarber: onSelectAlternativeBarber,
               decorateContainer: false,
             ),
             const SizedBox(height: 25),
