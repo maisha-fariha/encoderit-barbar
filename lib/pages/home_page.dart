@@ -15,6 +15,7 @@ import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/api_date_time_format.dart';
 import '../utils/avatar_url_resolver.dart';
+import '../widgets/app_scroll_behavior.dart';
 import '../widgets/session_user_avatar.dart';
 
 class HomePage extends StatefulWidget {
@@ -384,76 +385,100 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: contentMaxWidth),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 30),
-                Container(
-                  padding: EdgeInsets.all(isLarge ? 34 : 30),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF242424),
-                    borderRadius: BorderRadius.only(
+      body: ColoredBox(
+        color: Colors.black,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 30),
+            Expanded(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _UpcomingCard(
-                        expandedIndex: _expandedIndex,
-                        isLoading: _isLoadingUpcoming,
-                        errorMessage: _upcomingError,
-                        items: _upcomingItems,
-                        onRetry: _loadUpcomingBookedAppointments,
-                        onToggle: (i) => setState(
-                          () => _expandedIndex = _expandedIndex == i ? -1 : i,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 54,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEEEEEE),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                    child: ColoredBox(
+                      color: const Color(0xFF242424),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: ScrollConfiguration(
+                              behavior: const AppScrollBehavior(),
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  isLarge ? 34 : 30,
+                                  isLarge ? 34 : 30,
+                                  isLarge ? 34 : 30,
+                                  0,
+                                ),
+                                child: _UpcomingCard(
+                                  expandedIndex: _expandedIndex,
+                                  isLoading: _isLoadingUpcoming,
+                                  errorMessage: _upcomingError,
+                                  items: _upcomingItems,
+                                  onRetry: _loadUpcomingBookedAppointments,
+                                  onToggle: (i) => setState(
+                                    () => _expandedIndex =
+                                        _expandedIndex == i ? -1 : i,
+                                  ),
+                                ),
                               ),
                             ),
-                            onPressed: () async {
-                              final canProceed = await _ensureAuthenticated();
-                              if (!canProceed) return;
-                              Get.toNamed(AppRoutes.appoinment);
-                            },
-                            child: Text(
+                          ),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          isLarge ? 34 : 30,
+                          16,
+                          isLarge ? 34 : 30,
+                          isLarge ? 34 : 34,
+                        ),
+                        child: SizedBox(
+                          height: 54,
+                          width: double.infinity,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEEEEE),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: () async {
+                                final canProceed = await _ensureAuthenticated();
+                                if (!canProceed) return;
+                                Get.toNamed(AppRoutes.appoinment);
+                              },
+                              child: Text(
                                 l10n.serviceBooking,
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFF000000),
-                                fontSize: 16 * fontScale,
-                                fontWeight: FontWeight.w600,
-                                height: 1.5,
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF000000),
+                                  fontSize: 16 * fontScale,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.5,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 18),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -541,59 +566,68 @@ class _UpcomingCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 15),
-        if (isLoading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(
-              child: CircularProgressIndicator(color: Color(0xFFEEEEEE)),
-            ),
-          )
-        else if (errorMessage.isNotEmpty)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                errorMessage,
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFDDDDDD),
-                  fontSize: 13 * fontScale,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
+        Expanded(
+          child: isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFFEEEEEE),
+                  ),
+                )
+              : errorMessage.isNotEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        errorMessage,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFDDDDDD),
+                          fontSize: 13 * fontScale,
+                          fontWeight: FontWeight.w500,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: onRetry,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : items.isEmpty
+              ? Center(
+                  child: Text(
+                    l10n.noBookedAppointmentsFound,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFFDDDDDD),
+                      fontSize: 13 * fontScale,
+                      fontWeight: FontWeight.w500,
+                      height: 1.5,
+                    ),
+                  ),
+                )
+              : Material(
+                  color: const Color(0xFF242424),
+                  child: ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: items.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, i) {
+                      final item = items[i];
+                      final expanded = expandedIndex == i;
+                      return _UpcomingAccordionItem(
+                        item: item,
+                        expanded: expanded,
+                        onTap: () => onToggle(i),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: onRetry,
-                  child: const Text('Retry'),
-                ),
-              ),
-            ],
-          )
-        else if (items.isEmpty)
-          Text(
-            l10n.noBookedAppointmentsFound,
-            style: GoogleFonts.inter(
-              color: const Color(0xFFDDDDDD),
-              fontSize: 13 * fontScale,
-              fontWeight: FontWeight.w500,
-              height: 1.5,
-            ),
-          )
-        else
-        ...List.generate(items.length, (i) {
-          final item = items[i];
-          final expanded = expandedIndex == i;
-          return Padding(
-            padding: EdgeInsets.only(bottom: i == items.length - 1 ? 0 : 12),
-            child: _UpcomingAccordionItem(
-              item: item,
-              expanded: expanded,
-              onTap: () => onToggle(i),
-            ),
-          );
-        }),
+        ),
       ],
     );
   }

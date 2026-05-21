@@ -200,75 +200,95 @@ class _ContactPageState extends State<ContactPage> {
           ),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: SingleChildScrollView(
-            padding: EdgeInsets.only(bottom: 70 + media.padding.bottom),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 16),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 10),
-                  child: Obx(() {
-                    final shopCtrl = Get.find<ShopListController>();
-                    final loading = shopCtrl.isLoading.value;
-                    final _ = shopCtrl.items.length;
-                    return GetBuilder<ShopListController>(
-                      id: 'shop-selection',
-                      builder: (c) {
-                        if (loading && c.items.isEmpty) {
-                          return const SizedBox(
-                            height: 182,
-                            child: Center(
-                              child: SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Color(0xFFCCCCCC),
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                        final shop = c.selectedShop;
-                        if (shop == null) {
-                          return _EmptyShopMapCard(message: l10n.contactNoShopsHint);
-                        }
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            if (shop.name.trim().isNotEmpty) ...[
-                              Text(
-                                shop.name,
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFFFFFFFF),
-                                  fontSize: 18 * fontScale,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.35,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-                            _MapPreviewCard(shop: shop, l10n: l10n),
-                          ],
-                        );
-                      },
-                    );
-                  }),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Color(0xFF242424),
-                    borderRadius: BorderRadius.only(topRight: Radius.circular(30), topLeft: Radius.circular(30)),
-                  ),
-                  padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
+      body: ColoredBox(
+        color: Colors.black,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Obx(() {
+                            final shopCtrl = Get.find<ShopListController>();
+                            final loading = shopCtrl.isLoading.value;
+                            final _ = shopCtrl.items.length;
+                            return GetBuilder<ShopListController>(
+                              id: 'shop-selection',
+                              builder: (c) {
+                                if (loading && c.items.isEmpty) {
+                                  return const SizedBox(
+                                    height: 182,
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 28,
+                                        height: 28,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Color(0xFFCCCCCC),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final shop = c.selectedShop;
+                                if (shop == null) {
+                                  return _EmptyShopMapCard(
+                                    message: l10n.contactNoShopsHint,
+                                  );
+                                }
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    if (shop.name.trim().isNotEmpty) ...[
+                                      Text(
+                                        shop.name,
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFFFFFFFF),
+                                          fontSize: 18 * fontScale,
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                    ],
+                                    _MapPreviewCard(shop: shop, l10n: l10n),
+                                  ],
+                                );
+                              },
+                            );
+                        }),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF242424),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
+                    ),
+                    padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                       _SectionHeader(
                         icon: 'assets/icons/location.svg',
                         title: l10n.address,
@@ -419,12 +439,13 @@ class _ContactPageState extends State<ContactPage> {
                             ],
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

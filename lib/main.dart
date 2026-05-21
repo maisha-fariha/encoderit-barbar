@@ -6,6 +6,7 @@ import 'package:gems_core/gems_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'routes/app_pages.dart';
+import 'widgets/app_scroll_behavior.dart';
 import 'gen/l10n/app_localizations.dart';
 import 'services/app_services.dart';
 import 'services/profile_avatar_service.dart';
@@ -87,13 +88,24 @@ class EncoderitBarbarApp extends StatelessWidget {
       value: _statusBarStyle,
       child: GetMaterialApp(
         title: 'EncoderIT Barbar',
+        scrollBehavior: const AppScrollBehavior(),
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          brightness: Brightness.dark,
+          colorScheme: const ColorScheme.dark(
+            surface: Color(0xFF242424),
+            onSurface: Colors.white,
+            primary: Color(0xFFEEEEEE),
+            onPrimary: Colors.black,
+          ),
           // Match main screens (black scaffolds) so route transitions never flash white.
           scaffoldBackgroundColor: Colors.black,
           canvasColor: Colors.black,
-          appBarTheme: const AppBarTheme(systemOverlayStyle: _statusBarStyle),
+          appBarTheme: const AppBarTheme(
+            systemOverlayStyle: _statusBarStyle,
+            backgroundColor: Colors.black,
+            surfaceTintColor: Colors.transparent,
+          ),
         ),
         localizationsDelegates: const [
           AppLocalizations.delegate,
