@@ -256,7 +256,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get actionCannotBeUndone =>
-      'Questa azione non può essere annullata.\\nConferma se desideri procedere.';
+      'Questa azione non può essere annullata.\nConferma se desideri procedere.';
 
   @override
   String get cancelAction => 'Cancellare';

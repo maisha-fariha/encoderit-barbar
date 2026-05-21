@@ -86,7 +86,7 @@
   "someoneAvailable": "Qualcuno disponibile",
   "confirmBooking": "Conferma la prenotazione",
   "areYouSure": "Sei sicuro?",
-  "actionCannotBeUndone": "Questa azione non può essere annullata.\\nConferma se desideri procedere.",
+  "actionCannotBeUndone": "Questa azione non può essere annullata.\nConferma se desideri procedere.",
   "cancelAction": "Cancellare",
   "confirmAction": "Confermare",
   "deleteAppointmentTitle": "Elimina appuntamento",
