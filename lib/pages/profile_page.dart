@@ -489,7 +489,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
     final hPad = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 18,
@@ -614,30 +613,44 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: SingleChildScrollView(
-            padding: EdgeInsets.only(bottom: 70 + media.padding.bottom),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 18),
-                  Center(
-                    child: _ProfileAvatar(
-                      size: avatarSize,
-                      service: _avatarSvc,
-                      pickedFile: _pendingAvatarFile,
-                      remoteAvatarUrl:
-                          _avatarUrl.isEmpty ? null : _avatarUrl,
-                      onTapEdit: _openAvatarPicker,
-                    ),
+      body: ColoredBox(
+        color: Colors.black,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 18),
+                      _ProfileAvatar(
+                        size: avatarSize,
+                        service: _avatarSvc,
+                        pickedFile: _pendingAvatarFile,
+                        remoteAvatarUrl:
+                            _avatarUrl.isEmpty ? null : _avatarUrl,
+                        onTapEdit: _openAvatarPicker,
+                      ),
+                      const SizedBox(height: 18),
+                    ],
                   ),
-                  const SizedBox(height: 18),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF242424),
-                      borderRadius: BorderRadius.only(topRight: Radius.circular(30), topLeft: Radius.circular(30)),
+                ),
+              ),
+            ),
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF242424),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
                     ),
                     padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
                     child: Column(
@@ -802,10 +815,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ),
                               onPressed: () => Get.offAllNamed(AppRoutes.login),
-                              child:  Text(
+                              child: Text(
                                 l10n.logout,
                                 style: GoogleFonts.inter(
-                                  color: Color(0xFF000000),
+                                  color: const Color(0xFF000000),
                                   fontSize: 16 * fontScale,
                                   fontWeight: FontWeight.w600,
                                   height: 1,
@@ -817,9 +830,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-          ),
+            ),
+          ],
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

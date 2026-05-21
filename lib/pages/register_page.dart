@@ -376,7 +376,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                               foregroundColor: Colors.white,
                                             ),
                                             child: Text(
-                                              'Login',
+                                              AppLocalizations.of(context)?.logIn ?? 'Login',
                                               style: GoogleFonts.inter(
                                                 color: const Color(0xFFDDDDDD),
                                                 fontWeight: FontWeight.w400,

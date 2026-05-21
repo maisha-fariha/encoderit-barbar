@@ -434,7 +434,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get cancelled => 'Annullata';
 
   @override
-  String get logout => 'Logout';
+  String get logout => 'Esci';
 
   @override
   String get update => 'Aggiorna';
