@@ -187,6 +187,7 @@
   },
   "alternativeBarbersTitle": "Alternative barbers",
   "selectAlternativeBarber": "Select alternative barber",
+  "clearAlternativeBarberSelection": "No alternative barber",
   "selectedAlternativeBarber": "Selected: {name}",
   "@selectedAlternativeBarber": {
     "placeholders": {
@@ -194,6 +195,12 @@
     }
   },
   "recurringAlternativeBarberRequired": "Please select an alternative barber for each unavailable appointment.",
+  "recurringDatesExcludedHint": "{count, plural, =1{1 date was not assigned a barber or waitlist and will not be booked.} other{{count} dates were not assigned a barber or waitlist and will not be booked.}}",
+  "@recurringDatesExcludedHint": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "recurringSuccess": "Recurring appointments processed.",
   "recurringMissingSelection": "Please choose a recurring interval and number of bookings.",
   "recurringIntervalRequired": "Please select how often the appointment repeats before continuing.",

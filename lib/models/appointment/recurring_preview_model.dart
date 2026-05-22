@@ -1,3 +1,28 @@
+/// Preview row status from `POST /appointments/recurring/preview`.
+enum RecurringPreviewStatus {
+  available,
+  unavailable,
+  shopClosed,
+  unknown;
+
+  static RecurringPreviewStatus fromApi(String raw) {
+    switch (raw.trim().toLowerCase()) {
+      case 'available':
+        return RecurringPreviewStatus.available;
+      case 'unavailable':
+        return RecurringPreviewStatus.unavailable;
+      case 'shop_closed':
+        return RecurringPreviewStatus.shopClosed;
+      default:
+        return RecurringPreviewStatus.unknown;
+    }
+  }
+
+  bool get isAvailable => this == RecurringPreviewStatus.available;
+  bool get isUnavailable => this == RecurringPreviewStatus.unavailable;
+  bool get isShopClosed => this == RecurringPreviewStatus.shopClosed;
+}
+
 class RecurringPreviewAlternativeBarber {
   const RecurringPreviewAlternativeBarber({
     required this.id,
@@ -24,7 +49,7 @@ class RecurringPreviewDateItem {
     required this.time,
     required this.dateTimeString,
     required this.dateTimeStringIt,
-    required this.status,
+    required this.previewStatus,
     required this.statusIt,
     required this.reason,
     required this.reasonIt,
@@ -37,7 +62,7 @@ class RecurringPreviewDateItem {
   final String time;
   final String dateTimeString;
   final String dateTimeStringIt;
-  final String status;
+  final RecurringPreviewStatus previewStatus;
   final String statusIt;
   final String reason;
   final String reasonIt;
@@ -45,7 +70,9 @@ class RecurringPreviewDateItem {
   final String? nextAvailableDate;
   final List<RecurringPreviewAlternativeBarber> alternativeBarbers;
 
-  bool get isAvailable => status.trim().toLowerCase() == 'available';
+  bool get isAvailable => previewStatus.isAvailable;
+  bool get isUnavailable => previewStatus.isUnavailable;
+  bool get isShopClosed => previewStatus.isShopClosed;
 
   /// Italian by default; English when [languageCode] is `en`.
   String dateTimeLabelFor(String languageCode) {
@@ -64,15 +91,19 @@ class RecurringPreviewDateItem {
     return '$d $t';
   }
 
-  /// Italian by default; English when [languageCode] is `en`.
+  /// Localized status label; falls back to enum labels when [statusIt] is empty.
   String statusLabelFor(String languageCode) {
     final isEn = languageCode.toLowerCase() == 'en';
-    if (isEn) {
-      if (status.trim().isNotEmpty) return status.trim();
-      return statusIt.trim();
-    }
-    if (statusIt.trim().isNotEmpty) return statusIt.trim();
-    return status.trim();
+    if (!isEn && statusIt.trim().isNotEmpty) return statusIt.trim();
+    return switch (previewStatus) {
+      RecurringPreviewStatus.available =>
+        isEn ? 'Available' : 'Disponibile',
+      RecurringPreviewStatus.unavailable =>
+        isEn ? 'Unavailable' : 'Non disponibile',
+      RecurringPreviewStatus.shopClosed =>
+        isEn ? 'Shop closed' : 'Negozio chiuso',
+      RecurringPreviewStatus.unknown => statusIt.trim(),
+    };
   }
 
   /// Italian by default; English when [languageCode] is `en`.
@@ -103,7 +134,9 @@ class RecurringPreviewDateItem {
       time: (json['time'] ?? '').toString(),
       dateTimeString: (json['date_time_string'] ?? '').toString(),
       dateTimeStringIt: (json['date_time_string_it'] ?? '').toString(),
-      status: (json['status'] ?? '').toString(),
+      previewStatus: RecurringPreviewStatus.fromApi(
+        (json['status'] ?? '').toString(),
+      ),
       statusIt: (json['status_it'] ?? '').toString(),
       reason: (json['reason'] ?? '').toString(),
       reasonIt: (json['reason_it'] ?? '').toString(),

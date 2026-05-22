@@ -512,6 +512,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get selectAlternativeBarber => 'Seleziona barbiere alternativo';
 
   @override
+  String get clearAlternativeBarberSelection => 'Nessun barbiere alternativo';
+
+  @override
   String selectedAlternativeBarber(String name) {
     return 'Selezionato: $name';
   }
@@ -519,6 +522,18 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get recurringAlternativeBarberRequired =>
       'Seleziona un barbiere alternativo per ogni appuntamento non disponibile.';
+
+  @override
+  String recurringDatesExcludedHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count date senza barbiere o lista d\'attesa non verranno prenotate.',
+      one: '1 data senza barbiere o lista d\'attesa non verrà prenotata.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get recurringSuccess => 'Appuntamenti ricorrenti elaborati.';

@@ -187,6 +187,7 @@
   },
   "alternativeBarbersTitle": "Barbieri alternativi",
   "selectAlternativeBarber": "Seleziona barbiere alternativo",
+  "clearAlternativeBarberSelection": "Nessun barbiere alternativo",
   "selectedAlternativeBarber": "Selezionato: {name}",
   "@selectedAlternativeBarber": {
     "placeholders": {
@@ -194,6 +195,12 @@
     }
   },
   "recurringAlternativeBarberRequired": "Seleziona un barbiere alternativo per ogni appuntamento non disponibile.",
+  "recurringDatesExcludedHint": "{count, plural, =1{1 data senza barbiere o lista d'attesa non verrà prenotata.} other{{count} date senza barbiere o lista d'attesa non verranno prenotate.}}",
+  "@recurringDatesExcludedHint": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "recurringSuccess": "Appuntamenti ricorrenti elaborati.",
   "recurringMissingSelection": "Seleziona un intervallo ricorrente e il numero di prenotazioni.",
   "recurringIntervalRequired": "Seleziona la frequenza della ripetizione prima di continuare.",

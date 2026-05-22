@@ -1022,6 +1022,12 @@ abstract class AppLocalizations {
   /// **'Select alternative barber'**
   String get selectAlternativeBarber;
 
+  /// No description provided for @clearAlternativeBarberSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'No alternative barber'**
+  String get clearAlternativeBarberSelection;
+
   /// No description provided for @selectedAlternativeBarber.
   ///
   /// In en, this message translates to:
@@ -1033,6 +1039,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please select an alternative barber for each unavailable appointment.'**
   String get recurringAlternativeBarberRequired;
+
+  /// No description provided for @recurringDatesExcludedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 date was not assigned a barber or waitlist and will not be booked.} other{{count} dates were not assigned a barber or waitlist and will not be booked.}}'**
+  String recurringDatesExcludedHint(int count);
 
   /// No description provided for @recurringSuccess.
   ///

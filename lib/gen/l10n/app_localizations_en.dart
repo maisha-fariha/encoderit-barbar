@@ -508,6 +508,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectAlternativeBarber => 'Select alternative barber';
 
   @override
+  String get clearAlternativeBarberSelection => 'No alternative barber';
+
+  @override
   String selectedAlternativeBarber(String name) {
     return 'Selected: $name';
   }
@@ -515,6 +518,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recurringAlternativeBarberRequired =>
       'Please select an alternative barber for each unavailable appointment.';
+
+  @override
+  String recurringDatesExcludedHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count dates were not assigned a barber or waitlist and will not be booked.',
+      one:
+          '1 date was not assigned a barber or waitlist and will not be booked.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get recurringSuccess => 'Recurring appointments processed.';

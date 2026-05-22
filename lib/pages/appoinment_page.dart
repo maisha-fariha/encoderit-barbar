@@ -132,6 +132,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     final n = DateTime.now();
     return DateTime(n.year, n.month, n.day);
   }
+
+  static DateTime _dateOnly(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
   late final ShopListController _shopController;
   late final ServiceListController _serviceController;
   late final BarberListController _barberController;
@@ -172,7 +175,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   }
 
   bool _isBarberWorkingDay(DateTime date) {
-    final day = DateTime(date.year, date.month, date.day);
+    final day = _dateOnly(date);
     if (day.isBefore(_today())) return false;
     final barber = _selectedBarberModel;
     if (barber == null) return false;
@@ -596,8 +599,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       }());
       setState(() {
         _previewItems = outcome.result?.dates ?? const <RecurringPreviewDateItem>[];
-        final allowedDates = _previewItems.map((e) => e.date).toSet();
-        _waitlistedOriginalDates.retainAll(allowedDates);
+        _waitlistedOriginalDates.retainAll(
+          _previewItems.map((e) => e.date),
+        );
         _pruneAlternativeBarberSelections();
         _previewErrorMessage = '';
         _isLoadingPreview = false;
@@ -671,31 +675,47 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   }
 
   int? _alternativeBarberIdForPreviewItem(RecurringPreviewDateItem item) {
-    if (item.isAvailable || item.alternativeBarbers.isEmpty) return null;
+    if (!item.isUnavailable || item.alternativeBarbers.isEmpty) return null;
     if (_waitlistedOriginalDates.contains(item.date)) return null;
-    if (item.alternativeBarbers.length == 1) {
-      return item.alternativeBarbers.first.id;
+    final selected = _selectedAlternativeBarberByDate[item.date];
+    if (selected == null ||
+        !item.alternativeBarbers.any((a) => a.id == selected)) {
+      return null;
     }
-    return _selectedAlternativeBarberByDate[item.date];
+    return selected;
   }
 
-  bool _hasUnresolvedAlternativeBarberSelections() {
-    for (final item in _previewItems) {
-      if (item.isAvailable || item.alternativeBarbers.length <= 1) continue;
-      if (_waitlistedOriginalDates.contains(item.date)) continue;
-      final selected = _selectedAlternativeBarberByDate[item.date];
-      if (selected == null ||
-          !item.alternativeBarbers.any((a) => a.id == selected)) {
-        return true;
-      }
-    }
-    return false;
+  /// Dates that will not appear in the appointment list (shop closed or
+  /// unresolved unavailable slots).
+  bool _isPreviewDateExcludedFromBooking(RecurringPreviewDateItem item) {
+    if (item.isAvailable) return false;
+    if (item.isShopClosed) return true;
+    if (_waitlistedOriginalDates.contains(item.date)) return false;
+    return _alternativeBarberIdForPreviewItem(item) == null;
+  }
+
+  int get _recurringAvailableDatesCount =>
+      _previewItems.where((e) => e.isAvailable).length;
+
+  int get _excludedPreviewDatesCount =>
+      _previewItems.where(_isPreviewDateExcludedFromBooking).length;
+
+  void _showExcludedPreviewDatesNoticeIfNeeded() {
+    final count = _excludedPreviewDatesCount;
+    if (count <= 0) return;
+    _showPageMessage(
+      AppLocalizations.of(context)!.recurringDatesExcludedHint(count),
+    );
   }
 
   List<Map<String, dynamic>> _buildRecurringOverrides() {
     if (_previewItems.isEmpty) return const <Map<String, dynamic>>[];
     final overrides = <Map<String, dynamic>>[];
     for (final item in _previewItems) {
+      // Only `available` is booked by default; `shop_closed` is skipped entirely.
+      if (item.isAvailable || item.isShopClosed) continue;
+      if (!item.isUnavailable) continue;
+
       if (_waitlistedOriginalDates.contains(item.date)) {
         overrides.add(<String, dynamic>{
           'original_date': item.date,
@@ -767,10 +787,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         _showErrorMessage(l10n.recurringMissingSelection);
         return;
       }
-      if (_hasUnresolvedAlternativeBarberSelections()) {
-        _showErrorMessage(l10n.recurringAlternativeBarberRequired);
-        return;
-      }
+      _showExcludedPreviewDatesNoticeIfNeeded();
 
       final outcome = await controller.bookRecurring(
         shopId: shopId,
@@ -983,10 +1000,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
           _showErrorMessage(l10n.recurringQuantityRequired);
           return;
         }
-        if (_hasUnresolvedAlternativeBarberSelections()) {
-          _showErrorMessage(l10n.recurringAlternativeBarberRequired);
-          return;
-        }
       }
 
       if (!_hasAvailableSlots) {
@@ -1001,6 +1014,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
       await _refreshStep4ScheduleData();
       if (!mounted || _step != 4) return;
+      _showExcludedPreviewDatesNoticeIfNeeded();
       setState(() => _step = 5);
       return;
     }
@@ -1108,6 +1122,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     setState(() {
       if (value) {
         _waitlistedOriginalDates.add(originalDate);
+        _selectedAlternativeBarberByDate.remove(originalDate);
       } else {
         _waitlistedOriginalDates.remove(originalDate);
       }
@@ -1119,18 +1134,29 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     _selectedAlternativeBarberByDate.removeWhere((date, barberId) {
       if (!dates.contains(date)) return true;
       final item = _previewItems.firstWhere((e) => e.date == date);
+      if (!item.isUnavailable) return true;
       return !item.alternativeBarbers.any((a) => a.id == barberId);
     });
-    for (final item in _previewItems) {
-      if (item.isAvailable || item.alternativeBarbers.length != 1) continue;
-      _selectedAlternativeBarberByDate[item.date] =
-          item.alternativeBarbers.first.id;
+    for (final date in _waitlistedOriginalDates.toList()) {
+      if (!dates.contains(date)) {
+        _waitlistedOriginalDates.remove(date);
+        continue;
+      }
+      final item = _previewItems.firstWhere((e) => e.date == date);
+      if (!item.isUnavailable) {
+        _waitlistedOriginalDates.remove(date);
+      }
     }
   }
 
-  void _onSelectAlternativeBarberForDate(String date, int barberId) {
+  void _onSelectAlternativeBarberForDate(String date, int? barberId) {
     setState(() {
-      _selectedAlternativeBarberByDate[date] = barberId;
+      if (barberId == null) {
+        _selectedAlternativeBarberByDate.remove(date);
+      } else {
+        _selectedAlternativeBarberByDate[date] = barberId;
+        _waitlistedOriginalDates.remove(date);
+      }
     });
   }
 
@@ -1173,24 +1199,54 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return '$dow, $mon $day';
   }
 
-  /// First selectable working day for the picker, or [fallback] if none found.
-  DateTime _initialDateForPicker({required DateTime fallback}) {
-    if (_isBarberWorkingDay(_selectedDate)) return _selectedDate;
-    for (int offset = 0; offset < 370; offset++) {
-      final candidate = _today().add(Duration(days: offset));
+  /// Next selectable day on or after [start], searching up to [maxDays] ahead.
+  DateTime? _nextSelectableWorkingDay({
+    DateTime? start,
+    int maxDays = 370,
+  }) {
+    final from = _dateOnly(start ?? _today());
+    for (int offset = 0; offset < maxDays; offset++) {
+      final candidate = from.add(Duration(days: offset));
       if (_isBarberWorkingDay(candidate)) return candidate;
     }
-    return fallback;
+    return null;
+  }
+
+  /// A day guaranteed to satisfy [selectableDayPredicate] for [showDatePicker].
+  DateTime? _initialDateForPicker() {
+    final selected = _dateOnly(_selectedDate);
+    if (_isBarberWorkingDay(selected)) return selected;
+    return _nextSelectableWorkingDay();
   }
 
   /// Opens the month calendar. The header icon is always tappable; only working
   /// weekdays are selectable inside the dialog.
   Future<void> _pickStep3Date() async {
-    final initial = _initialDateForPicker(fallback: _selectedDate);
+    final l10n = AppLocalizations.of(context)!;
+    final initial = _initialDateForPicker();
+    if (initial == null) {
+      _showPageMessage(l10n.noBarberWorkingDays);
+      return;
+    }
+
+    final normalizedInitial = _dateOnly(initial);
+    if (!_isBarberWorkingDay(normalizedInitial)) return;
+
+    final selectedDay = _dateOnly(_selectedDate);
+    if (selectedDay != normalizedInitial && !_isBarberWorkingDay(selectedDay)) {
+      setState(() {
+        _selectedDate = normalizedInitial;
+        _selectedTime = -1;
+      });
+    }
+
+    final firstDate = _today();
     final picked = await showDatePicker(
       context: context,
-      initialDate: initial,
-      firstDate: DateTime(2020, 1, 1),
+      initialDate: normalizedInitial,
+      firstDate: firstDate.isAfter(normalizedInitial)
+          ? normalizedInitial
+          : firstDate,
       lastDate: DateTime(2035, 12, 31),
       selectableDayPredicate: (d) => _isBarberWorkingDay(d),
       builder: (context, child) {
@@ -1275,9 +1331,11 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       },
     );
 
-    if (picked == null || !_isBarberWorkingDay(picked)) return;
+    if (picked == null) return;
+    final normalizedPicked = _dateOnly(picked);
+    if (!_isBarberWorkingDay(normalizedPicked)) return;
     setState(() {
-      _selectedDate = picked;
+      _selectedDate = normalizedPicked;
       _syncRecurringDates();
     });
     if (_step == 4) {
@@ -1979,13 +2037,15 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                       onRetry: _loadRecurringPreview,
                                       selectedBarberName: _selectedBarberName,
                                       onRemoveAt: _confirmRemoveRecurringDateAt,
-                                      waitlistedOriginalDates:
-                                          _waitlistedOriginalDates,
                                       alternativeBarberByDate:
                                           _selectedAlternativeBarberByDate,
+                                      waitlistedOriginalDates:
+                                          _waitlistedOriginalDates,
                                       onToggleWaitlist: _toggleWaitlistForDate,
                                       onSelectAlternativeBarber:
                                           _onSelectAlternativeBarberForDate,
+                                      excludedPreviewDatesCount:
+                                          _excludedPreviewDatesCount,
                                       decorateContainer: true,
                                     ),
                                   ],
@@ -2078,8 +2138,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                     : intervalLabels[0];
                             final bookings = _recurringEnabled
                                 ? (_previewItems.isNotEmpty
-                                      ? _previewItems.length
-                                      : (_howManyBookings >= 1 ? _howManyBookings : 1))
+                                      ? (_recurringAvailableDatesCount > 0
+                                            ? _recurringAvailableDatesCount
+                                            : 1)
+                                      : (_howManyBookings >= 1
+                                            ? _howManyBookings
+                                            : 1))
                                 : 1;
                             final card = _Step4SummaryCard(
                               service: selectedService,
@@ -2101,6 +2165,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               onToggleWaitlist: _toggleWaitlistForDate,
                               onSelectAlternativeBarber:
                                   _onSelectAlternativeBarberForDate,
+                              excludedPreviewDatesCount:
+                                  _excludedPreviewDatesCount,
                             );
                             if (!isLarge) return card;
                             return Align(
@@ -2221,6 +2287,7 @@ class _Step4SummaryCard extends StatelessWidget {
     this.waitlistedOriginalDates = const <String>{},
     this.onToggleWaitlist,
     this.onSelectAlternativeBarber,
+    this.excludedPreviewDatesCount = 0,
   });
 
   final _ServiceItem service;
@@ -2239,7 +2306,8 @@ class _Step4SummaryCard extends StatelessWidget {
   final Map<String, int> alternativeBarberByDate;
   final Set<String> waitlistedOriginalDates;
   final void Function(String originalDate, bool value)? onToggleWaitlist;
-  final void Function(String date, int barberId)? onSelectAlternativeBarber;
+  final void Function(String date, int? barberId)? onSelectAlternativeBarber;
+  final int excludedPreviewDatesCount;
 
   @override
   Widget build(BuildContext context) {
@@ -2283,10 +2351,11 @@ class _Step4SummaryCard extends StatelessWidget {
               onRetry: onRetryPreview,
               selectedBarberName: selectedBarberName,
               onRemoveAt: onRemoveRecurringAt,
-              waitlistedOriginalDates: waitlistedOriginalDates,
               alternativeBarberByDate: alternativeBarberByDate,
+              waitlistedOriginalDates: waitlistedOriginalDates,
               onToggleWaitlist: onToggleWaitlist,
               onSelectAlternativeBarber: onSelectAlternativeBarber,
+              excludedPreviewDatesCount: excludedPreviewDatesCount,
               decorateContainer: false,
             ),
             const SizedBox(height: 25),
@@ -3304,12 +3373,13 @@ class _RecurringPreviewSummary extends StatelessWidget {
     required this.errorMessage,
     required this.onRetry,
     required this.selectedBarberName,
-    required this.waitlistedOriginalDates,
     this.alternativeBarberByDate = const <String, int>{},
+    this.waitlistedOriginalDates = const <String>{},
     this.onRemoveAt,
     this.onToggleWaitlist,
     this.onSelectAlternativeBarber,
     this.decorateContainer = true,
+    this.excludedPreviewDatesCount = 0,
   });
 
   final String intervalLabel;
@@ -3318,12 +3388,13 @@ class _RecurringPreviewSummary extends StatelessWidget {
   final String errorMessage;
   final Future<void> Function() onRetry;
   final String selectedBarberName;
-  final Set<String> waitlistedOriginalDates;
   final Map<String, int> alternativeBarberByDate;
+  final Set<String> waitlistedOriginalDates;
   final ValueChanged<int>? onRemoveAt;
   final void Function(String originalDate, bool value)? onToggleWaitlist;
-  final void Function(String date, int barberId)? onSelectAlternativeBarber;
+  final void Function(String date, int? barberId)? onSelectAlternativeBarber;
   final bool decorateContainer;
+  final int excludedPreviewDatesCount;
 
   @override
   Widget build(BuildContext context) {
@@ -3349,6 +3420,31 @@ class _RecurringPreviewSummary extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
+        if (excludedPreviewDatesCount > 0) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 18,
+                color: Color(0xFFBDBDBD),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  l10n.recurringDatesExcludedHint(excludedPreviewDatesCount),
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFBDBDBD),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
         if (isLoading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 14),
@@ -3394,16 +3490,22 @@ class _RecurringPreviewSummary extends StatelessWidget {
             _RecurringPreviewRow(
               item: previewItems[i],
               selectedBarberName: selectedBarberName,
-              isWaitlisted: waitlistedOriginalDates.contains(previewItems[i].date),
+              isWaitlisted: waitlistedOriginalDates.contains(
+                previewItems[i].date,
+              ),
               selectedAlternativeBarberId:
                   alternativeBarberByDate[previewItems[i].date],
-              onToggleWaitlist: onToggleWaitlist == null
-                  ? null
-                  : (value) => onToggleWaitlist!(previewItems[i].date, value),
-              onSelectAlternativeBarber: onSelectAlternativeBarber == null
-                  ? null
-                  : (barberId) =>
-                      onSelectAlternativeBarber!(previewItems[i].date, barberId),
+              onToggleWaitlist: previewItems[i].isUnavailable &&
+                      onToggleWaitlist != null
+                  ? (value) => onToggleWaitlist!(previewItems[i].date, value)
+                  : null,
+              onSelectAlternativeBarber: previewItems[i].isUnavailable &&
+                      onSelectAlternativeBarber != null
+                  ? (barberId) => onSelectAlternativeBarber!(
+                      previewItems[i].date,
+                      barberId,
+                    )
+                  : null,
               onRemove: onRemoveAt == null ? null : () => onRemoveAt!(i),
             ),
           ],
@@ -3434,7 +3536,7 @@ class _RecurringPreviewRow extends StatelessWidget {
   const _RecurringPreviewRow({
     required this.item,
     required this.selectedBarberName,
-    required this.isWaitlisted,
+    this.isWaitlisted = false,
     this.selectedAlternativeBarberId,
     this.onToggleWaitlist,
     this.onSelectAlternativeBarber,
@@ -3446,7 +3548,7 @@ class _RecurringPreviewRow extends StatelessWidget {
   final bool isWaitlisted;
   final int? selectedAlternativeBarberId;
   final ValueChanged<bool>? onToggleWaitlist;
-  final ValueChanged<int>? onSelectAlternativeBarber;
+  final ValueChanged<int?>? onSelectAlternativeBarber;
   final VoidCallback? onRemove;
 
   @override
@@ -3460,8 +3562,11 @@ class _RecurringPreviewRow extends StatelessWidget {
     final hasReason = reasonLabel.isNotEmpty;
     final nextSlot = item.nextAvailableSlot?.trim() ?? '';
     final nextDate = item.nextAvailableDate?.trim() ?? '';
-    final canSelectAlternative =
-        !item.isAvailable && hasAlternatives && onSelectAlternativeBarber != null;
+    final showUnavailableActions = item.isUnavailable;
+    final canSelectAlternative = showUnavailableActions &&
+        hasAlternatives &&
+        !isWaitlisted &&
+        onSelectAlternativeBarber != null;
 
     RecurringPreviewAlternativeBarber? selectedAlternative;
     if (selectedAlternativeBarberId != null) {
@@ -3472,6 +3577,10 @@ class _RecurringPreviewRow extends StatelessWidget {
         }
       }
     }
+    final canToggleWaitlist =
+        showUnavailableActions &&
+        onToggleWaitlist != null &&
+        selectedAlternative == null;
 
     Widget statusWidget;
     if (item.isAvailable) {
@@ -3551,9 +3660,7 @@ class _RecurringPreviewRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 statusWidget,
-                if (hasAlternatives &&
-                    !item.isAvailable &&
-                    canSelectAlternative) ...[
+                if (canSelectAlternative) ...[
                   const SizedBox(height: 12),
                   Text(
                     l10n.alternativeBarbersTitle,
@@ -3565,25 +3672,12 @@ class _RecurringPreviewRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (item.alternativeBarbers.length == 1)
-                    _AlternativeBarberChip(
-                      name: item.alternativeBarbers.first.name.trim(),
-                      selected:
-                          selectedAlternativeBarberId ==
-                              item.alternativeBarbers.first.id ||
-                          selectedAlternative != null,
-                      enabled: true,
-                      onTap: () => onSelectAlternativeBarber!(
-                        item.alternativeBarbers.first.id,
-                      ),
-                    )
-                  else
-                    _AlternativeBarberDropdown(
-                      alternatives: item.alternativeBarbers,
-                      selectedBarberId: selectedAlternativeBarberId,
-                      enabled: true,
-                      onSelect: onSelectAlternativeBarber!,
-                    ),
+                  _AlternativeBarberDropdown(
+                    alternatives: item.alternativeBarbers,
+                    selectedBarberId: selectedAlternativeBarberId,
+                    enabled: true,
+                    onSelect: onSelectAlternativeBarber!,
+                  ),
                 ],
                 if (hasReason) ...[
                   const SizedBox(height: 8),
@@ -3624,28 +3718,39 @@ class _RecurringPreviewRow extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (!item.isAvailable && onToggleWaitlist != null) ...[
+                if (showUnavailableActions && onToggleWaitlist != null) ...[
                   const SizedBox(height: 8),
                   InkWell(
-                    onTap: () => onToggleWaitlist!(!isWaitlisted),
-                    child: Row(
-                      children: [
-                        isWaitlisted
-                            ? SvgPicture.asset('assets/icons/checked_box.svg', width: 20)
-                            : SvgPicture.asset('assets/icons/non_checked_box.svg', width: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            l10n.waitlistMe,
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFFDDDDDD),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              height: 1.4,
+                    onTap: canToggleWaitlist
+                        ? () => onToggleWaitlist!(!isWaitlisted)
+                        : null,
+                    child: Opacity(
+                      opacity: canToggleWaitlist ? 1 : 0.45,
+                      child: Row(
+                        children: [
+                          isWaitlisted
+                              ? SvgPicture.asset(
+                                  'assets/icons/checked_box.svg',
+                                  width: 20,
+                                )
+                              : SvgPicture.asset(
+                                  'assets/icons/non_checked_box.svg',
+                                  width: 20,
+                                ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              l10n.waitlistMe,
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFFDDDDDD),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                height: 1.4,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -3670,77 +3775,6 @@ class _RecurringPreviewRow extends StatelessWidget {
   }
 }
 
-class _AlternativeBarberChip extends StatelessWidget {
-  const _AlternativeBarberChip({
-    required this.name,
-    required this.selected,
-    required this.enabled,
-    this.onTap,
-  });
-
-  final String name;
-  final bool selected;
-  final bool enabled;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final border = selected
-        ? const Color(0xFF185C5C)
-        : const Color(0xFF797979).withValues(alpha: 0.5);
-    final nameColor = selected
-        ? const Color(0xFFDDDDDD)
-        : enabled
-        ? const Color(0xFFEEEEEE)
-        : const Color(0xFFEEEEEE).withValues(alpha: 0.35);
-    final bg = selected
-        ? const Color(0xFF242424)
-        : enabled
-        ? const Color(0xFFEEEEEE)
-        : const Color(0xFFEEEEEE).withValues(alpha: 0.35);
-
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: border),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              name.isNotEmpty ? name : '—',
-              style: GoogleFonts.inter(
-                color: nameColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
-              ),
-            ),
-            if (!selected && enabled) ...[
-              const SizedBox(width: 8),
-              Text(
-                l10n.select,
-                style: GoogleFonts.inter(
-                  color: const Color(0xFF797979),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _AlternativeBarberDropdown extends StatelessWidget {
   const _AlternativeBarberDropdown({
     required this.alternatives,
@@ -3749,14 +3783,18 @@ class _AlternativeBarberDropdown extends StatelessWidget {
     required this.onSelect,
   });
 
+  static const int _clearSelectionSentinel = -1;
+
   final List<RecurringPreviewAlternativeBarber> alternatives;
   final int? selectedBarberId;
   final bool enabled;
-  final ValueChanged<int> onSelect;
+  final ValueChanged<int?> onSelect;
 
   Future<void> _open(BuildContext context) async {
     if (!enabled || alternatives.isEmpty) return;
     final l10n = AppLocalizations.of(context)!;
+    final hasSelection = selectedBarberId != null &&
+        alternatives.any((a) => a.id == selectedBarberId);
     final picked = await showModalBottomSheet<int>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -3809,13 +3847,38 @@ class _AlternativeBarberDropdown extends StatelessWidget {
                     child: ListView.separated(
                       shrinkWrap: true,
                       padding: EdgeInsets.zero,
-                      itemCount: alternatives.length,
+                      itemCount: alternatives.length + (hasSelection ? 1 : 0),
                       separatorBuilder: (_, index) => const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
                         child: _Step3Divider(),
                       ),
                       itemBuilder: (_, i) {
-                        final alt = alternatives[i];
+                        if (hasSelection && i == 0) {
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.of(sheetContext)
+                                  .pop(_clearSelectionSentinel),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                                child: Text(
+                                  l10n.clearAlternativeBarberSelection,
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFFEF4444),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        final altIndex = hasSelection ? i - 1 : i;
+                        final alt = alternatives[altIndex];
                         final name = alt.name.trim();
                         final isSelected = selectedBarberId == alt.id;
                         return Material(
@@ -3866,7 +3929,12 @@ class _AlternativeBarberDropdown extends StatelessWidget {
         );
       },
     );
-    if (picked != null) onSelect(picked);
+    if (picked == null) return;
+    if (picked == _clearSelectionSentinel) {
+      onSelect(null);
+    } else {
+      onSelect(picked);
+    }
   }
 
   @override
@@ -3889,48 +3957,79 @@ class _AlternativeBarberDropdown extends StatelessWidget {
         ? const Color(0xFFDDDDDD)
         : const Color(0xFF797979);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled ? () => _open(context) : null,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF242424),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: hasSelection
-                  ? const Color(0xFF185C5C)
-                  : const Color(0xFF797979).withValues(alpha: 0.5),
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label.isNotEmpty ? label : '—',
-                  style: GoogleFonts.inter(
-                    color: enabled
-                        ? labelColor
-                        : labelColor.withValues(alpha: 0.35),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
+    return Row(
+      children: [
+        Expanded(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: enabled ? () => _open(context) : null,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF242424),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: hasSelection
+                        ? const Color(0xFF185C5C)
+                        : const Color(0xFF797979).withValues(alpha: 0.5),
                   ),
                 ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        label.isNotEmpty ? label : '—',
+                        style: GoogleFonts.inter(
+                          color: enabled
+                              ? labelColor
+                              : labelColor.withValues(alpha: 0.35),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: enabled
+                          ? const Color(0xFF797979)
+                          : const Color(0xFF797979).withValues(alpha: 0.35),
+                      size: 20,
+                    ),
+                  ],
+                ),
               ),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: enabled
-                    ? const Color(0xFF797979)
-                    : const Color(0xFF797979).withValues(alpha: 0.35),
-                size: 20,
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+        if (hasSelection && enabled) ...[
+          const SizedBox(width: 8),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => onSelect(null),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF242424),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFF797979).withValues(alpha: 0.5),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  color: Color(0xFF797979),
+                  size: 18,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
