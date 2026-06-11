@@ -27,6 +27,7 @@ import '../repositories/shop_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../utils/compact_screen_utils.dart';
+import '../utils/slot_time_format.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
 
 int _appointmentGridCrossAxisCount(BuildContext context) {
@@ -341,6 +342,16 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
           ),
         )
         .toList();
+  }
+
+  int get _selectedServiceDurationMinutes {
+    final services = _serviceController.items;
+    if (services.isEmpty ||
+        _selectedService < 0 ||
+        _selectedService >= services.length) {
+      return 0;
+    }
+    return services[_selectedService].durationMinutes;
   }
 
   List<_BarberItem> get _barbers {
@@ -1943,6 +1954,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 Localizations.localeOf(context),
                               ),
                               selectedDate: _selectedDate,
+                              serviceDurationMinutes:
+                                  _selectedServiceDurationMinutes,
                               isPillDayEnabled: _isBarberWorkingDay,
                               isSlotSelectable: _isSlotSelectable,
                               onSelectDate: (d) async {
@@ -2892,6 +2905,7 @@ class _Step3CalendarCard extends StatelessWidget {
   const _Step3CalendarCard({
     required this.monthLabel,
     required this.selectedDate,
+    required this.serviceDurationMinutes,
     required this.isPillDayEnabled,
     required this.isSlotSelectable,
     required this.onSelectDate,
@@ -2906,6 +2920,7 @@ class _Step3CalendarCard extends StatelessWidget {
 
   final String monthLabel;
   final DateTime selectedDate;
+  final int serviceDurationMinutes;
   /// Enables/disables the horizontal day pills only (not the calendar icon).
   final bool Function(DateTime date) isPillDayEnabled;
   final bool Function(AvailabilitySlot slot) isSlotSelectable;
@@ -3081,10 +3096,11 @@ class _Step3CalendarCard extends StatelessWidget {
                 crossAxisCount: 3,
                 mainAxisSpacing: 14,
                 crossAxisSpacing: 14,
-                childAspectRatio: 2.35,
+                childAspectRatio: 2.55,
               ),
               itemBuilder: (context, i) {
-                final isDisabled = !isSlotSelectable(slots[i]);
+                final slot = slots[i];
+                final isDisabled = !isSlotSelectable(slot);
                 final selected = i == selectedTimeIndex;
                 final bg = isDisabled
                     ? Color(0xFF242424).withValues(alpha: 0.30)
@@ -3096,11 +3112,15 @@ class _Step3CalendarCard extends StatelessWidget {
                     : selected
                     ? const Color(0xFFDDDDDD)
                     : const Color(0xFF797979);
-                final text = isDisabled
+                final textColor = isDisabled
                     ? Color(0xFFEEEEEE).withValues(alpha: 0.30)
                     : selected
                     ? const Color(0xFF242424)
                     : const Color(0xFFEEEEEE);
+                final label = formatSlotTimeRange(
+                  slot.time,
+                  serviceDurationMinutes,
+                );
                 return InkWell(
                   onTap: isDisabled ? null : () => onSelectTime(i),
                   borderRadius: BorderRadius.circular(10),
@@ -3110,14 +3130,19 @@ class _Step3CalendarCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: border),
                     ),
-                    child: Center(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
-                        slots[i].time,
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
                         style: GoogleFonts.inter(
-                          color: text,
+                          color: textColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          height: 1.5,
+                          height: 1.2,
                         ),
                       ),
                     ),
