@@ -23,7 +23,6 @@ class ReservationListPage extends StatefulWidget {
 }
 
 class _ReservationListPageState extends State<ReservationListPage> {
-  int _tab = 0; // 0 booked, 1 completed, 2 cancelled
   int _expandedIndex = 0;
   int _navIndex = 1; // Prenotazione selected
   late final ReservationListController _controller;
@@ -328,29 +327,15 @@ class _ReservationListPageState extends State<ReservationListPage> {
         builder: (controller) {
           final languageCode = Localizations.localeOf(context).languageCode;
           final l10n = AppLocalizations.of(context)!;
-          final booked = _mapItems(
-            controller.byStatus('booked'),
+          final tab = controller.activeTab;
+          final list = _mapItems(
+            controller.items,
             languageCode: languageCode,
             l10n: l10n,
           );
-          final completed = _mapItems(
-            controller.byStatus('completed'),
-            languageCode: languageCode,
-            l10n: l10n,
-          );
-          final cancelled = _mapItems(
-            controller.byStatus('cancelled'),
-            languageCode: languageCode,
-            l10n: l10n,
-          );
-          final list = _tab == 0
-              ? booked
-              : _tab == 1
-              ? completed
-              : cancelled;
-          final mode = _tab == 0
+          final mode = tab == 0
               ? _ReservationMode.booked
-              : _tab == 1
+              : tab == 1
               ? _ReservationMode.completed
               : _ReservationMode.cancelled;
           final effectiveExpandedIndex = _expandedIndex >= list.length
@@ -398,23 +383,32 @@ class _ReservationListPageState extends State<ReservationListPage> {
                             children: [
                               _TopPill(
                                 label: l10n.upcoming,
-                                count: '${booked.length}',
-                                selected: _tab == 0,
-                                onTap: () => setState(() => _tab = 0),
+                                count: '${controller.tabCounts[0] ?? 0}',
+                                selected: tab == 0,
+                                onTap: () {
+                                  setState(() => _expandedIndex = 0);
+                                  _controller.switchTab(0);
+                                },
                               ),
                               const SizedBox(width: 10),
                               _TopPill(
                                 label: l10n.completed,
-                                count: '${completed.length}',
-                                selected: _tab == 1,
-                                onTap: () => setState(() => _tab = 1),
+                                count: '${controller.tabCounts[1] ?? 0}',
+                                selected: tab == 1,
+                                onTap: () {
+                                  setState(() => _expandedIndex = 0);
+                                  _controller.switchTab(1);
+                                },
                               ),
                               const SizedBox(width: 10),
                               _TopPill(
                                 label: l10n.cancelled,
-                                count: '${cancelled.length}',
-                                selected: _tab == 2,
-                                onTap: () => setState(() => _tab = 2),
+                                count: '${controller.tabCounts[2] ?? 0}',
+                                selected: tab == 2,
+                                onTap: () {
+                                  setState(() => _expandedIndex = 0);
+                                  _controller.switchTab(2);
+                                },
                               ),
                             ],
                           ),

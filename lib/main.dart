@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'routes/app_pages.dart';
 import 'widgets/app_scroll_behavior.dart';
 import 'gen/l10n/app_localizations.dart';
+import 'services/onboarding_prefs.dart';
 import 'services/app_services.dart';
 import 'services/profile_avatar_service.dart';
 import 'auth/app_auth_gateway.dart';
@@ -71,9 +73,29 @@ Future<void> main() async {
   await auth.bootstrap();
   await avatarService.onAuthChanged();
 
-  final initialRoute = auth.isLoggedIn.value
-      ? AppRoutes.home
-      : AppRoutes.onboarding;
+  final prefs = AppServices.getIt<SharedPreferences>();
+  final onboardingCompleted = OnboardingPrefs.isCompleted(prefs);
+
+  // First launch: ignore any session restored by OS backup and show onboarding.
+  if (!onboardingCompleted) {
+    await auth.clearSessionForFirstLaunch();
+  }
+
+  final String initialRoute;
+  if (auth.isLoggedIn.value) {
+    initialRoute = AppRoutes.home;
+  } else {
+    initialRoute = OnboardingPrefs.loggedOutRoute(prefs);
+  }
+
+  if (kDebugMode) {
+    debugPrint(
+      '[Startup] initialRoute=$initialRoute '
+      'loggedIn=${auth.isLoggedIn.value} '
+      'onboardingCompleted=$onboardingCompleted',
+    );
+  }
+
   runApp(EncoderitBarbarApp(initialRoute: initialRoute));
 }
 

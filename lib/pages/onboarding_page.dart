@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../gen/l10n/app_localizations.dart';
 
 import '../routes/app_pages.dart';
+import '../services/app_services.dart';
+import '../services/onboarding_prefs.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -67,6 +70,23 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.dispose();
   }
 
+  Future<void> _completeOnboarding() async {
+    final prefs = AppServices.getIt<SharedPreferences>();
+    await OnboardingPrefs.markCompleted(prefs);
+  }
+
+  Future<void> _goToRegister() async {
+    await _completeOnboarding();
+    if (!mounted) return;
+    Get.offNamed(AppRoutes.register);
+  }
+
+  Future<void> _goToLogin() async {
+    await _completeOnboarding();
+    if (!mounted) return;
+    Get.offNamed(AppRoutes.login);
+  }
+
   @override
   Widget build(BuildContext context) {
     final pad = MediaQuery.paddingOf(context);
@@ -85,7 +105,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 children: [
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => Get.offNamed(AppRoutes.register),
+                    onTap: _goToRegister,
                     behavior: HitTestBehavior.opaque,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -117,7 +137,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       constraints: BoxConstraints(maxWidth: buttonMaxWidth),
                       child: _PrimaryButton(
                         label: l10n.continueLabel,
-                        onPressed: () => Get.toNamed(AppRoutes.register),
+                        onPressed: _goToRegister,
                       ),
                     ),
                   ),
@@ -135,7 +155,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => Get.toNamed(AppRoutes.login),
+                      onPressed: _goToLogin,
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         minimumSize: Size.zero,

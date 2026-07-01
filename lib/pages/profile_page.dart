@@ -9,6 +9,7 @@ import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/profile/profile_update_request.dart';
@@ -814,7 +815,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              onPressed: () => Get.offAllNamed(AppRoutes.login),
+                              onPressed: () =>
+                                  Get.find<AuthController>().logout(),
                               child: Text(
                                 l10n.logout,
                                 style: GoogleFonts.inter(

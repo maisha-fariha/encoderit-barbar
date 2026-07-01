@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:gems_responsive/gems_responsive.dart';
@@ -12,6 +13,7 @@ import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
+import '../services/onboarding_prefs.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/api_date_time_format.dart';
 import '../utils/appointment_barber_display.dart';
@@ -114,7 +116,8 @@ class _HomePageState extends State<HomePage> {
       return true;
     }
     if (!mounted) return false;
-    Get.offAllNamed(AppRoutes.login);
+    final prefs = AppServices.getIt<SharedPreferences>();
+    Get.offAllNamed(OnboardingPrefs.loggedOutRoute(prefs));
     return false;
   }
 
