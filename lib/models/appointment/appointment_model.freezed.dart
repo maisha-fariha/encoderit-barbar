@@ -881,7 +881,9 @@ mixin _$AppointmentService {
   @JsonKey(name: 'duration_minutes')
   int get durationMinutes => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(name: 'is_active')
-  bool get isActive => throw _privateConstructorUsedError;
+  bool get isActive => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  @JsonKey(name: 'show_price')
+  bool get showPrice => throw _privateConstructorUsedError;
 
   /// Serializes this AppointmentService to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -907,6 +909,7 @@ abstract class $AppointmentServiceCopyWith<$Res> {
     @JsonKey(fromJson: _priceFromJson) double price,
     @JsonKey(name: 'duration_minutes') int durationMinutes,
     @JsonKey(name: 'is_active') bool isActive,
+    @JsonKey(name: 'show_price') bool showPrice,
   });
 }
 
@@ -931,6 +934,7 @@ class _$AppointmentServiceCopyWithImpl<$Res, $Val extends AppointmentService>
     Object? price = null,
     Object? durationMinutes = null,
     Object? isActive = null,
+    Object? showPrice = null,
   }) {
     return _then(
       _value.copyWith(
@@ -958,6 +962,10 @@ class _$AppointmentServiceCopyWithImpl<$Res, $Val extends AppointmentService>
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
                       as bool,
+            showPrice: null == showPrice
+                ? _value.showPrice
+                : showPrice // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -980,6 +988,7 @@ abstract class _$$AppointmentServiceImplCopyWith<$Res>
     @JsonKey(fromJson: _priceFromJson) double price,
     @JsonKey(name: 'duration_minutes') int durationMinutes,
     @JsonKey(name: 'is_active') bool isActive,
+    @JsonKey(name: 'show_price') bool showPrice,
   });
 }
 
@@ -1003,6 +1012,7 @@ class __$$AppointmentServiceImplCopyWithImpl<$Res>
     Object? price = null,
     Object? durationMinutes = null,
     Object? isActive = null,
+    Object? showPrice = null,
   }) {
     return _then(
       _$AppointmentServiceImpl(
@@ -1030,6 +1040,10 @@ class __$$AppointmentServiceImplCopyWithImpl<$Res>
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
                   as bool,
+        showPrice: null == showPrice
+            ? _value.showPrice
+            : showPrice // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -1045,6 +1059,7 @@ class _$AppointmentServiceImpl implements _AppointmentService {
     @JsonKey(fromJson: _priceFromJson) this.price = 0,
     @JsonKey(name: 'duration_minutes') this.durationMinutes = 0,
     @JsonKey(name: 'is_active') this.isActive = false,
+    @JsonKey(name: 'show_price') this.showPrice = true,
   });
 
   factory _$AppointmentServiceImpl.fromJson(Map<String, dynamic> json) =>
@@ -1071,10 +1086,14 @@ class _$AppointmentServiceImpl implements _AppointmentService {
   @override
   @JsonKey(name: 'is_active')
   final bool isActive;
+  // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'show_price')
+  final bool showPrice;
 
   @override
   String toString() {
-    return 'AppointmentService(id: $id, name: $name, description: $description, price: $price, durationMinutes: $durationMinutes, isActive: $isActive)';
+    return 'AppointmentService(id: $id, name: $name, description: $description, price: $price, durationMinutes: $durationMinutes, isActive: $isActive, showPrice: $showPrice)';
   }
 
   @override
@@ -1090,7 +1109,9 @@ class _$AppointmentServiceImpl implements _AppointmentService {
             (identical(other.durationMinutes, durationMinutes) ||
                 other.durationMinutes == durationMinutes) &&
             (identical(other.isActive, isActive) ||
-                other.isActive == isActive));
+                other.isActive == isActive) &&
+            (identical(other.showPrice, showPrice) ||
+                other.showPrice == showPrice));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1103,6 +1124,7 @@ class _$AppointmentServiceImpl implements _AppointmentService {
     price,
     durationMinutes,
     isActive,
+    showPrice,
   );
 
   /// Create a copy of AppointmentService
@@ -1130,6 +1152,7 @@ abstract class _AppointmentService implements AppointmentService {
     @JsonKey(fromJson: _priceFromJson) final double price,
     @JsonKey(name: 'duration_minutes') final int durationMinutes,
     @JsonKey(name: 'is_active') final bool isActive,
+    @JsonKey(name: 'show_price') final bool showPrice,
   }) = _$AppointmentServiceImpl;
 
   factory _AppointmentService.fromJson(Map<String, dynamic> json) =
@@ -1151,7 +1174,10 @@ abstract class _AppointmentService implements AppointmentService {
   int get durationMinutes; // ignore: invalid_annotation_target
   @override
   @JsonKey(name: 'is_active')
-  bool get isActive;
+  bool get isActive; // ignore: invalid_annotation_target
+  @override
+  @JsonKey(name: 'show_price')
+  bool get showPrice;
 
   /// Create a copy of AppointmentService
   /// with the given fields replaced by the non-null parameter values.

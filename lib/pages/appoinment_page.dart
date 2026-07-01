@@ -338,6 +338,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
             title: service.name,
             minutes: service.durationMinutes,
             priceEuro: service.price.round(),
+            showPrice: service.showPrice,
           ),
         )
         .toList();
@@ -2365,29 +2366,31 @@ class _Step4SummaryCard extends StatelessWidget {
             const _Step4Divider(),
             const SizedBox(height: 20),
           ],
-          Row(
-            children: [
-              Text(
-                l10n.total,
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFFFFFFF),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  height: 1.5,
+          if (service.showPrice) ...[
+            Row(
+              children: [
+                Text(
+                  l10n.total,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFFFFFFF),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                '€$totalPrice',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFFFFFFF),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  height: 1.5,
+                const Spacer(),
+                Text(
+                  '€$totalPrice',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFFFFFFF),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -2550,16 +2553,17 @@ class _ServiceCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '€${item.priceEuro}',
-                  style: GoogleFonts.inter(
-                    color: price,
-                    fontSize: 16 * scale,
-                    fontWeight: FontWeight.w700,
-                    height: 1.5,
+                if (item.showPrice)
+                  Text(
+                    '€${item.priceEuro}',
+                    style: GoogleFonts.inter(
+                      color: price,
+                      fontSize: 16 * scale,
+                      fontWeight: FontWeight.w700,
+                      height: 1.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
+                if (item.showPrice) const SizedBox(height: 10),
                 _SelectIcon(selected: selected),
               ],
             ),
@@ -2869,11 +2873,13 @@ class _ServiceItem {
     required this.title,
     required this.minutes,
     required this.priceEuro,
+    this.showPrice = true,
   });
 
   final String title;
   final int minutes;
   final int priceEuro;
+  final bool showPrice;
 }
 
 class _BarberItem {

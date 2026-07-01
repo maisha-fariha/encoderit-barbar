@@ -95,6 +95,8 @@ class AppointmentService with _$AppointmentService {
     @JsonKey(name: 'duration_minutes') @Default(0) int durationMinutes,
     // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
+    // ignore: invalid_annotation_target
+    @JsonKey(name: 'show_price') @Default(true) bool showPrice,
   }) = _AppointmentService;
 
   factory AppointmentService.fromJson(Map<String, dynamic> json) =>

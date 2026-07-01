@@ -117,6 +117,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
             languageCode: languageCode,
           ),
           price: '€${first.service.price.toStringAsFixed(0)}',
+          showPrice: first.service.showPrice,
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: true,
           recurringGroupId: groupId,
@@ -141,6 +142,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
             languageCode: languageCode,
           ),
           price: '€${e.service.price.toStringAsFixed(0)}',
+          showPrice: e.service.showPrice,
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
           recurringGroupId: null,
@@ -816,16 +818,18 @@ class _ReservationCard extends StatelessWidget {
                           height: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item.price,
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFFFFFFF),
-                          fontSize: 16 * fontScale,
-                          fontWeight: FontWeight.w700,
-                          height: 1.5,
+                      if (item.showPrice) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          item.price,
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFFFFFFFF),
+                            fontSize: 16 * fontScale,
+                            fontWeight: FontWeight.w700,
+                            height: 1.5,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -1190,6 +1194,7 @@ class _ReservationItem {
     this.subtitleIsAlternativeBarber = false,
     required this.dateText,
     required this.price,
+    this.showPrice = true,
     required this.imageAsset,
     required this.recurring,
     required this.recurringGroupId,
@@ -1203,6 +1208,7 @@ class _ReservationItem {
   final bool subtitleIsAlternativeBarber;
   final String dateText;
   final String price;
+  final bool showPrice;
   final String imageAsset;
   final bool recurring;
   final String? recurringGroupId;

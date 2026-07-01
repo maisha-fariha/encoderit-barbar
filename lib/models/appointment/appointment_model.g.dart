@@ -83,6 +83,7 @@ _$AppointmentServiceImpl _$$AppointmentServiceImplFromJson(
   price: json['price'] == null ? 0 : _priceFromJson(json['price']),
   durationMinutes: (json['duration_minutes'] as num?)?.toInt() ?? 0,
   isActive: json['is_active'] as bool? ?? false,
+  showPrice: json['show_price'] as bool? ?? true,
 );
 
 Map<String, dynamic> _$$AppointmentServiceImplToJson(
@@ -94,6 +95,7 @@ Map<String, dynamic> _$$AppointmentServiceImplToJson(
   'price': instance.price,
   'duration_minutes': instance.durationMinutes,
   'is_active': instance.isActive,
+  'show_price': instance.showPrice,
 };
 
 _$AppointmentShopImpl _$$AppointmentShopImplFromJson(
