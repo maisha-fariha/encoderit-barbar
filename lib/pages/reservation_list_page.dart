@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/appointment_ui_refresh_controller.dart';
+import '../controllers/price_display_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/appointment_model.dart';
@@ -13,6 +14,7 @@ import '../routes/app_pages.dart';
 import '../utils/api_date_time_format.dart';
 import '../utils/appointment_barber_display.dart';
 import '../utils/compact_screen_utils.dart';
+import '../utils/service_price_visibility.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
 
 class ReservationListPage extends StatefulWidget {
@@ -67,6 +69,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
     List<AppointmentModel> items, {
     required String languageCode,
     required AppLocalizations l10n,
+    required bool userShowsPrices,
   }) {
     final grouped = <String, List<AppointmentModel>>{};
     final singles = <AppointmentModel>[];
@@ -117,7 +120,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
             languageCode: languageCode,
           ),
           price: '€${first.service.price.toStringAsFixed(0)}',
-          showPrice: first.service.showPrice,
+          showPrice: shouldDisplayServicePrice(
+            apiShowPrice: first.service.showPrice,
+            userShowsPrices: userShowsPrices,
+          ),
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: true,
           recurringGroupId: groupId,
@@ -142,7 +148,10 @@ class _ReservationListPageState extends State<ReservationListPage> {
             languageCode: languageCode,
           ),
           price: '€${e.service.price.toStringAsFixed(0)}',
-          showPrice: e.service.showPrice,
+          showPrice: shouldDisplayServicePrice(
+            apiShowPrice: e.service.showPrice,
+            userShowsPrices: userShowsPrices,
+          ),
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
           recurringGroupId: null,
@@ -327,14 +336,18 @@ class _ReservationListPageState extends State<ReservationListPage> {
       body: GetBuilder<ReservationListController>(
         id: 'reservation-list',
         builder: (controller) {
-          final languageCode = Localizations.localeOf(context).languageCode;
-          final l10n = AppLocalizations.of(context)!;
-          final tab = controller.activeTab;
-          final list = _mapItems(
-            controller.items,
-            languageCode: languageCode,
-            l10n: l10n,
-          );
+          return Obx(() {
+            final userShowsPrices =
+                Get.find<PriceDisplayController>().showPricesInApp.value;
+            final languageCode = Localizations.localeOf(context).languageCode;
+            final l10n = AppLocalizations.of(context)!;
+            final tab = controller.activeTab;
+            final list = _mapItems(
+              controller.items,
+              languageCode: languageCode,
+              l10n: l10n,
+              userShowsPrices: userShowsPrices,
+            );
           final mode = tab == 0
               ? _ReservationMode.booked
               : tab == 1
@@ -497,6 +510,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
               ),
             ),
           );
+          });
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

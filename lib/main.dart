@@ -18,6 +18,7 @@ import 'controllers/appointment_ui_refresh_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/barber_list_controller.dart';
 import 'controllers/contact_controller.dart';
+import 'controllers/price_display_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/reservation_list_controller.dart';
 import 'controllers/shop_list_controller.dart';
@@ -70,6 +71,10 @@ Future<void> main() async {
   Get.put(contactController, permanent: true);
   final profileController = AppServices.getIt<ProfileController>();
   Get.put(profileController, permanent: true);
+  Get.put(
+    PriceDisplayController(AppServices.getIt<SharedPreferences>()),
+    permanent: true,
+  );
   await auth.bootstrap();
   await avatarService.onAuthChanged();
 

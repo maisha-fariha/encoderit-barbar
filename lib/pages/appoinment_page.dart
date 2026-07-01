@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/appointment_ui_refresh_controller.dart';
+import '../controllers/price_display_controller.dart';
 import '../controllers/barber_list_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../controllers/shop_list_controller.dart';
@@ -27,6 +28,7 @@ import '../repositories/shop_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../utils/compact_screen_utils.dart';
+import '../utils/service_price_visibility.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
 
 int _appointmentGridCrossAxisCount(BuildContext context) {
@@ -331,14 +333,17 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return int.tryParse(list[_selectedBarber].id);
   }
 
-  List<_ServiceItem> get _items {
+  List<_ServiceItem> _itemsFor(bool userShowsPrices) {
     return _serviceController.items
         .map(
           (service) => _ServiceItem(
             title: service.name,
             minutes: service.durationMinutes,
             priceEuro: service.price.round(),
-            showPrice: service.showPrice,
+            showPrice: shouldDisplayServicePrice(
+              apiShowPrice: service.showPrice,
+              userShowsPrices: userShowsPrices,
+            ),
           ),
         )
         .toList();
@@ -1812,28 +1817,35 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               ),
                             );
                           }
-                          return ListView.separated(
-                            key: const ValueKey('services'),
-                            padding: EdgeInsets.fromLTRB(
-                              hPad + 2,
-                              8,
-                              hPad + 2,
-                              18,
-                            ),
-                            itemCount: _items.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 16),
-                            itemBuilder: (context, i) {
-                              final item = _items[i];
-                              final selected = i == _selectedService;
-                              return _ServiceCard(
-                                item: item,
-                                selected: selected,
-                                onTap: () =>
-                                    setState(() => _selectedService = i),
-                              );
-                            },
-                          );
+                          return Obx(() {
+                            final items = _itemsFor(
+                              Get.find<PriceDisplayController>()
+                                  .showPricesInApp
+                                  .value,
+                            );
+                            return ListView.separated(
+                              key: const ValueKey('services'),
+                              padding: EdgeInsets.fromLTRB(
+                                hPad + 2,
+                                8,
+                                hPad + 2,
+                                18,
+                              ),
+                              itemCount: items.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (context, i) {
+                                final item = items[i];
+                                final selected = i == _selectedService;
+                                return _ServiceCard(
+                                  item: item,
+                                  selected: selected,
+                                  onTap: () =>
+                                      setState(() => _selectedService = i),
+                                );
+                              },
+                            );
+                          });
                         },
                       )
                     : _step == 3
@@ -2099,17 +2111,23 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     : SingleChildScrollView(
                         key: const ValueKey('step5'),
                         padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 20),
-                        child: Builder(
+                        child: Obx(() {
+                          final items = _itemsFor(
+                            Get.find<PriceDisplayController>()
+                                .showPricesInApp
+                                .value,
+                          );
+                          return Builder(
                           builder: (context) {
                             final isLarge = ResponsiveHelper.isLargeDevice(
                               context,
                             );
                             final locale = Localizations.localeOf(context);
                             final selectedService =
-                                _items.isNotEmpty &&
+                                items.isNotEmpty &&
                                     _selectedService >= 0 &&
-                                    _selectedService < _items.length
-                                ? _items[_selectedService]
+                                    _selectedService < items.length
+                                ? items[_selectedService]
                                 : const _ServiceItem(
                                     title: 'Service',
                                     minutes: 0,
@@ -2180,7 +2198,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               ),
                             );
                           },
-                        ),
+                        );
+                        }),
                       ),
               ),
             ),
