@@ -13,6 +13,7 @@ import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
+import '../utils/android_version_utils.dart';
 import '../utils/api_date_time_format.dart';
 import '../utils/appointment_barber_display.dart';
 import '../utils/avatar_url_resolver.dart';
@@ -446,7 +447,7 @@ class _HomePageState extends State<HomePage> {
                           isLarge ? 34 : 34,
                         ),
                         child: SizedBox(
-                          height: 54,
+                          height: isAndroid10 ? 58 : 54,
                           width: double.infinity,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
