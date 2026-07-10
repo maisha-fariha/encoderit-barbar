@@ -344,6 +344,12 @@ abstract class AppLocalizations {
   /// **'Date of birth'**
   String get dateOfBirthLabel;
 
+  /// No description provided for @dateOfBirthHintText.
+  ///
+  /// In en, this message translates to:
+  /// **'YYYY/MM/DD'**
+  String get dateOfBirthHintText;
+
   /// No description provided for @phoneNumberLabel.
   ///
   /// In en, this message translates to:

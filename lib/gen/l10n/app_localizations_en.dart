@@ -133,6 +133,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateOfBirthLabel => 'Date of birth';
 
   @override
+  String get dateOfBirthHintText => 'YYYY/MM/DD';
+
+  @override
   String get phoneNumberLabel => 'Phone number';
 
   @override

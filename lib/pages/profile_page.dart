@@ -676,7 +676,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 8),
                         _ProfileTextField(
                           controller: _dobCtrl,
-                          hint: 'YYYY-MM-DD',
+                          hint: l10n.dateOfBirthHintText,
                           fontScale: fontScale,
                           trailing: IconButton(
                             padding: EdgeInsets.zero,

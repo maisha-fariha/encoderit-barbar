@@ -41,6 +41,7 @@
   "nameLabel": "Name",
   "lastNameLabel": "Last name",
   "dateOfBirthLabel": "Date of birth",
+  "dateOfBirthHintText": "YYYY/MM/DD",
   "phoneNumberLabel": "Phone number",
   "zipCodeLabel": "ZIP code",
   "cityLabel": "City",
