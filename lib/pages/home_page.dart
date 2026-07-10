@@ -229,6 +229,7 @@ class _HomePageState extends State<HomePage> {
           dateText: formatAppointmentDateTime(
             first.startsAt,
             languageCode: languageCode,
+            shopTimezone: first.shop?.timezone,
           ),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: true,
@@ -243,6 +244,7 @@ class _HomePageState extends State<HomePage> {
                     dateText: formatAppointmentDateTime(
                       e.startsAt,
                       languageCode: languageCode,
+                      shopTimezone: e.shop?.timezone,
                     ),
                     barberText: barber.pillText,
                     isAlternativeBarber: barber.isAlternativeBarber,
@@ -265,6 +267,7 @@ class _HomePageState extends State<HomePage> {
           dateText: formatAppointmentDateTime(
             item.startsAt,
             languageCode: languageCode,
+            shopTimezone: item.shop?.timezone,
           ),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: false,
@@ -274,6 +277,7 @@ class _HomePageState extends State<HomePage> {
               dateText: formatAppointmentDateTime(
                 item.startsAt,
                 languageCode: languageCode,
+                shopTimezone: item.shop?.timezone,
               ),
               barberText: barber.pillText,
               isAlternativeBarber: barber.isAlternativeBarber,

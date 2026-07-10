@@ -114,6 +114,8 @@ class AppointmentShop with _$AppointmentShop {
     @Default('') String email,
     // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
+    /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+    @Default('UTC') String timezone,
     // ignore: invalid_annotation_target
     @JsonKey(fromJson: _nullableDoubleFromJson) double? latitude,
     // ignore: invalid_annotation_target

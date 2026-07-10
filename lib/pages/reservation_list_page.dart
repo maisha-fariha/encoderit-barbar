@@ -102,6 +102,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
                 dateText: formatAppointmentDateTime(
                   e.startsAt,
                   languageCode: languageCode,
+                  shopTimezone: e.shop?.timezone,
                 ),
                 barberText: barber.pillText,
                 isAlternativeBarber: barber.isAlternativeBarber,
@@ -118,6 +119,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           dateText: formatAppointmentDateTime(
             first.startsAt,
             languageCode: languageCode,
+            shopTimezone: first.shop?.timezone,
           ),
           price: '€${first.service.price.toStringAsFixed(0)}',
           showPrice: shouldDisplayServicePrice(
@@ -146,6 +148,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           dateText: formatAppointmentDateTime(
             e.startsAt,
             languageCode: languageCode,
+            shopTimezone: e.shop?.timezone,
           ),
           price: '€${e.service.price.toStringAsFixed(0)}',
           showPrice: shouldDisplayServicePrice(
@@ -162,6 +165,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
               dateText: formatAppointmentDateTime(
                 e.startsAt,
                 languageCode: languageCode,
+                shopTimezone: e.shop?.timezone,
               ),
               barberText: barber.pillText,
               isAlternativeBarber: barber.isAlternativeBarber,

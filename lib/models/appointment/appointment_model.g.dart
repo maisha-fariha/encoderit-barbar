@@ -107,6 +107,7 @@ _$AppointmentShopImpl _$$AppointmentShopImplFromJson(
   phone: json['phone'] as String? ?? '',
   email: json['email'] as String? ?? '',
   isActive: json['is_active'] as bool? ?? false,
+  timezone: json['timezone'] as String? ?? 'UTC',
   latitude: _nullableDoubleFromJson(json['latitude']),
   longitude: _nullableDoubleFromJson(json['longitude']),
 );
@@ -120,6 +121,7 @@ Map<String, dynamic> _$$AppointmentShopImplToJson(
   'phone': instance.phone,
   'email': instance.email,
   'is_active': instance.isActive,
+  'timezone': instance.timezone,
   'latitude': instance.latitude,
   'longitude': instance.longitude,
 };

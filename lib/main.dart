@@ -12,6 +12,7 @@ import 'gen/l10n/app_localizations.dart';
 import 'services/onboarding_prefs.dart';
 import 'services/app_services.dart';
 import 'services/profile_avatar_service.dart';
+import 'utils/shop_timezone.dart';
 import 'auth/app_auth_gateway.dart';
 import 'controllers/appointment_controller.dart';
 import 'controllers/appointment_ui_refresh_controller.dart';
@@ -32,6 +33,7 @@ const _statusBarStyle = SystemUiOverlayStyle(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ShopTimezone.ensureInitialized();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(_statusBarStyle);

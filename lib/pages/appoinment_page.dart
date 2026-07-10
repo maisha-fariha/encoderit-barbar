@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -30,6 +29,7 @@ import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../utils/compact_screen_utils.dart';
 import '../utils/service_price_visibility.dart';
+import '../utils/shop_timezone.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
 
 int _appointmentGridCrossAxisCount(BuildContext context) {
@@ -114,7 +114,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   int _selectedService = 0;
   int _selectedBarber = -1;
   int _selectedTime = -1;
-  DateTime _selectedDate = _today();
+  DateTime _selectedDate = ShopTimezone.todayDate();
   bool _recurringEnabled = false;
   int _recurringIndex = -1; // -1 = nothing selected; otherwise 0..3
   int _howManyBookings = 0; // 0 = nothing selected; otherwise 1..52
@@ -127,15 +127,13 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   final Set<String> _waitlistedOriginalDates = <String>{};
   final Map<String, int> _selectedAlternativeBarberByDate = <String, int>{};
   bool _pendingStep4WorkingDayAlign = false;
-  Timer? _slotClockTimer;
   List<ShopHoliday> _shopHolidays = const <ShopHoliday>[];
   List<VacationPeriod> _barberVacations = const <VacationPeriod>[];
   List<VacationPeriod> _shopVacations = const <VacationPeriod>[];
 
-  static DateTime _today() {
-    final n = DateTime.now();
-    return DateTime(n.year, n.month, n.day);
-  }
+  /// "Today" in the selected shop's timezone (falls back to UTC / device via helper).
+  DateTime _shopToday() =>
+      ShopTimezone.todayDate(_shopController.selectedShop?.timezone);
 
   static DateTime _dateOnly(DateTime date) =>
       DateTime(date.year, date.month, date.day);
@@ -180,7 +178,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   bool _isBarberWorkingDay(DateTime date) {
     final day = _dateOnly(date);
-    if (day.isBefore(_today())) return false;
+    if (day.isBefore(_shopToday())) return false;
     final barber = _selectedBarberModel;
     if (barber == null) return false;
     if (!barber.isWorkingDay(day)) return false;
@@ -252,68 +250,20 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return t >= s && t <= e;
   }
 
-  bool _isSlotTimeInPast(String time) {
-    final selectedDay = _dateOnly(_selectedDate);
-    final today = _today();
-    if (selectedDay.isAfter(today)) return false;
-    if (selectedDay.isBefore(today)) return true;
-    final slotMinutes = _minutesFromClock(time);
-    final now = DateTime.now();
-    final nowMinutes = now.hour * 60 + now.minute;
-    return slotMinutes <= nowMinutes;
-  }
-
-  bool _isSlotApiBookable(AvailabilitySlot slot) {
+  bool _isSlotSelectable(AvailabilitySlot slot) {
     if (!slot.available || slot.time.trim().isEmpty) return false;
     final hour = _selectedBarberModel?.workingHourForDate(_selectedDate);
     if (hour == null) return false;
     return _isClockTimeWithinRange(slot.time, hour.startTime, hour.endTime);
   }
 
-  bool _isSlotSelectable(AvailabilitySlot slot) {
-    if (!_isSlotApiBookable(slot)) return false;
-    if (_isSlotTimeInPast(slot.time)) return false;
-    return true;
-  }
-
   bool get _hasAvailableSlots => _slots.any(_isSlotSelectable);
 
-  int _firstSelectableSlotIndex() => _slots.indexWhere(_isSlotSelectable);
-
-  void _revalidateSelectedSlotIndex() {
-    var index = _selectedTime;
-    if (index < 0 ||
-        index >= _slots.length ||
-        !_isSlotSelectable(_slots[index])) {
-      index = _firstSelectableSlotIndex();
-    }
-    _selectedTime = index;
-  }
-
-  void _syncStep4SlotClockTimer() {
-    if (_step == 4) {
-      _slotClockTimer ??= Timer.periodic(
-        const Duration(seconds: 30),
-        (_) => _onSlotClockTick(),
-      );
-    } else {
-      _slotClockTimer?.cancel();
-      _slotClockTimer = null;
-    }
-  }
-
-  void _onSlotClockTick() {
-    if (!mounted || _step != 4) return;
-    if (!_dateOnly(_selectedDate).isAtSameMomentAs(_today())) return;
-    setState(_revalidateSelectedSlotIndex);
-  }
-
-  /// When the selected day has no selectable slots, move forward — but stay on
-  /// today if slots exist and are only in the past (show them disabled).
+  /// When the currently selected day has no available slots, move forward and
+  /// pick the next working day that has at least one selectable slot.
   Future<void> _selectNextDateWithAvailableSlots({int searchDays = 45}) async {
     if (!_hasBarberWorkingSchedule) return;
     if (_hasAvailableSlots) return;
-    if (_slots.any(_isSlotApiBookable)) return;
 
     final base = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
     for (int offset = 1; offset <= searchDays; offset++) {
@@ -340,7 +290,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     if (_isBarberWorkingDay(_selectedDate)) return;
 
     for (int offset = 0; offset < 370; offset++) {
-      final candidate = _today().add(Duration(days: offset));
+      final candidate = _shopToday().add(Duration(days: offset));
       if (_isBarberWorkingDay(candidate)) {
         _selectedDate = candidate;
         return;
@@ -433,12 +383,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       _serviceController.items.clear();
       _barberController.items.clear();
     });
-  }
-
-  @override
-  void dispose() {
-    _slotClockTimer?.cancel();
-    super.dispose();
   }
 
   /// Clears appointment cache, refreshes reservation list, and signals home to reload.
@@ -586,9 +530,18 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     result.when(
       success: (data) {
         final slots = data.slots;
+        int index = _selectedTime;
+        final invalid = index < 0 ||
+            index >= slots.length ||
+            (index >= 0 &&
+                index < slots.length &&
+                !_isSlotSelectable(slots[index]));
+        if (invalid) {
+          index = slots.indexWhere(_isSlotSelectable);
+        }
         setState(() {
           _slots = slots;
-          _revalidateSelectedSlotIndex();
+          _selectedTime = index;
           _slotsErrorMessage = '';
           _isLoadingSlots = false;
         });
@@ -954,7 +907,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       _selectedBarber = index;
       _step = 4;
       _selectedTime = -1;
-      _selectedDate = _today();
+      _selectedDate = _shopToday();
       _alignSelectedDateToNextWorkingDay();
       _recurringEnabled = false;
       _recurringIndex = -1;
@@ -978,7 +931,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     await _loadSlotsForSelection(showLoading: false);
     await _selectNextDateWithAvailableSlots();
     _scheduleStep4WorkingDayAlignment();
-    _syncStep4SlotClockTimer();
   }
 
   /// "Someone available" — pick a random barber from the loaded list, then step 4.
@@ -1078,7 +1030,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       if (!mounted || _step != 4) return;
       _showExcludedPreviewDatesNoticeIfNeeded();
       setState(() => _step = 5);
-      _syncStep4SlotClockTimer();
       return;
     }
     // Next steps can be implemented later.
@@ -1094,7 +1045,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       }
       _step -= 1;
     });
-    _syncStep4SlotClockTimer();
     if (returningToStep4 && mounted && _step == 4) {
       await _refreshStep4ScheduleData();
     }
@@ -1268,7 +1218,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     DateTime? start,
     int maxDays = 370,
   }) {
-    final from = _dateOnly(start ?? _today());
+    final from = _dateOnly(start ?? _shopToday());
     for (int offset = 0; offset < maxDays; offset++) {
       final candidate = from.add(Duration(days: offset));
       if (_isBarberWorkingDay(candidate)) return candidate;
@@ -1304,7 +1254,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       });
     }
 
-    final firstDate = _today();
+    final firstDate = _shopToday();
     final picked = await showDatePicker(
       context: context,
       initialDate: normalizedInitial,

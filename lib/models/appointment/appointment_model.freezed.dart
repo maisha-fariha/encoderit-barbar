@@ -1202,7 +1202,11 @@ mixin _$AppointmentShop {
   String get email =>
       throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(name: 'is_active')
-  bool get isActive => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
+  bool get isActive => throw _privateConstructorUsedError;
+
+  /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+  String get timezone =>
+      throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(fromJson: _nullableDoubleFromJson)
   double? get latitude => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(fromJson: _nullableDoubleFromJson)
@@ -1232,6 +1236,7 @@ abstract class $AppointmentShopCopyWith<$Res> {
     String phone,
     String email,
     @JsonKey(name: 'is_active') bool isActive,
+    String timezone,
     @JsonKey(fromJson: _nullableDoubleFromJson) double? latitude,
     @JsonKey(fromJson: _nullableDoubleFromJson) double? longitude,
   });
@@ -1258,6 +1263,7 @@ class _$AppointmentShopCopyWithImpl<$Res, $Val extends AppointmentShop>
     Object? phone = null,
     Object? email = null,
     Object? isActive = null,
+    Object? timezone = null,
     Object? latitude = freezed,
     Object? longitude = freezed,
   }) {
@@ -1287,6 +1293,10 @@ class _$AppointmentShopCopyWithImpl<$Res, $Val extends AppointmentShop>
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
                       as bool,
+            timezone: null == timezone
+                ? _value.timezone
+                : timezone // ignore: cast_nullable_to_non_nullable
+                      as String,
             latitude: freezed == latitude
                 ? _value.latitude
                 : latitude // ignore: cast_nullable_to_non_nullable
@@ -1317,6 +1327,7 @@ abstract class _$$AppointmentShopImplCopyWith<$Res>
     String phone,
     String email,
     @JsonKey(name: 'is_active') bool isActive,
+    String timezone,
     @JsonKey(fromJson: _nullableDoubleFromJson) double? latitude,
     @JsonKey(fromJson: _nullableDoubleFromJson) double? longitude,
   });
@@ -1342,6 +1353,7 @@ class __$$AppointmentShopImplCopyWithImpl<$Res>
     Object? phone = null,
     Object? email = null,
     Object? isActive = null,
+    Object? timezone = null,
     Object? latitude = freezed,
     Object? longitude = freezed,
   }) {
@@ -1371,6 +1383,10 @@ class __$$AppointmentShopImplCopyWithImpl<$Res>
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
                   as bool,
+        timezone: null == timezone
+            ? _value.timezone
+            : timezone // ignore: cast_nullable_to_non_nullable
+                  as String,
         latitude: freezed == latitude
             ? _value.latitude
             : latitude // ignore: cast_nullable_to_non_nullable
@@ -1394,6 +1410,7 @@ class _$AppointmentShopImpl implements _AppointmentShop {
     this.phone = '',
     this.email = '',
     @JsonKey(name: 'is_active') this.isActive = false,
+    this.timezone = 'UTC',
     @JsonKey(fromJson: _nullableDoubleFromJson) this.latitude,
     @JsonKey(fromJson: _nullableDoubleFromJson) this.longitude,
   });
@@ -1421,6 +1438,11 @@ class _$AppointmentShopImpl implements _AppointmentShop {
   @override
   @JsonKey(name: 'is_active')
   final bool isActive;
+
+  /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+  @override
+  @JsonKey()
+  final String timezone;
   // ignore: invalid_annotation_target
   @override
   @JsonKey(fromJson: _nullableDoubleFromJson)
@@ -1432,7 +1454,7 @@ class _$AppointmentShopImpl implements _AppointmentShop {
 
   @override
   String toString() {
-    return 'AppointmentShop(id: $id, name: $name, address: $address, phone: $phone, email: $email, isActive: $isActive, latitude: $latitude, longitude: $longitude)';
+    return 'AppointmentShop(id: $id, name: $name, address: $address, phone: $phone, email: $email, isActive: $isActive, timezone: $timezone, latitude: $latitude, longitude: $longitude)';
   }
 
   @override
@@ -1447,6 +1469,8 @@ class _$AppointmentShopImpl implements _AppointmentShop {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
+            (identical(other.timezone, timezone) ||
+                other.timezone == timezone) &&
             (identical(other.latitude, latitude) ||
                 other.latitude == latitude) &&
             (identical(other.longitude, longitude) ||
@@ -1463,6 +1487,7 @@ class _$AppointmentShopImpl implements _AppointmentShop {
     phone,
     email,
     isActive,
+    timezone,
     latitude,
     longitude,
   );
@@ -1492,6 +1517,7 @@ abstract class _AppointmentShop implements AppointmentShop {
     final String phone,
     final String email,
     @JsonKey(name: 'is_active') final bool isActive,
+    final String timezone,
     @JsonKey(fromJson: _nullableDoubleFromJson) final double? latitude,
     @JsonKey(fromJson: _nullableDoubleFromJson) final double? longitude,
   }) = _$AppointmentShopImpl;
@@ -1513,7 +1539,11 @@ abstract class _AppointmentShop implements AppointmentShop {
   String get email; // ignore: invalid_annotation_target
   @override
   @JsonKey(name: 'is_active')
-  bool get isActive; // ignore: invalid_annotation_target
+  bool get isActive;
+
+  /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+  @override
+  String get timezone; // ignore: invalid_annotation_target
   @override
   @JsonKey(fromJson: _nullableDoubleFromJson)
   double? get latitude; // ignore: invalid_annotation_target
