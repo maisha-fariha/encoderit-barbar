@@ -95,6 +95,8 @@ class AppointmentService with _$AppointmentService {
     @JsonKey(name: 'duration_minutes') @Default(0) int durationMinutes,
     // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
+    // ignore: invalid_annotation_target
+    @JsonKey(name: 'show_price') @Default(true) bool showPrice,
   }) = _AppointmentService;
 
   factory AppointmentService.fromJson(Map<String, dynamic> json) =>
@@ -112,6 +114,8 @@ class AppointmentShop with _$AppointmentShop {
     @Default('') String email,
     // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
+    /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+    @Default('UTC') String timezone,
     // ignore: invalid_annotation_target
     @JsonKey(fromJson: _nullableDoubleFromJson) double? latitude,
     // ignore: invalid_annotation_target

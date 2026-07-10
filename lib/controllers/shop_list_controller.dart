@@ -11,6 +11,7 @@ class ShopListController extends BaseListController<Shop>
   final ShopRepository repository;
 
   int _selectedIndex = 0;
+  int _loadGeneration = 0;
 
   int get selectedIndex => _selectedIndex;
 
@@ -33,8 +34,32 @@ class ShopListController extends BaseListController<Shop>
 
   @override
   Future<void> loadItems() async {
-    items.clear();
-    await handleListResult(() => repository.getAll());
+    final generation = ++_loadGeneration;
+    setLoading(true);
+    errorMessage.value = '';
+
+    try {
+      final result = await repository.getAll();
+      if (generation != _loadGeneration) return;
+
+      result.when(
+        success: (shops) {
+          items
+            ..clear()
+            ..addAll(ShopRepository.dedupeShops(shops));
+          _normalizeSelectedIndex();
+        },
+        failure: (error) => setError(error.message),
+      );
+    } finally {
+      if (generation == _loadGeneration) {
+        setLoading(false);
+        update(['shop-selection']);
+      }
+    }
+  }
+
+  void _normalizeSelectedIndex() {
     if (items.isEmpty) {
       _selectedIndex = 0;
       return;
@@ -42,6 +67,5 @@ class ShopListController extends BaseListController<Shop>
     if (_selectedIndex >= items.length) {
       _selectedIndex = 0;
     }
-    update(['shop-selection']);
   }
 }

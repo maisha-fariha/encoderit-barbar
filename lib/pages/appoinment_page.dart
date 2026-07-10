@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/appointment_ui_refresh_controller.dart';
+import '../controllers/price_display_controller.dart';
 import '../controllers/barber_list_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../controllers/shop_list_controller.dart';
@@ -27,6 +28,8 @@ import '../repositories/shop_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../utils/compact_screen_utils.dart';
+import '../utils/service_price_visibility.dart';
+import '../utils/shop_timezone.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
 
 int _appointmentGridCrossAxisCount(BuildContext context) {
@@ -111,7 +114,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   int _selectedService = 0;
   int _selectedBarber = -1;
   int _selectedTime = -1;
-  DateTime _selectedDate = _today();
+  DateTime _selectedDate = ShopTimezone.todayDate();
   bool _recurringEnabled = false;
   int _recurringIndex = -1; // -1 = nothing selected; otherwise 0..3
   int _howManyBookings = 0; // 0 = nothing selected; otherwise 1..52
@@ -128,10 +131,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   List<VacationPeriod> _barberVacations = const <VacationPeriod>[];
   List<VacationPeriod> _shopVacations = const <VacationPeriod>[];
 
-  static DateTime _today() {
-    final n = DateTime.now();
-    return DateTime(n.year, n.month, n.day);
-  }
+  /// "Today" in the selected shop's timezone (falls back to UTC / device via helper).
+  DateTime _shopToday() =>
+      ShopTimezone.todayDate(_shopController.selectedShop?.timezone);
 
   static DateTime _dateOnly(DateTime date) =>
       DateTime(date.year, date.month, date.day);
@@ -176,7 +178,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
 
   bool _isBarberWorkingDay(DateTime date) {
     final day = _dateOnly(date);
-    if (day.isBefore(_today())) return false;
+    if (day.isBefore(_shopToday())) return false;
     final barber = _selectedBarberModel;
     if (barber == null) return false;
     if (!barber.isWorkingDay(day)) return false;
@@ -224,6 +226,12 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   }
 
   static int _minutesFromClock(String raw) {
+    final match = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(raw.trim());
+    if (match != null) {
+      final h = int.tryParse(match.group(1)!) ?? 0;
+      final m = int.tryParse(match.group(2)!) ?? 0;
+      return h * 60 + m;
+    }
     final parts = raw.trim().split(':');
     if (parts.isEmpty) return 0;
     final h = int.tryParse(parts.first) ?? 0;
@@ -282,7 +290,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     if (_isBarberWorkingDay(_selectedDate)) return;
 
     for (int offset = 0; offset < 370; offset++) {
-      final candidate = _today().add(Duration(days: offset));
+      final candidate = _shopToday().add(Duration(days: offset));
       if (_isBarberWorkingDay(candidate)) {
         _selectedDate = candidate;
         return;
@@ -316,7 +324,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   String? get _selectedSlotTime {
     if (_selectedTime < 0 || _selectedTime >= _slots.length) return null;
     final slot = _slots[_selectedTime];
-    if (!slot.available) return null;
+    if (!_isSlotSelectable(slot)) return null;
     final time = slot.time.trim();
     return time.isEmpty ? null : time;
   }
@@ -331,13 +339,17 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return int.tryParse(list[_selectedBarber].id);
   }
 
-  List<_ServiceItem> get _items {
+  List<_ServiceItem> _itemsFor(bool userShowsPrices) {
     return _serviceController.items
         .map(
           (service) => _ServiceItem(
             title: service.name,
             minutes: service.durationMinutes,
             priceEuro: service.price.round(),
+            showPrice: shouldDisplayServicePrice(
+              apiShowPrice: service.showPrice,
+              userShowsPrices: userShowsPrices,
+            ),
           ),
         )
         .toList();
@@ -521,7 +533,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
         int index = _selectedTime;
         final invalid = index < 0 ||
             index >= slots.length ||
-            (index >= 0 && index < slots.length && !_isSlotSelectable(slots[index]));
+            (index >= 0 &&
+                index < slots.length &&
+                !_isSlotSelectable(slots[index]));
         if (invalid) {
           index = slots.indexWhere(_isSlotSelectable);
         }
@@ -893,7 +907,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       _selectedBarber = index;
       _step = 4;
       _selectedTime = -1;
-      _selectedDate = _today();
+      _selectedDate = _shopToday();
       _alignSelectedDateToNextWorkingDay();
       _recurringEnabled = false;
       _recurringIndex = -1;
@@ -1204,7 +1218,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     DateTime? start,
     int maxDays = 370,
   }) {
-    final from = _dateOnly(start ?? _today());
+    final from = _dateOnly(start ?? _shopToday());
     for (int offset = 0; offset < maxDays; offset++) {
       final candidate = from.add(Duration(days: offset));
       if (_isBarberWorkingDay(candidate)) return candidate;
@@ -1240,7 +1254,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
       });
     }
 
-    final firstDate = _today();
+    final firstDate = _shopToday();
     final picked = await showDatePicker(
       context: context,
       initialDate: normalizedInitial,
@@ -1811,28 +1825,35 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               ),
                             );
                           }
-                          return ListView.separated(
-                            key: const ValueKey('services'),
-                            padding: EdgeInsets.fromLTRB(
-                              hPad + 2,
-                              8,
-                              hPad + 2,
-                              18,
-                            ),
-                            itemCount: _items.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 16),
-                            itemBuilder: (context, i) {
-                              final item = _items[i];
-                              final selected = i == _selectedService;
-                              return _ServiceCard(
-                                item: item,
-                                selected: selected,
-                                onTap: () =>
-                                    setState(() => _selectedService = i),
-                              );
-                            },
-                          );
+                          return Obx(() {
+                            final items = _itemsFor(
+                              Get.find<PriceDisplayController>()
+                                  .showPricesInApp
+                                  .value,
+                            );
+                            return ListView.separated(
+                              key: const ValueKey('services'),
+                              padding: EdgeInsets.fromLTRB(
+                                hPad + 2,
+                                8,
+                                hPad + 2,
+                                18,
+                              ),
+                              itemCount: items.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (context, i) {
+                                final item = items[i];
+                                final selected = i == _selectedService;
+                                return _ServiceCard(
+                                  item: item,
+                                  selected: selected,
+                                  onTap: () =>
+                                      setState(() => _selectedService = i),
+                                );
+                              },
+                            );
+                          });
                         },
                       )
                     : _step == 3
@@ -2098,17 +2119,23 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     : SingleChildScrollView(
                         key: const ValueKey('step5'),
                         padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 20),
-                        child: Builder(
+                        child: Obx(() {
+                          final items = _itemsFor(
+                            Get.find<PriceDisplayController>()
+                                .showPricesInApp
+                                .value,
+                          );
+                          return Builder(
                           builder: (context) {
                             final isLarge = ResponsiveHelper.isLargeDevice(
                               context,
                             );
                             final locale = Localizations.localeOf(context);
                             final selectedService =
-                                _items.isNotEmpty &&
+                                items.isNotEmpty &&
                                     _selectedService >= 0 &&
-                                    _selectedService < _items.length
-                                ? _items[_selectedService]
+                                    _selectedService < items.length
+                                ? items[_selectedService]
                                 : const _ServiceItem(
                                     title: 'Service',
                                     minutes: 0,
@@ -2179,7 +2206,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               ),
                             );
                           },
-                        ),
+                        );
+                        }),
                       ),
               ),
             ),
@@ -2365,29 +2393,31 @@ class _Step4SummaryCard extends StatelessWidget {
             const _Step4Divider(),
             const SizedBox(height: 20),
           ],
-          Row(
-            children: [
-              Text(
-                l10n.total,
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFFFFFFF),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  height: 1.5,
+          if (service.showPrice) ...[
+            Row(
+              children: [
+                Text(
+                  l10n.total,
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFFFFFFF),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              Text(
-                '€$totalPrice',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFFFFFFF),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  height: 1.5,
+                const Spacer(),
+                Text(
+                  '€$totalPrice',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFFFFFFFF),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -2550,16 +2580,17 @@ class _ServiceCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '€${item.priceEuro}',
-                  style: GoogleFonts.inter(
-                    color: price,
-                    fontSize: 16 * scale,
-                    fontWeight: FontWeight.w700,
-                    height: 1.5,
+                if (item.showPrice)
+                  Text(
+                    '€${item.priceEuro}',
+                    style: GoogleFonts.inter(
+                      color: price,
+                      fontSize: 16 * scale,
+                      fontWeight: FontWeight.w700,
+                      height: 1.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
+                if (item.showPrice) const SizedBox(height: 10),
                 _SelectIcon(selected: selected),
               ],
             ),
@@ -2869,11 +2900,13 @@ class _ServiceItem {
     required this.title,
     required this.minutes,
     required this.priceEuro,
+    this.showPrice = true,
   });
 
   final String title;
   final int minutes;
   final int priceEuro;
+  final bool showPrice;
 }
 
 class _BarberItem {

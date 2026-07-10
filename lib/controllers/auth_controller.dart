@@ -3,9 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../auth/app_auth_gateway.dart';
 import '../routes/app_pages.dart';
+import '../services/app_services.dart';
+import '../services/onboarding_prefs.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/api_endpoints.dart';
 
@@ -115,9 +118,19 @@ class AuthController extends GetxController {
       if (stored != null) {
         _debugLogAuthToken('bootstrap', stored.accessToken);
       }
-      return;
+    } else {
+      isLoggedIn.value = await _tryOfflineSession();
     }
-    isLoggedIn.value = await _tryOfflineSession();
+    if (!isLoggedIn.value) {
+      authGateway.apiService.setAuthToken(null);
+    }
+  }
+
+  /// Clears restored/stale auth before the opening screen on first launch.
+  Future<void> clearSessionForFirstLaunch() async {
+    await authGateway.logout();
+    authGateway.apiService.setAuthToken(null);
+    isLoggedIn.value = false;
   }
 
   Future<bool> _tryOfflineSession() async {
@@ -223,10 +236,11 @@ class AuthController extends GetxController {
     isLoggedIn.value = false;
     isBusy.value = false;
     await _notifyAvatarServiceAuthChanged();
-    Get.offAllNamed(AppRoutes.login);
+    final prefs = AppServices.getIt<SharedPreferences>();
+    Get.offAllNamed(OnboardingPrefs.loggedOutRoute(prefs));
   }
 
-  /// Clears session, shows a toast, and navigates to login when the API rejects auth.
+  /// Clears session, shows a toast, and navigates when the API rejects auth.
   Future<void> handleSessionExpired({String? message}) async {
     final route = Get.currentRoute;
     if (route == AppRoutes.login ||
@@ -248,8 +262,10 @@ class AuthController extends GetxController {
 
     _snackbar('Session expired', displayMessage, isError: true);
 
-    if (Get.currentRoute != AppRoutes.login) {
-      Get.offAllNamed(AppRoutes.login);
+    final prefs = AppServices.getIt<SharedPreferences>();
+    final nextRoute = OnboardingPrefs.loggedOutRoute(prefs);
+    if (Get.currentRoute != nextRoute) {
+      Get.offAllNamed(nextRoute);
     }
     await _notifyAvatarServiceAuthChanged();
   }

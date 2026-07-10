@@ -14,25 +14,18 @@ class ShopRepository extends BaseRepository<Shop> {
     required super.syncService,
   }) : super(baseEndpoint: ApiEndpoints.shops);
 
-  static const _shopsCacheKey = 'shops_all';
+  static const _shopsCacheKey = 'shops_all_v2';
 
   @override
   Shop fromJson(Map<String, dynamic> json) => Shop.fromJson(json);
 
+  /// Fetches shops from the API first; uses local cache only when offline/failed.
   @override
   Future<Result<List<Shop>>> getAll({bool useCache = true}) async {
     try {
-      if (useCache) {
-        final cached = _readCachedShops();
-        if (cached != null) {
-          _refreshInBackground();
-          return Result.success(cached);
-        }
-      }
-
       final response = await apiService.get<dynamic>(baseEndpoint);
       if (response.success && response.data != null) {
-        final shops = _parseShopsPayload(response.data);
+        final shops = dedupeShops(_parseShopsPayload(response.data));
         await _saveShopsCache(shops);
         return Result.success(shops);
       }
@@ -46,16 +39,16 @@ class ShopRepository extends BaseRepository<Shop> {
         ApiError(message: response.message ?? 'Failed to fetch shops'),
       );
     } catch (e, stackTrace) {
+      if (useCache) {
+        final cached = _readCachedShops();
+        if (cached != null) return Result.success(cached);
+      }
       return Result.failure(NetworkError.fromException(e, stackTrace));
     }
   }
 
-  Future<void> _refreshInBackground() async {
-    try {
-      final response = await apiService.get<dynamic>(baseEndpoint);
-      if (!response.success || response.data == null) return;
-      await _saveShopsCache(_parseShopsPayload(response.data));
-    } catch (_) {}
+  Future<void> clearShopsCache() async {
+    await databaseService.delete(_shopsCacheKey);
   }
 
   List<Shop>? _readCachedShops() {
@@ -64,14 +57,32 @@ class ShopRepository extends BaseRepository<Shop> {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! List) return null;
-      final shops = decoded
-          .whereType<Map>()
-          .map((e) => Shop.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      final shops = dedupeShops(
+        decoded
+            .whereType<Map>()
+            .map((e) => Shop.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+      );
       return shops.isEmpty ? null : shops;
     } catch (_) {
       return null;
     }
+  }
+
+  static List<Shop> dedupeShops(List<Shop> shops) {
+    final seen = <String>{};
+    final unique = <Shop>[];
+    for (final shop in shops) {
+      final id = shop.id.trim();
+      if (id.isEmpty) {
+        unique.add(shop);
+        continue;
+      }
+      if (seen.add(id)) {
+        unique.add(shop);
+      }
+    }
+    return unique;
   }
 
   Future<void> _saveShopsCache(List<Shop> shops) async {
@@ -119,19 +130,23 @@ class ShopRepository extends BaseRepository<Shop> {
 
   List<Shop> _parseShopsPayload(dynamic raw) {
     if (raw is List) {
-      return raw
-          .whereType<Map>()
-          .map((e) => Shop.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
+      return dedupeShops(
+        raw
+            .whereType<Map>()
+            .map((e) => Shop.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+      );
     }
     if (raw is Map) {
       final map = Map<String, dynamic>.from(raw);
       final list = map['data'];
       if (list is List) {
-        return list
-            .whereType<Map>()
-            .map((e) => Shop.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
+        return dedupeShops(
+          list
+              .whereType<Map>()
+              .map((e) => Shop.fromJson(Map<String, dynamic>.from(e)))
+              .toList(),
+        );
       }
     }
     return const <Shop>[];

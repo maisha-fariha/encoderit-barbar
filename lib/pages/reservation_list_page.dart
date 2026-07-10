@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/appointment_ui_refresh_controller.dart';
+import '../controllers/price_display_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/appointment_model.dart';
@@ -13,6 +14,7 @@ import '../routes/app_pages.dart';
 import '../utils/api_date_time_format.dart';
 import '../utils/appointment_barber_display.dart';
 import '../utils/compact_screen_utils.dart';
+import '../utils/service_price_visibility.dart';
 import '../widgets/delete_appointment_confirm_dialog.dart';
 
 class ReservationListPage extends StatefulWidget {
@@ -23,7 +25,6 @@ class ReservationListPage extends StatefulWidget {
 }
 
 class _ReservationListPageState extends State<ReservationListPage> {
-  int _tab = 0; // 0 booked, 1 completed, 2 cancelled
   int _expandedIndex = 0;
   int _navIndex = 1; // Prenotazione selected
   late final ReservationListController _controller;
@@ -68,6 +69,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
     List<AppointmentModel> items, {
     required String languageCode,
     required AppLocalizations l10n,
+    required bool userShowsPrices,
   }) {
     final grouped = <String, List<AppointmentModel>>{};
     final singles = <AppointmentModel>[];
@@ -100,6 +102,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
                 dateText: formatAppointmentDateTime(
                   e.startsAt,
                   languageCode: languageCode,
+                  shopTimezone: e.shop?.timezone,
                 ),
                 barberText: barber.pillText,
                 isAlternativeBarber: barber.isAlternativeBarber,
@@ -116,8 +119,13 @@ class _ReservationListPageState extends State<ReservationListPage> {
           dateText: formatAppointmentDateTime(
             first.startsAt,
             languageCode: languageCode,
+            shopTimezone: first.shop?.timezone,
           ),
           price: '€${first.service.price.toStringAsFixed(0)}',
+          showPrice: shouldDisplayServicePrice(
+            apiShowPrice: first.service.showPrice,
+            userShowsPrices: userShowsPrices,
+          ),
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: true,
           recurringGroupId: groupId,
@@ -140,8 +148,13 @@ class _ReservationListPageState extends State<ReservationListPage> {
           dateText: formatAppointmentDateTime(
             e.startsAt,
             languageCode: languageCode,
+            shopTimezone: e.shop?.timezone,
           ),
           price: '€${e.service.price.toStringAsFixed(0)}',
+          showPrice: shouldDisplayServicePrice(
+            apiShowPrice: e.service.showPrice,
+            userShowsPrices: userShowsPrices,
+          ),
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
           recurringGroupId: null,
@@ -152,6 +165,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
               dateText: formatAppointmentDateTime(
                 e.startsAt,
                 languageCode: languageCode,
+                shopTimezone: e.shop?.timezone,
               ),
               barberText: barber.pillText,
               isAlternativeBarber: barber.isAlternativeBarber,
@@ -326,31 +340,21 @@ class _ReservationListPageState extends State<ReservationListPage> {
       body: GetBuilder<ReservationListController>(
         id: 'reservation-list',
         builder: (controller) {
-          final languageCode = Localizations.localeOf(context).languageCode;
-          final l10n = AppLocalizations.of(context)!;
-          final booked = _mapItems(
-            controller.byStatus('booked'),
-            languageCode: languageCode,
-            l10n: l10n,
-          );
-          final completed = _mapItems(
-            controller.byStatus('completed'),
-            languageCode: languageCode,
-            l10n: l10n,
-          );
-          final cancelled = _mapItems(
-            controller.byStatus('cancelled'),
-            languageCode: languageCode,
-            l10n: l10n,
-          );
-          final list = _tab == 0
-              ? booked
-              : _tab == 1
-              ? completed
-              : cancelled;
-          final mode = _tab == 0
+          return Obx(() {
+            final userShowsPrices =
+                Get.find<PriceDisplayController>().showPricesInApp.value;
+            final languageCode = Localizations.localeOf(context).languageCode;
+            final l10n = AppLocalizations.of(context)!;
+            final tab = controller.activeTab;
+            final list = _mapItems(
+              controller.items,
+              languageCode: languageCode,
+              l10n: l10n,
+              userShowsPrices: userShowsPrices,
+            );
+          final mode = tab == 0
               ? _ReservationMode.booked
-              : _tab == 1
+              : tab == 1
               ? _ReservationMode.completed
               : _ReservationMode.cancelled;
           final effectiveExpandedIndex = _expandedIndex >= list.length
@@ -398,23 +402,32 @@ class _ReservationListPageState extends State<ReservationListPage> {
                             children: [
                               _TopPill(
                                 label: l10n.upcoming,
-                                count: '${booked.length}',
-                                selected: _tab == 0,
-                                onTap: () => setState(() => _tab = 0),
+                                count: '${controller.tabCounts[0] ?? 0}',
+                                selected: tab == 0,
+                                onTap: () {
+                                  setState(() => _expandedIndex = 0);
+                                  _controller.switchTab(0);
+                                },
                               ),
                               const SizedBox(width: 10),
                               _TopPill(
                                 label: l10n.completed,
-                                count: '${completed.length}',
-                                selected: _tab == 1,
-                                onTap: () => setState(() => _tab = 1),
+                                count: '${controller.tabCounts[1] ?? 0}',
+                                selected: tab == 1,
+                                onTap: () {
+                                  setState(() => _expandedIndex = 0);
+                                  _controller.switchTab(1);
+                                },
                               ),
                               const SizedBox(width: 10),
                               _TopPill(
                                 label: l10n.cancelled,
-                                count: '${cancelled.length}',
-                                selected: _tab == 2,
-                                onTap: () => setState(() => _tab = 2),
+                                count: '${controller.tabCounts[2] ?? 0}',
+                                selected: tab == 2,
+                                onTap: () {
+                                  setState(() => _expandedIndex = 0);
+                                  _controller.switchTab(2);
+                                },
                               ),
                             ],
                           ),
@@ -501,6 +514,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
               ),
             ),
           );
+          });
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -822,16 +836,18 @@ class _ReservationCard extends StatelessWidget {
                           height: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item.price,
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFFFFFFFF),
-                          fontSize: 16 * fontScale,
-                          fontWeight: FontWeight.w700,
-                          height: 1.5,
+                      if (item.showPrice) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          item.price,
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFFFFFFFF),
+                            fontSize: 16 * fontScale,
+                            fontWeight: FontWeight.w700,
+                            height: 1.5,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -1196,6 +1212,7 @@ class _ReservationItem {
     this.subtitleIsAlternativeBarber = false,
     required this.dateText,
     required this.price,
+    this.showPrice = true,
     required this.imageAsset,
     required this.recurring,
     required this.recurringGroupId,
@@ -1209,6 +1226,7 @@ class _ReservationItem {
   final bool subtitleIsAlternativeBarber;
   final String dateText;
   final String price;
+  final bool showPrice;
   final String imageAsset;
   final bool recurring;
   final String? recurringGroupId;

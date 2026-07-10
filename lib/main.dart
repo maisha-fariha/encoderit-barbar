@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
@@ -8,14 +9,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'routes/app_pages.dart';
 import 'widgets/app_scroll_behavior.dart';
 import 'gen/l10n/app_localizations.dart';
+import 'services/onboarding_prefs.dart';
 import 'services/app_services.dart';
 import 'services/profile_avatar_service.dart';
+import 'utils/shop_timezone.dart';
 import 'auth/app_auth_gateway.dart';
 import 'controllers/appointment_controller.dart';
 import 'controllers/appointment_ui_refresh_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/barber_list_controller.dart';
 import 'controllers/contact_controller.dart';
+import 'controllers/price_display_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/reservation_list_controller.dart';
 import 'controllers/shop_list_controller.dart';
@@ -29,6 +33,7 @@ const _statusBarStyle = SystemUiOverlayStyle(
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ShopTimezone.ensureInitialized();
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(_statusBarStyle);
@@ -68,12 +73,36 @@ Future<void> main() async {
   Get.put(contactController, permanent: true);
   final profileController = AppServices.getIt<ProfileController>();
   Get.put(profileController, permanent: true);
+  Get.put(
+    PriceDisplayController(AppServices.getIt<SharedPreferences>()),
+    permanent: true,
+  );
   await auth.bootstrap();
   await avatarService.onAuthChanged();
 
-  final initialRoute = auth.isLoggedIn.value
-      ? AppRoutes.home
-      : AppRoutes.onboarding;
+  final prefs = AppServices.getIt<SharedPreferences>();
+  final onboardingCompleted = OnboardingPrefs.isCompleted(prefs);
+
+  // First launch: ignore any session restored by OS backup and show onboarding.
+  if (!onboardingCompleted) {
+    await auth.clearSessionForFirstLaunch();
+  }
+
+  final String initialRoute;
+  if (auth.isLoggedIn.value) {
+    initialRoute = AppRoutes.home;
+  } else {
+    initialRoute = OnboardingPrefs.loggedOutRoute(prefs);
+  }
+
+  if (kDebugMode) {
+    debugPrint(
+      '[Startup] initialRoute=$initialRoute '
+      'loggedIn=${auth.isLoggedIn.value} '
+      'onboardingCompleted=$onboardingCompleted',
+    );
+  }
+
   runApp(EncoderitBarbarApp(initialRoute: initialRoute));
 }
 

@@ -6,6 +6,16 @@ import 'appointment_ui_refresh_controller.dart';
 import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
 
+class _ReservationTabQuery {
+  const _ReservationTabQuery({
+    required this.status,
+    this.expired,
+  });
+
+  final String status;
+  final bool? expired;
+}
+
 class ReservationListController extends BaseListController<AppointmentModel>
     with BaseControllerMixin<AppointmentModel> {
   ReservationListController({required this.repository});
@@ -15,25 +25,99 @@ class ReservationListController extends BaseListController<AppointmentModel>
   bool hasMore = true;
   int currentPage = 1;
 
+  /// 0 = booked, 1 = completed, 2 = cancelled
+  int activeTab = 0;
+  final Map<int, int> tabCounts = {0: 0, 1: 0, 2: 0};
+
+  static const _bookedTab = 0;
+  static const _completedTab = 1;
+  static const _cancelledTab = 2;
+
+  _ReservationTabQuery _queryForTab(int tab) {
+    return switch (tab) {
+      _bookedTab => const _ReservationTabQuery(
+        status: 'booked',
+        expired: false,
+      ),
+      _completedTab => const _ReservationTabQuery(
+        status: 'completed',
+      ),
+      _cancelledTab => const _ReservationTabQuery(
+        status: 'cancelled',
+      ),
+      _ => const _ReservationTabQuery(
+        status: 'booked',
+        expired: false,
+      ),
+    };
+  }
+
   void _applyPage(AppointmentPageResult page) {
     items
       ..clear()
       ..addAll(page.items);
     currentPage = page.currentPage;
     hasMore = page.currentPage < page.lastPage;
+    tabCounts[activeTab] = page.total;
   }
 
-  /// Loads page 1 from the network; falls back to cache when offline.
+  Future<void> _fetchTabTotal(int tab) async {
+    final query = _queryForTab(tab);
+    final result = await repository.getPage(
+      1,
+      useCache: false,
+      forceNetwork: true,
+      status: query.status,
+      expired: query.expired,
+    );
+    result.when(
+      success: (page) => tabCounts[tab] = page.total,
+      failure: (_) {},
+    );
+  }
+
   Future<void> _fetchFirstPageFromNetwork() async {
-    final result = await repository.getPage(1, forceNetwork: true);
+    final query = _queryForTab(activeTab);
+    final result = await repository.getPage(
+      1,
+      forceNetwork: true,
+      status: query.status,
+      expired: query.expired,
+    );
     result.when(
       success: _applyPage,
       failure: (error) => setError(error.message),
     );
   }
 
+  Future<void> loadTabCounts({int? skipTab}) async {
+    final tabs = <int>[_bookedTab, _completedTab, _cancelledTab];
+    await Future.wait(
+      tabs
+          .where((tab) => tab != skipTab)
+          .map((tab) => _fetchTabTotal(tab)),
+    );
+    update(['reservation-list']);
+  }
+
   @override
   Future<void> loadItems() async {
+    hasMore = true;
+    currentPage = 1;
+    setLoading(items.isEmpty);
+    setError('');
+    try {
+      await _fetchFirstPageFromNetwork();
+      await loadTabCounts(skipTab: activeTab);
+    } finally {
+      setLoading(false);
+    }
+    update(['reservation-list']);
+  }
+
+  Future<void> switchTab(int tab) async {
+    if (activeTab == tab) return;
+    activeTab = tab;
     hasMore = true;
     currentPage = 1;
     setLoading(items.isEmpty);
@@ -46,13 +130,11 @@ class ReservationListController extends BaseListController<AppointmentModel>
     update(['reservation-list']);
   }
 
-  /// Replaces the list with page 1 from the API without clearing [items] first
-  /// or toggling [isLoading], so the UI keeps showing the previous rows until
-  /// the response arrives (used after delete/cancel so tab counts stay in sync).
   Future<void> reloadItemsFromNetwork() async {
     setError('');
     try {
       await _fetchFirstPageFromNetwork();
+      await loadTabCounts(skipTab: activeTab);
     } finally {
       update(['reservation-list']);
     }
@@ -63,7 +145,13 @@ class ReservationListController extends BaseListController<AppointmentModel>
     isLoadingMore = true;
     try {
       final next = currentPage + 1;
-      final result = await repository.getPage(next, useCache: false);
+      final query = _queryForTab(activeTab);
+      final result = await repository.getPage(
+        next,
+        useCache: false,
+        status: query.status,
+        expired: query.expired,
+      );
       result.when(
         success: (page) {
           items.addAll(page.items);
@@ -75,35 +163,6 @@ class ReservationListController extends BaseListController<AppointmentModel>
     } finally {
       isLoadingMore = false;
       update(['reservation-list']);
-    }
-  }
-
-  List<AppointmentModel> byStatus(String status) {
-    final expected = _normalizeStatus(status);
-    return items
-        .where((e) => _normalizeStatus(e.status) == expected)
-        .toList(growable: false);
-  }
-
-  String _normalizeStatus(String raw) {
-    final status = raw.trim().toLowerCase();
-    switch (status) {
-      case 'booked':
-      case 'upcoming':
-      case 'confirmed':
-      case 'pending':
-        return 'booked';
-      case 'done':
-      case 'complete':
-      case 'completed':
-        return 'completed';
-      case 'cancel':
-      case 'canceled':
-      case 'cancelled':
-      case 'rejected':
-        return 'cancelled';
-      default:
-        return status;
     }
   }
 

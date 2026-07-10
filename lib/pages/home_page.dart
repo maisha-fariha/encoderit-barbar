@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:gems_responsive/gems_responsive.dart';
@@ -12,6 +13,7 @@ import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
+import '../services/onboarding_prefs.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/android_version_utils.dart';
 import '../utils/api_date_time_format.dart';
@@ -115,7 +117,8 @@ class _HomePageState extends State<HomePage> {
       return true;
     }
     if (!mounted) return false;
-    Get.offAllNamed(AppRoutes.login);
+    final prefs = AppServices.getIt<SharedPreferences>();
+    Get.offAllNamed(OnboardingPrefs.loggedOutRoute(prefs));
     return false;
   }
 
@@ -227,6 +230,7 @@ class _HomePageState extends State<HomePage> {
           dateText: formatAppointmentDateTime(
             first.startsAt,
             languageCode: languageCode,
+            shopTimezone: first.shop?.timezone,
           ),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: true,
@@ -241,6 +245,7 @@ class _HomePageState extends State<HomePage> {
                     dateText: formatAppointmentDateTime(
                       e.startsAt,
                       languageCode: languageCode,
+                      shopTimezone: e.shop?.timezone,
                     ),
                     barberText: barber.pillText,
                     isAlternativeBarber: barber.isAlternativeBarber,
@@ -263,6 +268,7 @@ class _HomePageState extends State<HomePage> {
           dateText: formatAppointmentDateTime(
             item.startsAt,
             languageCode: languageCode,
+            shopTimezone: item.shop?.timezone,
           ),
           imageAsset: 'assets/images/barbar_1.jpg',
           hasRecurrence: false,
@@ -272,6 +278,7 @@ class _HomePageState extends State<HomePage> {
               dateText: formatAppointmentDateTime(
                 item.startsAt,
                 languageCode: languageCode,
+                shopTimezone: item.shop?.timezone,
               ),
               barberText: barber.pillText,
               isAlternativeBarber: barber.isAlternativeBarber,

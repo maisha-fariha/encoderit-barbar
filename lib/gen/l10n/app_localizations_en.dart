@@ -583,4 +583,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get barberAndHairConcept => 'Barber and Hair Concept';
+
+  @override
+  String get showServicePrices => 'Show prices in app';
 }

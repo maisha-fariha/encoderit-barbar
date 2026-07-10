@@ -15,6 +15,7 @@ _$ShopImpl _$$ShopImplFromJson(Map<String, dynamic> json) => _$ShopImpl(
   latitude: _nullableDoubleFromJson(json['latitude']),
   longitude: _nullableDoubleFromJson(json['longitude']),
   isActive: json['is_active'] as bool? ?? false,
+  timezone: json['timezone'] as String? ?? 'UTC',
   services:
       (json['services'] as List<dynamic>?)
           ?.map((e) => ShopService.fromJson(e as Map<String, dynamic>))
@@ -32,6 +33,7 @@ Map<String, dynamic> _$$ShopImplToJson(_$ShopImpl instance) =>
       'latitude': instance.latitude,
       'longitude': instance.longitude,
       'is_active': instance.isActive,
+      'timezone': instance.timezone,
       'services': instance.services,
     };
 

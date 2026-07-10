@@ -167,9 +167,14 @@ class AuthService {
     final authData = await getStoredAuth();
     if (authData == null) return false;
 
-    if (authData.isExpired && authData.refreshToken != null) {
-      final refreshResponse = await refreshToken();
-      return refreshResponse.success;
+    if (authData.isExpired) {
+      final refresh = authData.refreshToken?.trim();
+      if (refresh != null && refresh.isNotEmpty) {
+        final refreshResponse = await refreshToken();
+        return refreshResponse.success;
+      }
+      await logout();
+      return false;
     }
 
     apiService.setAuthToken(authData.accessToken);

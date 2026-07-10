@@ -35,6 +35,9 @@ mixin _$Shop {
   double? get longitude => throw _privateConstructorUsedError; // ignore: invalid_annotation_target
   @JsonKey(name: 'is_active')
   bool get isActive => throw _privateConstructorUsedError;
+
+  /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+  String get timezone => throw _privateConstructorUsedError;
   List<ShopService> get services => throw _privateConstructorUsedError;
 
   /// Serializes this Shop to a JSON map.
@@ -62,6 +65,7 @@ abstract class $ShopCopyWith<$Res> {
     @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
     double? longitude,
     @JsonKey(name: 'is_active') bool isActive,
+    String timezone,
     List<ShopService> services,
   });
 }
@@ -89,6 +93,7 @@ class _$ShopCopyWithImpl<$Res, $Val extends Shop>
     Object? latitude = freezed,
     Object? longitude = freezed,
     Object? isActive = null,
+    Object? timezone = null,
     Object? services = null,
   }) {
     return _then(
@@ -125,6 +130,10 @@ class _$ShopCopyWithImpl<$Res, $Val extends Shop>
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
                       as bool,
+            timezone: null == timezone
+                ? _value.timezone
+                : timezone // ignore: cast_nullable_to_non_nullable
+                      as String,
             services: null == services
                 ? _value.services
                 : services // ignore: cast_nullable_to_non_nullable
@@ -154,6 +163,7 @@ abstract class _$$ShopImplCopyWith<$Res> implements $ShopCopyWith<$Res> {
     @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
     double? longitude,
     @JsonKey(name: 'is_active') bool isActive,
+    String timezone,
     List<ShopService> services,
   });
 }
@@ -178,6 +188,7 @@ class __$$ShopImplCopyWithImpl<$Res>
     Object? latitude = freezed,
     Object? longitude = freezed,
     Object? isActive = null,
+    Object? timezone = null,
     Object? services = null,
   }) {
     return _then(
@@ -214,6 +225,10 @@ class __$$ShopImplCopyWithImpl<$Res>
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
                   as bool,
+        timezone: null == timezone
+            ? _value.timezone
+            : timezone // ignore: cast_nullable_to_non_nullable
+                  as String,
         services: null == services
             ? _value._services
             : services // ignore: cast_nullable_to_non_nullable
@@ -236,6 +251,7 @@ class _$ShopImpl implements _Shop {
     @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
     this.longitude,
     @JsonKey(name: 'is_active') this.isActive = false,
+    this.timezone = 'UTC',
     final List<ShopService> services = const <ShopService>[],
   }) : _services = services;
 
@@ -270,6 +286,11 @@ class _$ShopImpl implements _Shop {
   @override
   @JsonKey(name: 'is_active')
   final bool isActive;
+
+  /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+  @override
+  @JsonKey()
+  final String timezone;
   final List<ShopService> _services;
   @override
   @JsonKey()
@@ -281,7 +302,7 @@ class _$ShopImpl implements _Shop {
 
   @override
   String toString() {
-    return 'Shop(id: $id, name: $name, address: $address, phone: $phone, email: $email, latitude: $latitude, longitude: $longitude, isActive: $isActive, services: $services)';
+    return 'Shop(id: $id, name: $name, address: $address, phone: $phone, email: $email, latitude: $latitude, longitude: $longitude, isActive: $isActive, timezone: $timezone, services: $services)';
   }
 
   @override
@@ -300,6 +321,8 @@ class _$ShopImpl implements _Shop {
                 other.longitude == longitude) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
+            (identical(other.timezone, timezone) ||
+                other.timezone == timezone) &&
             const DeepCollectionEquality().equals(other._services, _services));
   }
 
@@ -315,6 +338,7 @@ class _$ShopImpl implements _Shop {
     latitude,
     longitude,
     isActive,
+    timezone,
     const DeepCollectionEquality().hash(_services),
   );
 
@@ -344,6 +368,7 @@ abstract class _Shop implements Shop {
     @JsonKey(name: 'longitude', fromJson: _nullableDoubleFromJson)
     final double? longitude,
     @JsonKey(name: 'is_active') final bool isActive,
+    final String timezone,
     final List<ShopService> services,
   }) = _$ShopImpl;
 
@@ -370,6 +395,10 @@ abstract class _Shop implements Shop {
   @override
   @JsonKey(name: 'is_active')
   bool get isActive;
+
+  /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+  @override
+  String get timezone;
   @override
   List<ShopService> get services;
 

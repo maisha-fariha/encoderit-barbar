@@ -21,6 +21,8 @@ class Shop with _$Shop implements BaseModel {
     double? longitude,
     // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
+    /// IANA timezone for this shop (e.g. `Europe/Rome`). Fallback: UTC.
+    @Default('UTC') String timezone,
     @Default(<ShopService>[]) List<ShopService> services,
   }) = _Shop;
 

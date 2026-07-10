@@ -394,9 +394,20 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
     int page, {
     bool useCache = true,
     bool forceNetwork = false,
+    String? status,
+    bool? expired,
   }) async {
+    final filtered = status != null && status.trim().isNotEmpty;
+    final queryParameters = <String, dynamic>{'page': page};
+    if (filtered) {
+      queryParameters['status'] = status.trim();
+      if (expired != null) {
+        queryParameters['expired'] = expired;
+      }
+    }
+
     try {
-      if (useCache && !forceNetwork && page == 1) {
+      if (useCache && !forceNetwork && page == 1 && !filtered) {
         final cached = _readCache();
         if (cached != null) {
           _refreshInBackground();
@@ -413,17 +424,17 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
 
       final response = await apiService.get<dynamic>(
         baseEndpoint,
-        queryParameters: {'page': page},
+        queryParameters: queryParameters,
       );
       if (response.success && response.data != null) {
         final parsed = _parsePage(response.data);
-        if (page == 1) {
+        if (page == 1 && !filtered) {
           await _saveCache(parsed.items);
         }
         return Result.success(parsed);
       }
 
-      if (useCache && page == 1) {
+      if (useCache && page == 1 && !filtered) {
         final cached = _readCache();
         if (cached != null) {
           return Result.success(
@@ -441,7 +452,7 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
         ApiError(message: response.message ?? 'Failed to fetch appointments'),
       );
     } catch (e, stackTrace) {
-      if (useCache && page == 1) {
+      if (useCache && page == 1 && !filtered) {
         final cached = _readCache();
         if (cached != null) {
           return Result.success(
@@ -460,30 +471,23 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
 
   /// Fetches appointments filtered by status from `/profile/appointments`.
   ///
-  /// Example: `status=booked` for upcoming items shown on the home page.
+  /// Example: `status=booked&expired=false` for upcoming booked items.
   Future<Result<List<AppointmentModel>>> getByStatus(
     String status, {
     int page = 1,
+    bool? expired,
   }) async {
-    try {
-      final response = await apiService.get<dynamic>(
-        baseEndpoint,
-        queryParameters: {
-          'status': status,
-          'page': page,
-        },
-      );
-      if (response.success && response.data != null) {
-        final list = _parseList(response.data);
-        _sortAppointmentsDescending(list);
-        return Result.success(list);
-      }
-      return Result.failure(
-        ApiError(message: response.message ?? 'Failed to fetch appointments'),
-      );
-    } catch (e, stackTrace) {
-      return Result.failure(NetworkError.fromException(e, stackTrace));
-    }
+    final pageResult = await getPage(
+      page,
+      useCache: false,
+      forceNetwork: true,
+      status: status,
+      expired: expired,
+    );
+    return pageResult.when(
+      success: (data) => Result.success(data.items),
+      failure: (error) => Result.failure(error),
+    );
   }
 
   Future<void> _refreshInBackground() async {
