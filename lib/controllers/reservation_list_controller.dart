@@ -9,11 +9,11 @@ import '../repositories/appointment_repository.dart';
 class _ReservationTabQuery {
   const _ReservationTabQuery({
     required this.status,
-    required this.expired,
+    this.expired,
   });
 
   final String status;
-  final bool expired;
+  final bool? expired;
 }
 
 class ReservationListController extends BaseListController<AppointmentModel>
@@ -41,11 +41,9 @@ class ReservationListController extends BaseListController<AppointmentModel>
       ),
       _completedTab => const _ReservationTabQuery(
         status: 'completed',
-        expired: false,
       ),
       _cancelledTab => const _ReservationTabQuery(
         status: 'cancelled',
-        expired: false,
       ),
       _ => const _ReservationTabQuery(
         status: 'booked',
