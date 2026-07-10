@@ -154,6 +154,7 @@
   "bookings": "Bookings",
   "serviceBooking": "Service booking",
   "upcoming": "Upcoming",
+  "past": "Past",
   "confirmed": "Confirmed",
   "completed": "Completed",
   "cancelled": "Cancelled",

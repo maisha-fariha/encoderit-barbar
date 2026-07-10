@@ -352,11 +352,11 @@ class _ReservationListPageState extends State<ReservationListPage> {
               l10n: l10n,
               userShowsPrices: userShowsPrices,
             );
-          final mode = tab == 0
-              ? _ReservationMode.booked
-              : tab == 1
-              ? _ReservationMode.completed
-              : _ReservationMode.cancelled;
+          final mode = switch (tab) {
+            0 => _ReservationMode.upcoming,
+            1 => _ReservationMode.completed,
+            _ => _ReservationMode.cancelled,
+          };
           final effectiveExpandedIndex = _expandedIndex >= list.length
               ? (list.isEmpty ? -1 : list.length - 1)
               : _expandedIndex;
@@ -775,11 +775,11 @@ class _ReservationCard extends StatelessWidget {
       large: 1.22,
     );
     final statusLabel = switch (mode) {
-      _ReservationMode.booked => l10n.upcoming,
+      _ReservationMode.upcoming => l10n.upcoming,
       _ReservationMode.completed => l10n.completed,
       _ReservationMode.cancelled => l10n.cancelled,
     };
-    final showDelete = mode == _ReservationMode.booked;
+    final showDelete = mode == _ReservationMode.upcoming;
     final compact = isCompactScreen(context);
     final chipGap = compact ? 6.0 : 8.0;
     final actionGap = compact ? 8.0 : 12.0;
@@ -1234,4 +1234,4 @@ class _ReservationItem {
   final List<_ReservationOccurrence> occurrences;
 }
 
-enum _ReservationMode { booked, completed, cancelled }
+enum _ReservationMode { upcoming, completed, cancelled }

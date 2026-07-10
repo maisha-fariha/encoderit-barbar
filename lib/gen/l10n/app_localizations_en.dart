@@ -429,6 +429,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upcoming => 'Upcoming';
 
   @override
+  String get past => 'Past';
+
+  @override
   String get confirmed => 'Confirmed';
 
   @override

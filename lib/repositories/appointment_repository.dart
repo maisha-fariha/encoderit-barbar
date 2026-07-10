@@ -395,15 +395,11 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
     bool useCache = true,
     bool forceNetwork = false,
     String? status,
-    bool? expired,
   }) async {
     final filtered = status != null && status.trim().isNotEmpty;
     final queryParameters = <String, dynamic>{'page': page};
     if (filtered) {
       queryParameters['status'] = status.trim();
-      if (expired != null) {
-        queryParameters['expired'] = expired;
-      }
     }
 
     try {
@@ -471,18 +467,16 @@ class AppointmentRepository extends BaseRepository<AppointmentModel> {
 
   /// Fetches appointments filtered by status from `/profile/appointments`.
   ///
-  /// Example: `status=booked&expired=false` for upcoming booked items.
+  /// Example: `status=upcoming` for upcoming items.
   Future<Result<List<AppointmentModel>>> getByStatus(
     String status, {
     int page = 1,
-    bool? expired,
   }) async {
     final pageResult = await getPage(
       page,
       useCache: false,
       forceNetwork: true,
       status: status,
-      expired: expired,
     );
     return pageResult.when(
       success: (data) => Result.success(data.items),

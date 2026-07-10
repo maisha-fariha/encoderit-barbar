@@ -884,6 +884,12 @@ abstract class AppLocalizations {
   /// **'Upcoming'**
   String get upcoming;
 
+  /// No description provided for @past.
+  ///
+  /// In en, this message translates to:
+  /// **'Past'**
+  String get past;
+
   /// No description provided for @confirmed.
   ///
   /// In en, this message translates to:

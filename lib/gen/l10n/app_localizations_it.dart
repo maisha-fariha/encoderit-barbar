@@ -432,6 +432,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get upcoming => 'Prossimamente';
 
   @override
+  String get past => 'Passate';
+
+  @override
   String get confirmed => 'Confermato';
 
   @override

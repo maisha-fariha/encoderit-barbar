@@ -6,16 +6,6 @@ import 'appointment_ui_refresh_controller.dart';
 import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
 
-class _ReservationTabQuery {
-  const _ReservationTabQuery({
-    required this.status,
-    this.expired,
-  });
-
-  final String status;
-  final bool? expired;
-}
-
 class ReservationListController extends BaseListController<AppointmentModel>
     with BaseControllerMixin<AppointmentModel> {
   ReservationListController({required this.repository});
@@ -25,30 +15,20 @@ class ReservationListController extends BaseListController<AppointmentModel>
   bool hasMore = true;
   int currentPage = 1;
 
-  /// 0 = booked, 1 = completed, 2 = cancelled
+  /// 0 = upcoming, 1 = completed, 2 = cancelled
   int activeTab = 0;
   final Map<int, int> tabCounts = {0: 0, 1: 0, 2: 0};
 
-  static const _bookedTab = 0;
+  static const _upcomingTab = 0;
   static const _completedTab = 1;
   static const _cancelledTab = 2;
 
-  _ReservationTabQuery _queryForTab(int tab) {
+  String _statusForTab(int tab) {
     return switch (tab) {
-      _bookedTab => const _ReservationTabQuery(
-        status: 'booked',
-        expired: false,
-      ),
-      _completedTab => const _ReservationTabQuery(
-        status: 'completed',
-      ),
-      _cancelledTab => const _ReservationTabQuery(
-        status: 'cancelled',
-      ),
-      _ => const _ReservationTabQuery(
-        status: 'booked',
-        expired: false,
-      ),
+      _upcomingTab => 'upcoming',
+      _completedTab => 'completed',
+      _cancelledTab => 'cancelled',
+      _ => 'upcoming',
     };
   }
 
@@ -62,13 +42,11 @@ class ReservationListController extends BaseListController<AppointmentModel>
   }
 
   Future<void> _fetchTabTotal(int tab) async {
-    final query = _queryForTab(tab);
     final result = await repository.getPage(
       1,
       useCache: false,
       forceNetwork: true,
-      status: query.status,
-      expired: query.expired,
+      status: _statusForTab(tab),
     );
     result.when(
       success: (page) => tabCounts[tab] = page.total,
@@ -77,12 +55,10 @@ class ReservationListController extends BaseListController<AppointmentModel>
   }
 
   Future<void> _fetchFirstPageFromNetwork() async {
-    final query = _queryForTab(activeTab);
     final result = await repository.getPage(
       1,
       forceNetwork: true,
-      status: query.status,
-      expired: query.expired,
+      status: _statusForTab(activeTab),
     );
     result.when(
       success: _applyPage,
@@ -91,7 +67,7 @@ class ReservationListController extends BaseListController<AppointmentModel>
   }
 
   Future<void> loadTabCounts({int? skipTab}) async {
-    final tabs = <int>[_bookedTab, _completedTab, _cancelledTab];
+    final tabs = <int>[_upcomingTab, _completedTab, _cancelledTab];
     await Future.wait(
       tabs
           .where((tab) => tab != skipTab)
@@ -145,12 +121,10 @@ class ReservationListController extends BaseListController<AppointmentModel>
     isLoadingMore = true;
     try {
       final next = currentPage + 1;
-      final query = _queryForTab(activeTab);
       final result = await repository.getPage(
         next,
         useCache: false,
-        status: query.status,
-        expired: query.expired,
+        status: _statusForTab(activeTab),
       );
       result.when(
         success: (page) {

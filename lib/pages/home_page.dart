@@ -144,8 +144,7 @@ class _HomePageState extends State<HomePage> {
     final result = await repository.getPage(
       1,
       forceNetwork: true,
-      status: 'booked',
-      expired: false,
+      status: 'upcoming',
     );
     if (!mounted) return;
     result.when(
