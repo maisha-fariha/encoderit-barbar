@@ -141,18 +141,20 @@ class _HomePageState extends State<HomePage> {
       _upcomingError = '';
     });
     final repository = AppServices.getIt<AppointmentRepository>();
-    final result = await repository.getPage(1, forceNetwork: true);
+    final result = await repository.getPage(
+      1,
+      forceNetwork: true,
+      status: 'booked',
+      expired: false,
+    );
     if (!mounted) return;
     result.when(
       success: (page) {
         _totalAppointmentsCount = page.total;
-        final items = page.items
-            .where((item) => _normalizeStatus(item.status) == 'booked')
-            .toList(growable: false);
         final languageCode = Localizations.localeOf(context).languageCode;
         final l10n = AppLocalizations.of(context)!;
         final mapped = _mapUpcomingItems(
-          items,
+          page.items,
           languageCode: languageCode,
           l10n: l10n,
         );
@@ -172,28 +174,6 @@ class _HomePageState extends State<HomePage> {
         });
       },
     );
-  }
-
-  String _normalizeStatus(String raw) {
-    final status = raw.trim().toLowerCase();
-    switch (status) {
-      case 'booked':
-      case 'upcoming':
-      case 'confirmed':
-      case 'pending':
-        return 'booked';
-      case 'done':
-      case 'complete':
-      case 'completed':
-        return 'completed';
-      case 'cancel':
-      case 'canceled':
-      case 'cancelled':
-      case 'rejected':
-        return 'cancelled';
-      default:
-        return status;
-    }
   }
 
   List<_UpcomingItem> _mapUpcomingItems(
