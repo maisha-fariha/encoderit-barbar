@@ -92,7 +92,9 @@ class AppointmentService with _$AppointmentService {
     // ignore: invalid_annotation_target
     @JsonKey(fromJson: _priceFromJson) @Default(0) double price,
     // ignore: invalid_annotation_target
-    @JsonKey(name: 'duration_minutes') @Default(0) int durationMinutes,
+    @JsonKey(name: 'duration_minutes', fromJson: _intFromJson)
+    @Default(0)
+    int durationMinutes,
     // ignore: invalid_annotation_target
     @JsonKey(name: 'is_active') @Default(false) bool isActive,
     // ignore: invalid_annotation_target
@@ -226,6 +228,13 @@ String _idFromJson(dynamic value) {
 double _priceFromJson(dynamic value) {
   if (value is num) return value.toDouble();
   if (value is String) return double.tryParse(value) ?? 0;
+  return 0;
+}
+
+int _intFromJson(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim()) ?? 0;
   return 0;
 }
 

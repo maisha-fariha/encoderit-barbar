@@ -12,7 +12,9 @@ _$ServiceModelImpl _$$ServiceModelImplFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String? ?? '',
       description: json['description'] as String?,
       price: json['price'] == null ? 0 : _priceFromJson(json['price']),
-      durationMinutes: (json['duration_minutes'] as num?)?.toInt() ?? 0,
+      durationMinutes: json['duration_minutes'] == null
+          ? 0
+          : _intFromJson(json['duration_minutes']),
       isActive: json['is_active'] as bool? ?? false,
       showPrice: json['show_price'] as bool? ?? true,
     );
