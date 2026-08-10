@@ -2,7 +2,7 @@ import 'package:gems_core/gems_core.dart';
 
 /// Site origin for avatar/media URLs (no `/api/v1` — backend usually returns full URLs).
 const String defaultAvatarAssetOrigin =
-    'https://iconico.encoder-test-vpn.space';
+    'https://api.iconicohair.it';
 
 /// Reads `avatar` from stored user JSON (falls back to legacy `avatar_url`).
 String? sessionAvatarFromUserData(Map<String, dynamic>? userData) {

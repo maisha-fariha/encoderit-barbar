@@ -1103,7 +1103,7 @@ abstract class AppLocalizations {
   /// No description provided for @barberAndHairConcept.
   ///
   /// In en, this message translates to:
-  /// **'Barber and Hair Concept'**
+  /// **'Iconico Hair'**
   String get barberAndHairConcept;
 
   /// No description provided for @showServicePrices.

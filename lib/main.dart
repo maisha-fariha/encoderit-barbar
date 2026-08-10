@@ -43,7 +43,7 @@ Future<void> main() async {
   await appServices.initialize(
     environmentMode: EnvironmentMode.development,
     appConfig: AppConfig(
-      apiBaseUrl: 'https://iconico.encoder-test-vpn.space/api/v1',
+      apiBaseUrl: 'https://api.iconicohair.it/api/v1',
       enableLogging: true,
       apiTimeout: const Duration(seconds: 30),
     ),
@@ -116,7 +116,7 @@ class EncoderitBarbarApp extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: _statusBarStyle,
       child: GetMaterialApp(
-        title: 'EncoderIT Barbar',
+        title: 'Iconico Hair',
         scrollBehavior: const AppScrollBehavior(),
         theme: ThemeData(
           useMaterial3: true,

@@ -588,7 +588,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get sendYourMessage => 'Invia il tuo messaggio';
 
   @override
-  String get barberAndHairConcept => 'Barber and Hair Concept';
+  String get barberAndHairConcept => 'Iconico Hair';
 
   @override
   String get showServicePrices => 'Mostra prezzi in app';

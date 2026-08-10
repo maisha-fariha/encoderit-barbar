@@ -2,7 +2,7 @@
     package="com.encoderit.barber">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="Encoder Barber Shop"
+        android:label="Iconico Hair"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
