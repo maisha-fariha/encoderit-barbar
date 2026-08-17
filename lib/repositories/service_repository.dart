@@ -17,15 +17,10 @@ class ServiceRepository extends BaseRepository<ServiceModel> {
   ServiceModel fromJson(Map<String, dynamic> json) =>
       ServiceModel.fromJson(json);
 
+  /// Fetches services from the API first; uses local cache only when offline/failed.
   Future<Result<List<ServiceModel>>> getByShopId(String shopId) async {
     final cacheKey = 'services_shop_$shopId';
     try {
-      final cached = _readCache(cacheKey);
-      if (cached != null) {
-        _refreshInBackground(shopId, cacheKey);
-        return Result.success(cached);
-      }
-
       final response = await apiService.get<dynamic>(
         baseEndpoint,
         queryParameters: {'shop_id': shopId},
@@ -43,20 +38,10 @@ class ServiceRepository extends BaseRepository<ServiceModel> {
         ApiError(message: response.message ?? 'Failed to fetch services'),
       );
     } catch (e, stackTrace) {
+      final fallback = _readCache(cacheKey);
+      if (fallback != null) return Result.success(fallback);
       return Result.failure(NetworkError.fromException(e, stackTrace));
     }
-  }
-
-  Future<void> _refreshInBackground(String shopId, String cacheKey) async {
-    try {
-      final response = await apiService.get<dynamic>(
-        baseEndpoint,
-        queryParameters: {'shop_id': shopId},
-      );
-      if (response.success && response.data != null) {
-        await _saveCache(cacheKey, _parseList(response.data));
-      }
-    } catch (_) {}
   }
 
   List<ServiceModel>? _readCache(String key) {
