@@ -8,7 +8,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/appointment_ui_refresh_controller.dart';
-import '../controllers/price_display_controller.dart';
 import '../controllers/barber_list_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../controllers/shop_list_controller.dart';
@@ -339,7 +338,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
     return int.tryParse(list[_selectedBarber].id);
   }
 
-  List<_ServiceItem> _itemsFor(bool userShowsPrices) {
+  List<_ServiceItem> _itemsFor() {
     return _serviceController.items
         .map(
           (service) => _ServiceItem(
@@ -348,7 +347,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
             priceEuro: service.price.round(),
             showPrice: shouldDisplayServicePrice(
               apiShowPrice: service.showPrice,
-              userShowsPrices: userShowsPrices,
             ),
           ),
         )
@@ -1825,13 +1823,8 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               ),
                             );
                           }
-                          return Obx(() {
-                            final items = _itemsFor(
-                              Get.find<PriceDisplayController>()
-                                  .showPricesInApp
-                                  .value,
-                            );
-                            return ListView.separated(
+                          final items = _itemsFor();
+                          return ListView.separated(
                               key: const ValueKey('services'),
                               padding: EdgeInsets.fromLTRB(
                                 hPad + 2,
@@ -1853,7 +1846,6 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                                 );
                               },
                             );
-                          });
                         },
                       )
                     : _step == 3
@@ -2119,14 +2111,9 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                     : SingleChildScrollView(
                         key: const ValueKey('step5'),
                         padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 20),
-                        child: Obx(() {
-                          final items = _itemsFor(
-                            Get.find<PriceDisplayController>()
-                                .showPricesInApp
-                                .value,
-                          );
-                          return Builder(
+                        child: Builder(
                           builder: (context) {
+                            final items = _itemsFor();
                             final isLarge = ResponsiveHelper.isLargeDevice(
                               context,
                             );
@@ -2206,8 +2193,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
                               ),
                             );
                           },
-                        );
-                        }),
+                        ),
                       ),
               ),
             ),

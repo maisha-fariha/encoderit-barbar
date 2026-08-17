@@ -586,7 +586,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get barberAndHairConcept => 'Iconico Hair';
-
-  @override
-  String get showServicePrices => 'Show prices in app';
 }

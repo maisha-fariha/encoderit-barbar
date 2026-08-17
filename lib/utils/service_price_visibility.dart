@@ -1,6 +1,2 @@
-/// User app preference + per-service API `show_price`.
-bool shouldDisplayServicePrice({
-  required bool apiShowPrice,
-  required bool userShowsPrices,
-}) =>
-    apiShowPrice && userShowsPrices;
+/// Per-service API `show_price` controls whether a price is shown.
+bool shouldDisplayServicePrice({required bool apiShowPrice}) => apiShowPrice;

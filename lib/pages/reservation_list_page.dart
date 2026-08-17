@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/appointment_ui_refresh_controller.dart';
-import '../controllers/price_display_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/appointment_model.dart';
@@ -69,7 +68,6 @@ class _ReservationListPageState extends State<ReservationListPage> {
     List<AppointmentModel> items, {
     required String languageCode,
     required AppLocalizations l10n,
-    required bool userShowsPrices,
   }) {
     final grouped = <String, List<AppointmentModel>>{};
     final singles = <AppointmentModel>[];
@@ -124,7 +122,6 @@ class _ReservationListPageState extends State<ReservationListPage> {
           price: '€${first.service.price.toStringAsFixed(0)}',
           showPrice: shouldDisplayServicePrice(
             apiShowPrice: first.service.showPrice,
-            userShowsPrices: userShowsPrices,
           ),
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: true,
@@ -153,7 +150,6 @@ class _ReservationListPageState extends State<ReservationListPage> {
           price: '€${e.service.price.toStringAsFixed(0)}',
           showPrice: shouldDisplayServicePrice(
             apiShowPrice: e.service.showPrice,
-            userShowsPrices: userShowsPrices,
           ),
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
@@ -341,8 +337,6 @@ class _ReservationListPageState extends State<ReservationListPage> {
         id: 'reservation-list',
         builder: (controller) {
           return Obx(() {
-            final userShowsPrices =
-                Get.find<PriceDisplayController>().showPricesInApp.value;
             final languageCode = Localizations.localeOf(context).languageCode;
             final l10n = AppLocalizations.of(context)!;
             final tab = controller.activeTab;
@@ -350,7 +344,6 @@ class _ReservationListPageState extends State<ReservationListPage> {
               controller.items,
               languageCode: languageCode,
               l10n: l10n,
-              userShowsPrices: userShowsPrices,
             );
           final mode = switch (tab) {
             0 => _ReservationMode.upcoming,

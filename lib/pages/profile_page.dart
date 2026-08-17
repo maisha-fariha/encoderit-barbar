@@ -10,7 +10,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/auth_controller.dart';
-import '../controllers/price_display_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/profile/profile_update_request.dart';
@@ -753,32 +752,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           hint: l10n.countryLabel,
                           fontScale: fontScale,
                         ),
-                        const SizedBox(height: 22),
-                        Obx(() {
-                          final priceCtrl = Get.find<PriceDisplayController>();
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  l10n.showServicePrices,
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontSize: 15 * fontScale,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              Switch.adaptive(
-                                value: priceCtrl.showPricesInApp.value,
-                                activeThumbColor: Colors.white,
-                                activeTrackColor: const Color(0xFF555555),
-                                inactiveThumbColor: const Color(0xFF888888),
-                                inactiveTrackColor: const Color(0xFF333333),
-                                onChanged: priceCtrl.setShowPricesInApp,
-                              ),
-                            ],
-                          );
-                        }),
                         const SizedBox(height: 30),
                         Obx(() {
                           final busy =

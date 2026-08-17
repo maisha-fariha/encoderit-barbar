@@ -589,7 +589,4 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get barberAndHairConcept => 'Iconico Hair';
-
-  @override
-  String get showServicePrices => 'Mostra prezzi in app';
 }

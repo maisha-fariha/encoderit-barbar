@@ -1106,11 +1106,6 @@ abstract class AppLocalizations {
   /// **'Iconico Hair'**
   String get barberAndHairConcept;
 
-  /// No description provided for @showServicePrices.
-  ///
-  /// In en, this message translates to:
-  /// **'Show prices in app'**
-  String get showServicePrices;
 }
 
 class _AppLocalizationsDelegate
