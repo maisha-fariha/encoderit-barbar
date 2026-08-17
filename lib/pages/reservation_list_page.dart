@@ -11,6 +11,7 @@ import '../models/appointment/appointment_model.dart';
 
 import '../routes/app_pages.dart';
 import '../utils/api_date_time_format.dart';
+import '../utils/appointment_status_label.dart';
 import '../utils/appointment_barber_display.dart';
 import '../utils/compact_screen_utils.dart';
 import '../utils/service_price_visibility.dart';
@@ -123,6 +124,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           showPrice: shouldDisplayServicePrice(
             apiShowPrice: first.service.showPrice,
           ),
+          status: first.status,
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: true,
           recurringGroupId: groupId,
@@ -151,6 +153,7 @@ class _ReservationListPageState extends State<ReservationListPage> {
           showPrice: shouldDisplayServicePrice(
             apiShowPrice: e.service.showPrice,
           ),
+          status: e.status,
           imageAsset: 'assets/images/barbar_1.jpg',
           recurring: false,
           recurringGroupId: null,
@@ -767,11 +770,7 @@ class _ReservationCard extends StatelessWidget {
       medium: 1.08,
       large: 1.22,
     );
-    final statusLabel = switch (mode) {
-      _ReservationMode.upcoming => l10n.upcoming,
-      _ReservationMode.completed => l10n.completed,
-      _ReservationMode.cancelled => l10n.cancelled,
-    };
+    final statusLabel = appointmentStatusLabel(item.status, l10n);
     final showDelete = mode == _ReservationMode.upcoming;
     final compact = isCompactScreen(context);
     final chipGap = compact ? 6.0 : 8.0;
@@ -1206,6 +1205,7 @@ class _ReservationItem {
     required this.dateText,
     required this.price,
     this.showPrice = true,
+    required this.status,
     required this.imageAsset,
     required this.recurring,
     required this.recurringGroupId,
@@ -1220,6 +1220,7 @@ class _ReservationItem {
   final String dateText;
   final String price;
   final bool showPrice;
+  final String status;
   final String imageAsset;
   final bool recurring;
   final String? recurringGroupId;

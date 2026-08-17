@@ -435,7 +435,13 @@ class AppLocalizationsIt extends AppLocalizations {
   String get past => 'Passate';
 
   @override
-  String get confirmed => 'Confermato';
+  String get confirmed => 'Confermata';
+
+  @override
+  String get waitingList => 'In lista d\'attesa';
+
+  @override
+  String get noShow => 'Non presentato';
 
   @override
   String get completed => 'Completato';

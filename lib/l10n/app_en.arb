@@ -156,6 +156,8 @@
   "upcoming": "Upcoming",
   "past": "Past",
   "confirmed": "Confirmed",
+  "waitingList": "Waiting list",
+  "noShow": "No show",
   "completed": "Completed",
   "cancelled": "Cancelled",
   "logout": "Logout",

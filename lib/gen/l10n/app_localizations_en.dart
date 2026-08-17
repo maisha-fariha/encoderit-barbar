@@ -435,6 +435,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmed => 'Confirmed';
 
   @override
+  String get waitingList => 'Waiting list';
+
+  @override
+  String get noShow => 'No show';
+
+  @override
   String get completed => 'Completed';
 
   @override

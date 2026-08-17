@@ -896,6 +896,18 @@ abstract class AppLocalizations {
   /// **'Confirmed'**
   String get confirmed;
 
+  /// No description provided for @waitingList.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting list'**
+  String get waitingList;
+
+  /// No description provided for @noShow.
+  ///
+  /// In en, this message translates to:
+  /// **'No show'**
+  String get noShow;
+
   /// No description provided for @completed.
   ///
   /// In en, this message translates to:
@@ -1105,7 +1117,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Iconico Hair'**
   String get barberAndHairConcept;
-
 }
 
 class _AppLocalizationsDelegate

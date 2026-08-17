@@ -17,6 +17,7 @@ import '../services/onboarding_prefs.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/android_version_utils.dart';
 import '../utils/api_date_time_format.dart';
+import '../utils/appointment_status_label.dart';
 import '../utils/appointment_barber_display.dart';
 import '../utils/avatar_url_resolver.dart';
 import '../widgets/app_scroll_behavior.dart';
@@ -212,6 +213,7 @@ class _HomePageState extends State<HomePage> {
             shopTimezone: first.shop?.timezone,
           ),
           imageAsset: 'assets/images/barbar_1.jpg',
+          status: first.status,
           hasRecurrence: true,
           sortAt: groupItems
               .map((e) => e.activitySortTime)
@@ -250,6 +252,7 @@ class _HomePageState extends State<HomePage> {
             shopTimezone: item.shop?.timezone,
           ),
           imageAsset: 'assets/images/barbar_1.jpg',
+          status: item.status,
           hasRecurrence: false,
           sortAt: item.activitySortTime,
           occurrences: <_UpcomingOccurrence>[
@@ -697,6 +700,10 @@ class _UpcomingAccordionItem extends StatelessWidget {
                             height: 1.5,
                           ),
                         ),
+                        const SizedBox(height: 8),
+                        _StatusChip(
+                          label: appointmentStatusLabel(item.status, l10n),
+                        ),
                       ],
                     ),
                   ),
@@ -884,6 +891,7 @@ class _UpcomingItem {
     this.subtitleIsAlternativeBarber = false,
     required this.dateText,
     required this.imageAsset,
+    required this.status,
     required this.hasRecurrence,
     required this.sortAt,
     required this.occurrences,
@@ -894,9 +902,39 @@ class _UpcomingItem {
   final bool subtitleIsAlternativeBarber;
   final String dateText;
   final String imageAsset;
+  final String status;
   final bool hasRecurrence;
   final DateTime? sortAt;
   final List<_UpcomingOccurrence> occurrences;
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF797979).withValues(alpha: 0.20),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFF797979)),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.inter(
+          color: const Color(0xFFFFFFFF),
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          height: 1.35,
+        ),
+      ),
+    );
+  }
 }
 
 class _UpcomingOccurrence {
