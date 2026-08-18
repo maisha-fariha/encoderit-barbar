@@ -126,6 +126,7 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   final Set<String> _waitlistedOriginalDates = <String>{};
   final Map<String, int> _selectedAlternativeBarberByDate = <String, int>{};
   bool _pendingStep4WorkingDayAlign = false;
+  bool _isContinuing = false;
   List<ShopHoliday> _shopHolidays = const <ShopHoliday>[];
   List<VacationPeriod> _barberVacations = const <VacationPeriod>[];
   List<VacationPeriod> _shopVacations = const <VacationPeriod>[];
@@ -943,6 +944,17 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   }
 
   Future<void> _onContinue() async {
+    if (_isContinuing) return;
+    _isContinuing = true;
+
+    try {
+      await _onContinueImpl();
+    } finally {
+      _isContinuing = false;
+    }
+  }
+
+  Future<void> _onContinueImpl() async {
     final l10n = AppLocalizations.of(context)!;
 
     if (_step == 1) {

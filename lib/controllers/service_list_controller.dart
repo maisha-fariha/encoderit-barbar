@@ -10,6 +10,7 @@ class ServiceListController extends BaseListController<ServiceModel>
 
   final ServiceRepository repository;
   String? _shopId;
+  int _loadGeneration = 0;
 
   String? get shopId => _shopId;
 
@@ -20,9 +21,29 @@ class ServiceListController extends BaseListController<ServiceModel>
       update(['service-selection']);
       return;
     }
-    items.clear();
-    await handleListResult(() => repository.getByShopId(_shopId!));
-    update(['service-selection']);
+
+    final generation = ++_loadGeneration;
+    setLoading(true);
+    errorMessage.value = '';
+
+    try {
+      final result = await repository.getByShopId(_shopId!);
+      if (generation != _loadGeneration) return;
+
+      result.when(
+        success: (services) {
+          items
+            ..clear()
+            ..addAll(services);
+        },
+        failure: (error) => setError(error.message),
+      );
+    } finally {
+      if (generation == _loadGeneration) {
+        setLoading(false);
+        update(['service-selection']);
+      }
+    }
   }
 
   Future<void> loadByShop(String shopId) async {
