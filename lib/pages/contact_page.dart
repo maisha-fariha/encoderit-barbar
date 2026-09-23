@@ -641,7 +641,7 @@ class _OsmMiniMapState extends State<_OsmMiniMap>
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.encoderit.barber',
+              userAgentPackageName: 'it.iconicohair.app',
             ),
             MarkerLayer(
               markers: [

@@ -39,7 +39,7 @@ class AppServices {
 
     await setupDataLayerServices(
       apiConfig: apiConfig,
-      databaseBoxName: 'encoderit_barbar_db',
+      databaseBoxName: 'iconico_hair_db',
     );
 
     setupResponsiveServices();

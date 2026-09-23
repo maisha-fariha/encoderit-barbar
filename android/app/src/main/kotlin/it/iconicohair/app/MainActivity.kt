@@ -1,4 +1,4 @@
-package com.encoderit.barber
+package it.iconicohair.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,4 +1,4 @@
-# encoderit_barbar
+# iconico_hair
 
 A new Flutter project.
 

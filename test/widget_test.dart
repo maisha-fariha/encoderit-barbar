@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:encoderit_barbar/utils/api_endpoints.dart';
+import 'package:iconico_hair/utils/api_endpoints.dart';
 
 void main() {
   test('API path constants are wired', () {

@@ -1,4 +1,4 @@
-import 'package:encoderit_barbar/utils/avatar_url_resolver.dart';
+import 'package:iconico_hair/utils/avatar_url_resolver.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
