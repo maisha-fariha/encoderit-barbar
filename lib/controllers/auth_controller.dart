@@ -107,7 +107,7 @@ class AuthController extends GetxController {
 
   Future<bool> _hasNetwork() async {
     final result = await connectivity.checkConnectivity();
-    return result != ConnectivityResult.none;
+    return result.any((status) => status != ConnectivityResult.none);
   }
 
   /// Online: [AppAuthGateway.isAuthenticated]. Offline: restore session from prefs if token exists and is not expired.

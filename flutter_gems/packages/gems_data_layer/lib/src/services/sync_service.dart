@@ -74,7 +74,9 @@ class SyncService {
   Future<void> syncQueue() async {
     try {
       final result = await connectivity.checkConnectivity();
-      if (result == ConnectivityResult.none) return;
+      final offline = result.isEmpty ||
+          result.every((status) => status == ConnectivityResult.none);
+      if (offline) return;
     } catch (e) {
       return;
     }

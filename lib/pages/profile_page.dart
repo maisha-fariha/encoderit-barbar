@@ -224,7 +224,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<bool> _hasNetwork() async {
     final result =
         await AppServices.getIt<Connectivity>().checkConnectivity();
-    return result != ConnectivityResult.none;
+    return result.any((status) => status != ConnectivityResult.none);
   }
 
   String _stringField(Map<String, dynamic> u, List<String> keys) {

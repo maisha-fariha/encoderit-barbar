@@ -20,7 +20,7 @@ dependencies:
   dartz: ^0.10.1
   
   # Package Info
-  package_info_plus: ^5.0.1
+  package_info_plus: ^8.3.0
   
   # State Management (for controller mixin)
   get: ^4.6.6
