@@ -24,7 +24,7 @@ dependencies:
 
   get: ^4.6.6
   get_it: ^7.7.0
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.5
   connectivity_plus: ^6.1.4
   google_fonts: ^8.0.2
   flutter_svg: ^2.2.4
@@ -41,6 +41,11 @@ dependencies:
   flutter_map: ^6.1.0
   latlong2: ^0.9.1
   timezone: ^0.9.4
+
+dependency_overrides:
+  # AGP 9 / built-in Kotlin: these Android impls must not apply kotlin-android.
+  image_picker_android: ^0.8.13+19
+  shared_preferences_android: ^2.4.28
 
 dev_dependencies:
   flutter_test:

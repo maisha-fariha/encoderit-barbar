@@ -13,6 +13,14 @@ analyzer:
   errors:
     # Freezed copies `// ignore: invalid_annotation_target` into `*.freezed.dart`, which then triggers duplicate_ignore.
     duplicate_ignore: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   # The lint rules applied to this project can be customized in the
