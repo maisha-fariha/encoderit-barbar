@@ -462,6 +462,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logout => 'Logout';
 
   @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Enter your password to permanently delete your account. This cannot be undone.';
+
+  @override
+  String get deleteAccountConfirm => 'Delete';
+
+  @override
+  String get deleteAccountSuccess => 'Your account has been deleted.';
+
+  @override
+  String get deleteAccountNetworkError =>
+      'Could not delete account. Check your connection and try again.';
+
+  @override
+  String get deleteAccountPasswordRequired =>
+      'Password is required to delete your account.';
+
+  @override
   String get update => 'Update';
 
   @override

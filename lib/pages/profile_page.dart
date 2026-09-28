@@ -469,6 +469,54 @@ class _ProfilePageState extends State<ProfilePage> {
     _showSnack(errMsg, isError: true);
   }
 
+  Future<void> _confirmDeleteAccount() async {
+    final password = await showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.72),
+      builder: (dialogCtx) => const _DeleteAccountPasswordDialog(),
+    );
+    if (password == null || !mounted) return;
+    if (password.trim().isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
+      _showSnack(l10n.deleteAccountPasswordRequired, isError: true);
+      return;
+    }
+    await _deleteAccount(password.trim());
+  }
+
+  Future<void> _deleteAccount(String password) async {
+    FocusScope.of(context).unfocus();
+    final l10n = AppLocalizations.of(context)!;
+    final controller = Get.find<ProfileController>();
+    final outcome = await controller.deleteAccount(password: password);
+    if (!mounted) return;
+
+    if (outcome.success) {
+      final msg = outcome.message.isNotEmpty
+          ? outcome.message
+          : l10n.deleteAccountSuccess;
+      // Show success while this route still has Overlay, then leave.
+      _showSnack(msg, isError: false);
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (!mounted) return;
+      await Get.find<AuthController>().logout();
+      return;
+    }
+
+    if (outcome.isNetworkError) {
+      _showSnack(l10n.deleteAccountNetworkError, isError: true);
+      return;
+    }
+
+    final fromErrors = _firstErrorString(outcome.errors);
+    final errMsg = outcome.message.isNotEmpty
+        ? outcome.message
+        : (fromErrors.isNotEmpty
+            ? fromErrors
+            : l10n.deleteAccountPasswordRequired);
+    _showSnack(errMsg, isError: true);
+  }
+
   String _avatarErrorMessage(AppLocalizations l10n, AvatarPickError? err) {
     switch (err) {
       case AvatarPickError.cameraPermissionDenied:
@@ -653,7 +701,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         topRight: Radius.circular(30),
                       ),
                     ),
-                    padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
+                    padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 100),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -829,6 +877,52 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        Obx(() {
+                          final busy = Get.find<ProfileController>()
+                              .isDeletingAccount
+                              .value;
+                          return SizedBox(
+                            height: 48,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFEF4444),
+                                ),
+                              ),
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                onPressed: busy ? null : _confirmDeleteAccount,
+                                child: busy
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Color(0xFFEF4444),
+                                        ),
+                                      )
+                                    : Text(
+                                        l10n.deleteAccount,
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFFEF4444),
+                                          fontSize: 16 * fontScale,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -892,6 +986,168 @@ class _ProfilePageState extends State<ProfilePage> {
 }
 
 enum _AvatarPickSource { camera, gallery }
+
+class _DeleteAccountPasswordDialog extends StatefulWidget {
+  const _DeleteAccountPasswordDialog();
+
+  @override
+  State<_DeleteAccountPasswordDialog> createState() =>
+      _DeleteAccountPasswordDialogState();
+}
+
+class _DeleteAccountPasswordDialogState
+    extends State<_DeleteAccountPasswordDialog> {
+  final _passwordCtrl = TextEditingController();
+  bool _obscure = true;
+  String? _passwordError;
+
+  @override
+  void dispose() {
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final l10n = AppLocalizations.of(context)!;
+    final v = _passwordCtrl.text.trim();
+    if (v.isEmpty) {
+      setState(() {
+        _passwordError = l10n.deleteAccountPasswordRequired;
+      });
+      return;
+    }
+    Navigator.of(context).pop(v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final hasError = _passwordError != null;
+
+    return AlertDialog(
+      backgroundColor: const Color(0xFF242424),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      title: Text(
+        l10n.deleteAccountTitle,
+        style: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.deleteAccountMessage,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFDDDDDD),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _passwordCtrl,
+            obscureText: _obscure,
+            autofocus: true,
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+            onChanged: (_) {
+              if (_passwordError != null) {
+                setState(() => _passwordError = null);
+              }
+            },
+            decoration: InputDecoration(
+              hintText: l10n.passwordHint,
+              hintStyle: GoogleFonts.inter(
+                color: const Color(0xFFFFFFFF).withValues(alpha: 0.35),
+              ),
+              filled: true,
+              fillColor: const Color(0xFFFFFFFF).withValues(alpha: 0.08),
+              errorText: _passwordError,
+              errorMaxLines: 2,
+              errorStyle: GoogleFonts.inter(
+                color: const Color(0xFFFCA5A5),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: hasError
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFFFFFFFF).withValues(alpha: 0.15),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: hasError
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFFFFFFFF).withValues(alpha: 0.15),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: hasError ? const Color(0xFFEF4444) : Colors.white,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+              suffixIcon: IconButton(
+                onPressed: () => setState(() => _obscure = !_obscure),
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: const Color(0xFFB7B7B7),
+                ),
+              ),
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            l10n.cancel,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFDDDDDD),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: _submit,
+          child: Text(
+            l10n.deleteAccountConfirm,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFEF4444),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({

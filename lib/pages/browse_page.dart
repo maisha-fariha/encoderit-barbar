@@ -23,7 +23,6 @@ class BrowsePage extends StatefulWidget {
 class _BrowsePageState extends State<BrowsePage> {
   late final ShopListController _shops;
   late final ServiceListController _services;
-  int _selectedService = 0;
 
   @override
   void initState() {
@@ -37,7 +36,7 @@ class _BrowsePageState extends State<BrowsePage> {
       if (shop != null) {
         await _services.loadByShop(shop.id);
         if (!mounted) return;
-        setState(() => _selectedService = 0);
+        setState(() {});
       }
     });
   }
@@ -48,7 +47,7 @@ class _BrowsePageState extends State<BrowsePage> {
     if (shop == null) return;
     await _services.loadByShop(shop.id);
     if (!mounted) return;
-    setState(() => _selectedService = 0);
+    setState(() {});
   }
 
   void _startBooking() {
@@ -236,18 +235,10 @@ class _BrowsePageState extends State<BrowsePage> {
                           }
                           return Column(
                             children: [
-                              for (var i = 0;
-                                  i < controller.items.length;
-                                  i++)
+                              for (final service in controller.items)
                                 Padding(
                                   padding: const EdgeInsets.only(bottom: 14),
-                                  child: _BrowseServiceCard(
-                                    service: controller.items[i],
-                                    selected: i == _selectedService,
-                                    onTap: () => setState(
-                                      () => _selectedService = i,
-                                    ),
-                                  ),
+                                  child: _BrowseServiceCard(service: service),
                                 ),
                             ],
                           );
@@ -443,24 +434,18 @@ class _BrowseShopCard extends StatelessWidget {
   }
 }
 
-/// Matches appointment service card theme: white selected / #242424 unselected.
+/// View-only service row (guest browse). Selection happens after login.
 class _BrowseServiceCard extends StatelessWidget {
-  const _BrowseServiceCard({
-    required this.service,
-    required this.selected,
-    required this.onTap,
-  });
+  const _BrowseServiceCard({required this.service});
 
   final ServiceModel service;
-  final bool selected;
-  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? const Color(0xFFFFFFFF) : const Color(0xFF242424);
-    final title = selected ? const Color(0xFF000000) : Colors.white;
-    final sub = selected ? const Color(0xFF242424) : const Color(0xFFDDDDDD);
-    final price = selected ? const Color(0xFF000000) : Colors.white;
+    const bg = Color(0xFF242424);
+    const title = Colors.white;
+    const sub = Color(0xFFDDDDDD);
+    const price = Colors.white;
     final showPrice = shouldDisplayServicePrice(
       apiShowPrice: service.showPrice,
     );
@@ -470,71 +455,56 @@ class _BrowseServiceCard extends StatelessWidget {
         ? desc
         : (duration > 0 ? '$duration min' : '');
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: bg,
         borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      service.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        color: title,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
-                          color: sub,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (showPrice) ...[
-                const SizedBox(width: 10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  '€${service.price.round()}',
+                  service.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
-                    color: price,
+                    color: title,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      color: sub,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
-              const SizedBox(width: 10),
-              SvgPicture.asset(
-                selected
-                    ? 'assets/icons/checked.svg'
-                    : 'assets/icons/non_check.svg',
-                width: 24,
-              ),
-            ],
+            ),
           ),
-        ),
+          if (showPrice) ...[
+            const SizedBox(width: 10),
+            Text(
+              '€${service.price.round()}',
+              style: GoogleFonts.inter(
+                color: price,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

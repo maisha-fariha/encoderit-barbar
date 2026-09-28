@@ -466,6 +466,30 @@ class AppLocalizationsIt extends AppLocalizations {
   String get logout => 'Esci';
 
   @override
+  String get deleteAccount => 'Elimina account';
+
+  @override
+  String get deleteAccountTitle => 'Eliminare l\'account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Inserisci la password per eliminare definitivamente il tuo account. Questa azione non può essere annullata.';
+
+  @override
+  String get deleteAccountConfirm => 'Elimina';
+
+  @override
+  String get deleteAccountSuccess => 'Il tuo account è stato eliminato.';
+
+  @override
+  String get deleteAccountNetworkError =>
+      'Impossibile eliminare l\'account. Controlla la connessione e riprova.';
+
+  @override
+  String get deleteAccountPasswordRequired =>
+      'La password è obbligatoria per eliminare l\'account.';
+
+  @override
   String get update => 'Aggiorna';
 
   @override

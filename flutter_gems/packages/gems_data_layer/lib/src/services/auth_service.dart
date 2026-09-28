@@ -90,13 +90,63 @@ class AuthService {
 
     if (response.success && response.data != null) {
       final authData = _parseAuthResponse(response.data!);
-      await _saveAuthData(authData);
-      apiService.setAuthToken(authData.accessToken);
+      // OTP registration may return success without a token yet.
+      if (authData.accessToken.isNotEmpty) {
+        await _saveAuthData(authData);
+        apiService.setAuthToken(authData.accessToken);
+      }
       return ApiResponse.success(authData);
     }
 
     return ApiResponse.error(
       response.message ?? 'Registration failed',
+      statusCode: response.statusCode,
+    );
+  }
+
+  /// Verify email OTP (`POST /auth/verify-otp`).
+  ///
+  /// When the response includes an access token (registration flow), the session
+  /// is saved. Forgot-password OTP may succeed without a token.
+  Future<ApiResponse<AuthData?>> verifyOtp({
+    required String email,
+    required String otp,
+    String endpoint = '/auth/verify-otp',
+  }) async {
+    final response = await apiService.post<Map<String, dynamic>>(
+      endpoint,
+      data: {
+        'email': email,
+        'otp': otp,
+      },
+    );
+
+    if (!response.success) {
+      return ApiResponse.error(
+        response.message ?? 'OTP verification failed',
+        statusCode: response.statusCode,
+        errors: response.errors,
+      );
+    }
+
+    final raw = response.data;
+    if (raw != null) {
+      final map = Map<String, dynamic>.from(raw);
+      final authData = _parseAuthResponse(map);
+      if (authData.accessToken.isNotEmpty) {
+        await _saveAuthData(authData);
+        apiService.setAuthToken(authData.accessToken);
+        return ApiResponse.success(
+          authData,
+          message: response.message,
+          statusCode: response.statusCode,
+        );
+      }
+    }
+
+    return ApiResponse.success(
+      null,
+      message: response.message,
       statusCode: response.statusCode,
     );
   }
@@ -199,28 +249,70 @@ class AuthService {
             ? Map<String, dynamic>.from(data['data'] as Map)
             : data;
 
+    // Some APIs nest the token under `token` / `auth` objects.
+    final nestedToken = payload['token'] is Map
+        ? Map<String, dynamic>.from(payload['token'] as Map)
+        : payload['auth'] is Map
+            ? Map<String, dynamic>.from(payload['auth'] as Map)
+            : null;
+
     final userPayload = payload['user'] ??
         payload['userData'] ??
         data['user'] ??
         data['userData'];
     DateTime? expiresAt;
-    final expiresAtRaw = payload['expiresAt'] ?? data['expiresAt'];
-    final expiresInRaw = payload['expiresIn'] ?? data['expiresIn'];
+    final expiresAtRaw = payload['expiresAt'] ??
+        payload['expires_at'] ??
+        data['expiresAt'] ??
+        data['expires_at'];
+    final expiresInRaw = payload['expiresIn'] ??
+        payload['expires_in'] ??
+        data['expiresIn'] ??
+        data['expires_in'];
     if (expiresAtRaw is String && expiresAtRaw.isNotEmpty) {
       try {
         expiresAt = DateTime.parse(expiresAtRaw);
       } catch (_) {}
     } else if (expiresInRaw is int) {
       expiresAt = DateTime.now().add(Duration(seconds: expiresInRaw));
+    } else if (expiresInRaw is num) {
+      expiresAt = DateTime.now().add(Duration(seconds: expiresInRaw.toInt()));
     }
 
+    String readToken(Map<String, dynamic> map) {
+      for (final key in <String>[
+        'accessToken',
+        'access_token',
+        'token',
+        'plainTextToken',
+        'plain_text_token',
+      ]) {
+        final value = map[key];
+        if (value is String && value.trim().isNotEmpty) {
+          return value.trim();
+        }
+      }
+      return '';
+    }
+
+    final accessToken = readToken(payload).isNotEmpty
+        ? readToken(payload)
+        : (nestedToken != null && readToken(nestedToken).isNotEmpty
+            ? readToken(nestedToken)
+            : readToken(data));
+
+    final refreshRaw = payload['refreshToken'] ??
+        payload['refresh_token'] ??
+        nestedToken?['refreshToken'] ??
+        nestedToken?['refresh_token'] ??
+        data['refreshToken'] ??
+        data['refresh_token'];
+
     return AuthData(
-      accessToken: payload['accessToken'] ??
-          payload['token'] ??
-          data['accessToken'] ??
-          data['token'] ??
-          '',
-      refreshToken: payload['refreshToken'] ?? data['refreshToken'],
+      accessToken: accessToken,
+      refreshToken: refreshRaw is String && refreshRaw.trim().isNotEmpty
+          ? refreshRaw.trim()
+          : null,
       expiresAt: expiresAt,
       userData: userPayload is Map<String, dynamic>
           ? userPayload

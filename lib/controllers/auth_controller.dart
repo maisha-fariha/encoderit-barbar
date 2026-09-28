@@ -10,6 +10,7 @@ import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../services/onboarding_prefs.dart';
 import '../services/profile_avatar_service.dart';
+import '../services/session_guard.dart';
 import '../utils/api_endpoints.dart';
 
 class AuthController extends GetxController {
@@ -222,11 +223,59 @@ class AuthController extends GetxController {
   }
 
   void completeRegistrationAfterOtp() {
-    isLoggedIn.value = true;
-    _snackbar('Welcome', 'Account verified successfully');
+    // Prefer async completion so we never open Home without a real session.
     // ignore: discarded_futures
-    _notifyAvatarServiceAuthChanged();
+    completeRegistrationAfterOtpAsync();
+  }
+
+  /// Completes registration after OTP. If verify-otp did not return a token,
+  /// optionally logs in with [email]/[password] so Home is not opened unauthenticated.
+  Future<void> completeRegistrationAfterOtpAsync({
+    String? email,
+    String? password,
+  }) async {
+    SessionGuard.suppressUnauthorized(const Duration(seconds: 4));
+
+    var stored = await authGateway.getStoredAuth();
+    final hasToken =
+        stored != null && stored.accessToken.trim().isNotEmpty && !stored.isExpired;
+
+    if (!hasToken &&
+        email != null &&
+        password != null &&
+        email.trim().isNotEmpty &&
+        password.isNotEmpty) {
+      final loginRes = await authGateway.login(
+        email: email.trim(),
+        password: password,
+        endpoint: ApiEndpoints.authLogin,
+      );
+      if (loginRes.success && loginRes.data != null) {
+        stored = loginRes.data;
+      }
+    }
+
+    final token = stored?.accessToken.trim() ?? '';
+    if (token.isEmpty) {
+      isLoggedIn.value = false;
+      Get.offAllNamed(AppRoutes.login);
+      Future<void>.delayed(const Duration(milliseconds: 300), () {
+        _snackbar(
+          'Account verified',
+          'Please sign in to continue.',
+        );
+      });
+      return;
+    }
+
+    authGateway.apiService.setAuthToken(token);
+    isLoggedIn.value = true;
+    _debugLogAuthToken('register-otp', token);
+    await _notifyAvatarServiceAuthChanged();
     Get.offAllNamed(AppRoutes.home);
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      _snackbar('Welcome', 'Account verified successfully');
+    });
   }
 
   Future<void> logout() async {
@@ -246,6 +295,10 @@ class AuthController extends GetxController {
     if (route == AppRoutes.login ||
         route == AppRoutes.register ||
         route == AppRoutes.onboarding) {
+      return;
+    }
+    // Guest browse has no session; ignore unauthorized noise from public APIs.
+    if (route == AppRoutes.browse && !isLoggedIn.value) {
       return;
     }
 
@@ -293,21 +346,29 @@ class AuthController extends GetxController {
     );
   }
 
-  /// Verify OTP for a given email (used in forgot-password flow).
+  /// Verify OTP for a given email (registration + forgot-password).
+  /// Registration responses that include a token also persist the session.
   Future<ApiResponse<void>> verifyEmailOtp({
     required String email,
     required String otp,
   }) async {
-    final res = await authGateway.apiService.post<Map<String, dynamic>>(
-      ApiEndpoints.authVerifyOtp,
-      data: {'email': email, 'otp': otp},
+    final res = await authGateway.verifyOtp(
+      email: email,
+      otp: otp,
+      endpoint: ApiEndpoints.authVerifyOtp,
     );
+
+    if (res.success && res.data != null) {
+      isLoggedIn.value = true;
+      _debugLogAuthToken('verify-otp', res.data!.accessToken);
+    }
 
     return ApiResponse<void>(
       success: res.success,
       message: res.message,
       statusCode: res.statusCode,
       errors: res.errors,
+      data: null,
     );
   }
 

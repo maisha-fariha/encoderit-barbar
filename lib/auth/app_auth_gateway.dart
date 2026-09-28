@@ -24,6 +24,13 @@ abstract class AppAuthGateway {
   Future<AuthData?> getStoredAuth();
 
   Future<bool> isAuthenticated();
+
+  /// Verify OTP. Saves session when the response includes an access token.
+  Future<ApiResponse<AuthData?>> verifyOtp({
+    required String email,
+    required String otp,
+    String endpoint = '/auth/verify-otp',
+  });
 }
 
 /// Delegates to [AuthService] (network + same storage as production).
@@ -58,6 +65,14 @@ class RemoteAppAuthGateway implements AppAuthGateway {
 
   @override
   Future<bool> isAuthenticated() => _auth.isAuthenticated();
+
+  @override
+  Future<ApiResponse<AuthData?>> verifyOtp({
+    required String email,
+    required String otp,
+    String endpoint = '/auth/verify-otp',
+  }) =>
+      _auth.verifyOtp(email: email, otp: otp, endpoint: endpoint);
 }
 
 /// Local accounts: passwords stored as bcrypt hashes only; session uses [AuthData] like the API path.
@@ -188,4 +203,30 @@ class LocalAppAuthGateway implements AppAuthGateway {
 
   @override
   Future<bool> isAuthenticated() => _auth.isAuthenticated();
+
+  @override
+  Future<ApiResponse<AuthData?>> verifyOtp({
+    required String email,
+    required String otp,
+    String endpoint = '/auth/verify-otp',
+  }) async {
+    final key = _normalizeEmail(email);
+    final accounts = _readAccounts();
+    final row = accounts[key];
+    if (row is! Map) {
+      return ApiResponse.error('Invalid OTP', statusCode: 400);
+    }
+    // Local backend accepts any OTP of length >= 4 for registered accounts.
+    if (otp.trim().length < 4) {
+      return ApiResponse.error('Invalid OTP', statusCode: 400);
+    }
+    final map = Map<String, dynamic>.from(row);
+    final session = _mintSession(
+      email: key,
+      name: map['name'] as String?,
+      phone: map['phone'] as String?,
+    );
+    await _auth.applySession(session);
+    return ApiResponse.success(session, statusCode: 200);
+  }
 }

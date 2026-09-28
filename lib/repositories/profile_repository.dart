@@ -30,6 +30,21 @@ class UpdateProfileOutcome {
   final String? avatarUrl;
 }
 
+/// Result of `DELETE /profile` with `{ password }`.
+class DeleteAccountOutcome {
+  const DeleteAccountOutcome({
+    required this.success,
+    required this.message,
+    this.errors,
+    this.isNetworkError = false,
+  });
+
+  final bool success;
+  final String message;
+  final Map<String, dynamic>? errors;
+  final bool isNetworkError;
+}
+
 class ProfileRepository {
   ProfileRepository({
     required this.apiService,
@@ -38,6 +53,66 @@ class ProfileRepository {
 
   final ApiService apiService;
   final AuthService authService;
+
+  Future<DeleteAccountOutcome> deleteAccount({required String password}) async {
+    final trimmed = password.trim();
+    if (trimmed.isEmpty) {
+      return const DeleteAccountOutcome(
+        success: false,
+        message: 'Password is required',
+      );
+    }
+
+    try {
+      if (kDebugMode) {
+        debugPrint(
+          '[ProfileRepository] >>> DELETE ${ApiEndpoints.profile} '
+          '(password length=${trimmed.length})',
+        );
+      }
+
+      final response = await apiService.delete<dynamic>(
+        ApiEndpoints.profile,
+        data: {'password': trimmed},
+        options: Options(
+          headers: const {'Accept': 'application/json'},
+        ),
+      );
+
+      if (kDebugMode) {
+        debugPrint(
+          '[ProfileRepository] <<< DELETE ${ApiEndpoints.profile} '
+          'success=${response.success} status=${response.statusCode} '
+          'message=${response.message}',
+        );
+      }
+
+      if (response.success) {
+        if (Get.isRegistered<ProfileAvatarService>()) {
+          await Get.find<ProfileAvatarService>().clearLocalAvatar();
+        }
+        return DeleteAccountOutcome(
+          success: true,
+          message: _successMessageFromResponse(response),
+        );
+      }
+
+      return DeleteAccountOutcome(
+        success: false,
+        message: _messageFromResponse(response),
+        errors: response.errors,
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[ProfileRepository] deleteAccount exception: $e\n$st');
+      }
+      return DeleteAccountOutcome(
+        success: false,
+        message: e.toString(),
+        isNetworkError: true,
+      );
+    }
+  }
 
   Future<UpdateProfileOutcome> updateProfile(ProfileUpdateRequest request) async {
     final hasAvatarFile = request.avatarFile != null;
