@@ -16,6 +16,7 @@ class OnboardingPrefs {
   }
 
   /// Where to send users who are not signed in.
+  /// After onboarding, guests browse shops/services without an account.
   static String loggedOutRoute(SharedPreferences prefs) =>
-      isCompleted(prefs) ? AppRoutes.login : AppRoutes.onboarding;
+      isCompleted(prefs) ? AppRoutes.browse : AppRoutes.onboarding;
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:gems_responsive/gems_responsive.dart';
@@ -13,7 +12,6 @@ import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
-import '../services/onboarding_prefs.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/android_version_utils.dart';
 import '../utils/api_date_time_format.dart';
@@ -107,25 +105,30 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<bool> _ensureAuthenticated() async {
+  Future<bool> _isAuthenticated() async {
     final authController = Get.find<AuthController>();
     if (authController.isLoggedIn.value) return true;
-    final AuthData? stored = await AppServices.getIt<AuthService>().getStoredAuth();
+    final AuthData? stored =
+        await AppServices.getIt<AuthService>().getStoredAuth();
     final validStored =
         stored != null && stored.accessToken.isNotEmpty && !stored.isExpired;
     if (validStored) {
       authController.isLoggedIn.value = true;
       return true;
     }
+    return false;
+  }
+
+  Future<bool> _ensureAuthenticated() async {
+    if (await _isAuthenticated()) return true;
     if (!mounted) return false;
-    final prefs = AppServices.getIt<SharedPreferences>();
-    Get.offAllNamed(OnboardingPrefs.loggedOutRoute(prefs));
+    Get.toNamed(AppRoutes.login);
     return false;
   }
 
   Future<void> _loadUpcomingBookedAppointments() async {
-    final canProceed = await _ensureAuthenticated();
-    if (!canProceed) {
+    final loggedIn = await _isAuthenticated();
+    if (!loggedIn) {
       if (!mounted) return;
       setState(() {
         _isLoadingUpcoming = false;
@@ -451,9 +454,7 @@ class _HomePageState extends State<HomePage> {
                                   borderRadius: BorderRadius.circular(30),
                                 ),
                               ),
-                              onPressed: () async {
-                                final canProceed = await _ensureAuthenticated();
-                                if (!canProceed) return;
+                              onPressed: () {
                                 Get.toNamed(AppRoutes.appoinment);
                               },
                               child: Text(
@@ -508,12 +509,16 @@ class _HomePageState extends State<HomePage> {
       ),
       bottomNavigationBar: _BottomNavBar(
         currentIndex: _tab,
-        onTap: (i) {
+        onTap: (i) async {
           setState(() => _tab = i);
           if (i == 1) {
+            final canProceed = await _ensureAuthenticated();
+            if (!canProceed) return;
             Get.toNamed(AppRoutes.reservations);
           }
           if (i == 3) {
+            final canProceed = await _ensureAuthenticated();
+            if (!canProceed) return;
             Get.toNamed(AppRoutes.profile);
           }
           if (i == 4) {

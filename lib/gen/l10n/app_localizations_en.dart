@@ -24,6 +24,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signIn => 'Sign in';
 
   @override
+  String get browseTitle => 'Shops & services';
+
+  @override
+  String get shopsSection => 'Shops';
+
+  @override
+  String get servicesSection => 'Services';
+
+  @override
+  String get browseSelectShopHint => 'Select a shop to see its services.';
+
+  @override
   String get logIn => 'Log in';
 
   @override

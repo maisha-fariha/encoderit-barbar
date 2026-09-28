@@ -24,6 +24,19 @@ class AppLocalizationsIt extends AppLocalizations {
   String get signIn => 'Accedi';
 
   @override
+  String get browseTitle => 'Saloni e servizi';
+
+  @override
+  String get shopsSection => 'Saloni';
+
+  @override
+  String get servicesSection => 'Servizi';
+
+  @override
+  String get browseSelectShopHint =>
+      'Seleziona un salone per vedere i servizi.';
+
+  @override
   String get logIn => 'Accedi';
 
   @override

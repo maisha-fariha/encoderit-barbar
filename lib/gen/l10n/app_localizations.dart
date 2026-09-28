@@ -128,6 +128,30 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get signIn;
 
+  /// No description provided for @browseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shops & services'**
+  String get browseTitle;
+
+  /// No description provided for @shopsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Shops'**
+  String get shopsSection;
+
+  /// No description provided for @servicesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get servicesSection;
+
+  /// No description provided for @browseSelectShopHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a shop to see its services.'**
+  String get browseSelectShopHint;
+
   /// No description provided for @logIn.
   ///
   /// In en, this message translates to:
