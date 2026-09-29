@@ -202,7 +202,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_loadFromSession());
+      if (mounted) unawaited(_loadProfile());
     });
   }
 
@@ -231,6 +231,7 @@ class _ProfilePageState extends State<ProfilePage> {
     for (final k in keys) {
       final v = u[k];
       if (v is String && v.trim().isNotEmpty) return v.trim();
+      if (v is num) return v.toString();
     }
     return '';
   }
@@ -240,13 +241,17 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!mounted) return;
     final u = auth?.userData;
     if (u == null) return;
+    _applyUserMapToFields(u);
+  }
+
+  void _applyUserMapToFields(Map<String, dynamic> u) {
     final name = (u['name'] as String? ?? '').trim();
     final parts = name.isEmpty ? <String>[] : name.split(RegExp(r'\s+'));
     setState(() {
       _firstName.text = parts.isNotEmpty ? parts.first : '';
       _lastName.text = parts.length > 1 ? parts.sublist(1).join(' ') : '';
       _email.text = (u['email'] as String? ?? '').trim();
-      _phone.text = (u['phone'] as String? ?? '').trim();
+      _phone.text = _stringField(u, ['phone']);
       _dobCtrl.text = _stringField(u, ['dob', 'date_of_birth', 'birthday']);
       _address.text = _stringField(u, ['address']);
       _zip.text = _stringField(u, ['zip_code', 'zip']);
@@ -256,6 +261,16 @@ class _ProfilePageState extends State<ProfilePage> {
       _avatarUrl =
           resolveAvatarDisplayUrl(sessionAvatarFromUserData(u))?.trim() ?? '';
     });
+  }
+
+  Future<void> _loadProfile() async {
+    await _loadFromSession();
+    if (!mounted) return;
+    if (!Get.isRegistered<ProfileController>()) return;
+    final refreshed =
+        await Get.find<ProfileController>().refreshSessionFromServer();
+    if (!mounted || !refreshed) return;
+    await _loadFromSession();
   }
 
   void _showSnack(String text, {required bool isError}) {

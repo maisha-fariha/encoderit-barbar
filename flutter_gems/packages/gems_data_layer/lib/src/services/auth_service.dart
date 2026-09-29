@@ -314,12 +314,29 @@ class AuthService {
           ? refreshRaw.trim()
           : null,
       expiresAt: expiresAt,
-      userData: userPayload is Map<String, dynamic>
-          ? userPayload
-          : userPayload is Map
-              ? Map<String, dynamic>.from(userPayload)
-              : null,
+      userData: _normalizeUserPayload(userPayload),
     );
+  }
+
+  /// Flattens nested `user_details` into the top-level user map used by the app.
+  Map<String, dynamic>? _normalizeUserPayload(dynamic userPayload) {
+    if (userPayload is! Map) return null;
+    final user = Map<String, dynamic>.from(userPayload);
+    final details = user['user_details'] ?? user['userDetails'] ?? user['profile'];
+    if (details is Map) {
+      for (final e in Map<String, dynamic>.from(details).entries) {
+        if (e.value == null) continue;
+        if (e.value is String && (e.value as String).trim().isEmpty) continue;
+        // Nested details fill gaps; keep existing top-level values.
+        final existing = user[e.key];
+        final missing = existing == null ||
+            (existing is String && existing.trim().isEmpty);
+        if (missing) {
+          user[e.key] = e.value;
+        }
+      }
+    }
+    return user;
   }
 
   /// Save auth data to local storage

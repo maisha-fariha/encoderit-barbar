@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../auth/app_auth_gateway.dart';
+import '../controllers/profile_controller.dart';
 import '../routes/app_pages.dart';
 import '../services/app_services.dart';
 import '../services/onboarding_prefs.dart';
@@ -154,6 +155,7 @@ class AuthController extends GetxController {
       if (res.success && res.data != null) {
         isLoggedIn.value = true;
         _debugLogAuthToken('login', res.data!.accessToken);
+        await _refreshProfileIntoSession();
         _snackbar('Welcome back', 'Login successful');
         await _notifyAvatarServiceAuthChanged();
         Get.offAllNamed(AppRoutes.home);
@@ -271,11 +273,28 @@ class AuthController extends GetxController {
     authGateway.apiService.setAuthToken(token);
     isLoggedIn.value = true;
     _debugLogAuthToken('register-otp', token);
+    await _refreshProfileIntoSession();
     await _notifyAvatarServiceAuthChanged();
     Get.offAllNamed(AppRoutes.home);
     Future<void>.delayed(const Duration(milliseconds: 300), () {
       _snackbar('Welcome', 'Account verified successfully');
     });
+  }
+
+  Future<void> _refreshProfileIntoSession() async {
+    try {
+      if (Get.isRegistered<ProfileController>()) {
+        await Get.find<ProfileController>().refreshSessionFromServer();
+        return;
+      }
+      if (AppServices.getIt.isRegistered<ProfileController>()) {
+        await AppServices.getIt<ProfileController>().refreshSessionFromServer();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AuthController] profile refresh after auth failed: $e');
+      }
+    }
   }
 
   Future<void> logout() async {

@@ -54,6 +54,50 @@ class ProfileRepository {
   final ApiService apiService;
   final AuthService authService;
 
+  /// Loads the latest profile from `GET /profile` into the local session.
+  ///
+  /// Login responses often omit address/dob/etc.; this keeps the profile screen
+  /// in sync after logout/login.
+  Future<bool> refreshSessionFromServer() async {
+    try {
+      final response = await apiService.get<dynamic>(ApiEndpoints.profile);
+      if (!response.success) {
+        if (kDebugMode) {
+          debugPrint(
+            '[ProfileRepository] GET ${ApiEndpoints.profile} failed: '
+            '${response.message}',
+          );
+        }
+        return false;
+      }
+
+      final auth = await authService.getStoredAuth();
+      if (auth == null) return false;
+
+      final merged = Map<String, dynamic>.from(auth.userData ?? {});
+      _applyResponseUserMap(merged, response.data);
+
+      await authService.applySession(
+        AuthData(
+          accessToken: auth.accessToken,
+          refreshToken: auth.refreshToken,
+          expiresAt: auth.expiresAt,
+          userData: merged,
+        ),
+      );
+
+      if (Get.isRegistered<ProfileAvatarService>()) {
+        Get.find<ProfileAvatarService>().revision.value++;
+      }
+      return true;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[ProfileRepository] refreshSessionFromServer: $e\n$st');
+      }
+      return false;
+    }
+  }
+
   Future<DeleteAccountOutcome> deleteAccount({required String password}) async {
     final trimmed = password.trim();
     if (trimmed.isEmpty) {
@@ -350,6 +394,24 @@ class ProfileRepository {
 
     _applyResponseUserMap(merged, responseData);
 
+    // Prefer just-sent editable fields over empty/partial API echoes.
+    for (final key in <String>[
+      'name',
+      'email',
+      'phone',
+      'dob',
+      'address',
+      'zip_code',
+      'province',
+      'municipality',
+      'country',
+    ]) {
+      final v = sent[key];
+      if (v is String && v.trim().isNotEmpty) {
+        merged[key] = v.trim();
+      }
+    }
+
     await authService.applySession(
       AuthData(
         accessToken: auth.accessToken,
@@ -417,14 +479,32 @@ class ProfileRepository {
     }
 
     for (final e in payload.entries) {
-      if (e.key == 'user_details') continue;
-      if (e.value != null) merged[e.key] = e.value;
+      if (e.key == 'user_details' ||
+          e.key == 'userDetails' ||
+          e.key == 'profile') {
+        continue;
+      }
+      if (e.value == null) continue;
+      if (e.value is String && (e.value as String).trim().isEmpty) {
+        // Don't wipe existing values with empty API fields.
+        final existing = merged[e.key];
+        if (existing is String && existing.trim().isNotEmpty) continue;
+        if (existing != null && existing is! String) continue;
+      }
+      merged[e.key] = e.value;
     }
 
-    final details = payload['user_details'];
+    final details = payload['user_details'] ??
+        payload['userDetails'] ??
+        payload['profile'];
     if (details is Map) {
       for (final e in Map<String, dynamic>.from(details).entries) {
-        if (e.value != null) merged[e.key] = e.value;
+        if (e.value == null) continue;
+        if (e.value is String && (e.value as String).trim().isEmpty) {
+          final existing = merged[e.key];
+          if (existing is String && existing.trim().isNotEmpty) continue;
+        }
+        merged[e.key] = e.value;
       }
     }
 

@@ -40,4 +40,8 @@ class ProfileController extends GetxController {
       isDeletingAccount.value = false;
     }
   }
+
+  /// Pulls full profile from API into local session (after login / on profile open).
+  Future<bool> refreshSessionFromServer() =>
+      repository.refreshSessionFromServer();
 }
