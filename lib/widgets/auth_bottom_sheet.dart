@@ -55,6 +55,8 @@ class _AuthFlowSheetState extends State<_AuthFlowSheet> {
   final _otp = TextEditingController();
   final _newPassword = TextEditingController();
   final _confirmPassword = TextEditingController();
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -413,7 +415,10 @@ class _AuthFlowSheetState extends State<_AuthFlowSheet> {
               controller: _newPassword,
               hint: l10n.newPassword,
               keyboardType: TextInputType.visiblePassword,
-              obscureText: true,
+              obscureText: _obscureNewPassword,
+              onToggleObscure: () => setState(
+                () => _obscureNewPassword = !_obscureNewPassword,
+              ),
               prefixIcon: Icons.lock_outline_rounded,
             ),
             const SizedBox(height: 12),
@@ -421,7 +426,10 @@ class _AuthFlowSheetState extends State<_AuthFlowSheet> {
               controller: _confirmPassword,
               hint: l10n.confirmPassword,
               keyboardType: TextInputType.visiblePassword,
-              obscureText: true,
+              obscureText: _obscureConfirmPassword,
+              onToggleObscure: () => setState(
+                () => _obscureConfirmPassword = !_obscureConfirmPassword,
+              ),
               prefixIcon: Icons.lock_outline_rounded,
             ),
           ],
@@ -668,6 +676,7 @@ class _SheetField extends StatelessWidget {
     required this.keyboardType,
     required this.prefixIcon,
     this.obscureText = false,
+    this.onToggleObscure,
   });
 
   final TextEditingController controller;
@@ -675,6 +684,9 @@ class _SheetField extends StatelessWidget {
   final TextInputType keyboardType;
   final IconData prefixIcon;
   final bool obscureText;
+
+  /// When set, shows an eye button that toggles [obscureText].
+  final VoidCallback? onToggleObscure;
 
   @override
   Widget build(BuildContext context) {
@@ -711,6 +723,17 @@ class _SheetField extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
           prefixIcon: Icon(prefixIcon, color: const Color(0xFFB7B7B7)),
+          suffixIcon: onToggleObscure == null
+              ? null
+              : IconButton(
+                  onPressed: onToggleObscure,
+                  icon: Icon(
+                    obscureText
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: Colors.white.withValues(alpha: 0.55),
+                  ),
+                ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 14,
             vertical: 16,
