@@ -38,10 +38,12 @@ class AvatarPickResult {
   bool get isFailure => error != null;
 }
 
-/// Picks a profile photo and stores it per user under app documents for preview.
+/// Picks a profile photo and keeps it per user under app documents as an
+/// optimistic preview while it is uploaded via `POST /profile/avatar` — see
+/// [ProfileRepository.uploadAvatar].
 ///
-/// Upload uses `PUT /profile` with multipart field `avatar` (file) — see
-/// [ProfileRepository.updateProfile].
+/// Every pick is written to a new file name: [FileImage] caches by path, so
+/// reusing one path would keep showing the previously decoded photo.
 class ProfileAvatarService {
   ProfileAvatarService({
     required this.gateway,
@@ -60,6 +62,18 @@ class ProfileAvatarService {
 
   Future<void> initialize() async {
     _currentUserKey = await _readUserKey();
+    await _deleteAllPicks();
+  }
+
+  /// Picks are only kept while an upload is in flight, so anything on disk at
+  /// launch is stale and would hide the server avatar.
+  Future<void> _deleteAllPicks() async {
+    try {
+      final dir = await _avatarsDir();
+      await for (final entity in dir.list()) {
+        if (entity is File) await entity.delete();
+      }
+    } catch (_) {}
   }
 
   Future<void> dispose() async {}
@@ -90,28 +104,48 @@ class ProfileAvatarService {
     return dir;
   }
 
-  Future<File> _userAvatarFile(String userKey) async {
+  Future<File> _newUserAvatarFile(String userKey) async {
     final dir = await _avatarsDir();
-    return File(p.join(dir.path, '${_safeFileName(userKey)}.jpg'));
+    final stamp = DateTime.now().microsecondsSinceEpoch;
+    return File(p.join(dir.path, '${_safeFileName(userKey)}_$stamp.jpg'));
   }
 
-  /// Local cached avatar for the signed-in user, if any.
+  /// All stored picks for [userKey], newest first.
+  Future<List<File>> _userAvatarFiles(String userKey) async {
+    final dir = await _avatarsDir();
+    final prefix = _safeFileName(userKey);
+    final files = <File>[];
+    await for (final entity in dir.list()) {
+      if (entity is! File) continue;
+      final name = p.basenameWithoutExtension(entity.path);
+      if (name == prefix || name.startsWith('${prefix}_')) files.add(entity);
+    }
+    files.sort((a, b) => b.path.compareTo(a.path));
+    return files;
+  }
+
+  Future<void> _deleteUserAvatarFiles(String userKey, {File? keep}) async {
+    for (final f in await _userAvatarFiles(userKey)) {
+      if (keep != null && f.path == keep.path) continue;
+      try {
+        await f.delete();
+      } catch (_) {}
+    }
+  }
+
+  /// Local pending avatar for the signed-in user, if any.
   Future<File?> currentAvatarFile() async {
     final key = _currentUserKey ??= await _readUserKey();
     if (key == null) return null;
-    final f = await _userAvatarFile(key);
-    if (await f.exists()) return f;
-    return null;
+    final files = await _userAvatarFiles(key);
+    return files.isEmpty ? null : files.first;
   }
 
   /// Removes the on-device pick so the UI can show the server [avatar] URL.
   Future<void> clearLocalAvatar() async {
     final key = _currentUserKey ??= await _readUserKey();
     if (key == null) return;
-    final f = await _userAvatarFile(key);
-    if (await f.exists()) {
-      await f.delete();
-    }
+    await _deleteUserAvatarFiles(key);
     revision.value++;
   }
 
@@ -161,9 +195,10 @@ class ProfileAvatarService {
     }
 
     try {
-      final dest = await _userAvatarFile(key);
+      final dest = await _newUserAvatarFile(key);
       final bytes = await File(picked.path).readAsBytes();
       await dest.writeAsBytes(bytes, flush: true);
+      await _deleteUserAvatarFiles(key, keep: dest);
       revision.value++;
       return AvatarPickResult.saved(dest);
     } catch (e, st) {

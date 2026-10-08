@@ -13,7 +13,7 @@ import '../services/profile_avatar_service.dart';
 import '../utils/api_endpoints.dart';
 import '../utils/avatar_url_resolver.dart';
 
-/// Result of `PUT /profile`.
+/// Result of `PUT /profile` or `POST /profile/avatar`.
 class UpdateProfileOutcome {
   const UpdateProfileOutcome({
     required this.success,
@@ -158,56 +158,116 @@ class ProfileRepository {
     }
   }
 
+  /// Uploads [file] as multipart field `avatar` to `POST /profile/avatar` and
+  /// stores the returned URL in the session with a fresh [avatarVersionKey].
+  Future<UpdateProfileOutcome> uploadAvatar(File file) async {
+    final lang = Get.locale?.languageCode ?? 'it';
+    try {
+      final form = FormData.fromMap({
+        'avatar': await MultipartFile.fromFile(
+          file.path,
+          filename: p.basename(file.path),
+          contentType: _imageDioMediaType(file.path),
+        ),
+      });
+      if (kDebugMode) {
+        debugPrint(
+          '[ProfileRepository] >>> POST ${ApiEndpoints.profileAvatar}?lang=$lang '
+          'avatar=${p.basename(file.path)} (${file.lengthSync()} bytes)',
+        );
+      }
+
+      final response = await apiService.post<dynamic>(
+        ApiEndpoints.profileAvatar,
+        data: form,
+        queryParameters: {'lang': lang},
+        options: Options(headers: const {'Accept': 'application/json'}),
+      );
+
+      if (kDebugMode) {
+        debugPrint(
+          '[ProfileRepository] <<< POST ${ApiEndpoints.profileAvatar} '
+          'success=${response.success} status=${response.statusCode} '
+          'data=${response.data}',
+        );
+      }
+
+      if (!response.success) {
+        return UpdateProfileOutcome(
+          success: false,
+          message: _messageFromResponse(response),
+          errors: response.errors,
+        );
+      }
+
+      final auth = await authService.getStoredAuth();
+      String? displayUrl;
+      if (auth != null) {
+        final merged = Map<String, dynamic>.from(auth.userData ?? {});
+        _applyResponseUserMap(merged, response.data);
+        final bareUrl = _avatarUrlFromUploadResponse(response.data);
+        if (bareUrl != null) {
+          merged['avatar'] = normalizeAvatarUrlForStorage(bareUrl) ?? bareUrl;
+          merged.remove('avatar_url');
+        }
+        merged[avatarVersionKey] = DateTime.now().millisecondsSinceEpoch;
+        await authService.applySession(
+          AuthData(
+            accessToken: auth.accessToken,
+            refreshToken: auth.refreshToken,
+            expiresAt: auth.expiresAt,
+            userData: merged,
+          ),
+        );
+        displayUrl = sessionAvatarDisplayUrl(merged);
+      }
+
+      return UpdateProfileOutcome(
+        success: true,
+        message: _successMessageFromResponse(response),
+        avatarUrl: displayUrl,
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[ProfileRepository] uploadAvatar exception: $e\n$st');
+      }
+      return UpdateProfileOutcome(
+        success: false,
+        message: e.toString(),
+        isNetworkError: true,
+      );
+    }
+  }
+
+  /// Handles upload responses that return the URL as a bare string
+  /// (`{ data: "https://…" }`) or under `url` / `path`.
+  String? _avatarUrlFromUploadResponse(dynamic responseData) {
+    if (responseData is! Map) return null;
+    final data = responseData['data'];
+    if (data is String && data.trim().isNotEmpty) return data.trim();
+    final container = data is Map ? data : responseData;
+    for (final key in const ['avatar', 'avatar_url', 'url', 'path']) {
+      final v = container[key];
+      if (v is String && v.trim().isNotEmpty) return v.trim();
+    }
+    return null;
+  }
+
   Future<UpdateProfileOutcome> updateProfile(ProfileUpdateRequest request) async {
-    final hasAvatarFile = request.avatarFile != null;
-    final headers = const {'Accept': 'application/json'};
     final url = '${Environment.instance.apiBaseUrl}${ApiEndpoints.profile}';
 
     try {
-      final ApiResponse<dynamic> response;
-      if (hasAvatarFile) {
-        final file = request.avatarFile!;
-        final filename = p.basename(file.path);
-        final contentType = _imageDioMediaType(file.path);
-        final form = FormData.fromMap({
-          ...request.toFormFields(),
-          'avatar': await MultipartFile.fromFile(
-            file.path,
-            filename: filename,
-            contentType: contentType,
-          ),
-        });
-        _logPutProfileRequest(
-          url: url,
-          headers: headers,
-          body: form,
-          sourceFile: file,
-        );
-        response = await apiService.put<dynamic>(
-          ApiEndpoints.profile,
-          data: form,
-          options: Options(headers: headers),
-        );
-      } else {
-        final body = request.toJson();
-        _logPutProfileRequest(
-          url: url,
-          headers: headers,
-          body: body,
-        );
-        response = await apiService.put<dynamic>(
-          ApiEndpoints.profile,
-          data: body,
-        );
-      }
+      final body = request.toJson();
+      _logPutProfileRequest(url: url, body: body);
+      final response = await apiService.put<dynamic>(
+        ApiEndpoints.profile,
+        data: body,
+      );
 
       _logPutProfileResponse(response);
 
       if (response.success) {
-        final avatarUrl = await _mergeStoredUser(
-          request.toFormFields(),
-          response.data,
-        );
+        final avatarUrl = await _mergeStoredUser(body, response.data);
         return UpdateProfileOutcome(
           success: true,
           message: _successMessageFromResponse(response),
@@ -234,79 +294,18 @@ class ProfileRepository {
 
   void _logPutProfileRequest({
     required String url,
-    required Map<String, dynamic> headers,
-    required dynamic body,
-    File? sourceFile,
+    required Map<String, dynamic> body,
   }) {
     if (!kDebugMode) return;
 
     final buffer = StringBuffer()
       ..writeln('[ProfileRepository] >>> PUT $url')
-      ..writeln('  method: PUT')
-      ..writeln('  requestHeaders: $headers');
-
-    if (body is FormData) {
-      final form = body;
-      buffer
-        ..writeln(
-          '  contentType: multipart/form-data; boundary=${form.boundary}',
-        )
-        ..writeln('  bodySummary: ${form.fields.length} text part(s), '
-            '${form.files.length} file part(s)')
-        ..writeln('  --- multipart text parts (form-data / Text) ---');
-      if (form.fields.isEmpty) {
-        buffer.writeln('    (none)');
-      } else {
-        for (final part in form.fields) {
-          final value = part.value;
-          final display = value.isEmpty ? '(empty string)' : value;
-          buffer.writeln('    ${part.key}: $display');
-        }
-      }
-      buffer.writeln('  --- multipart file parts (form-data / File) ---');
-      if (form.files.isEmpty) {
-        buffer.writeln('    (none)');
-      } else {
-        for (final part in form.files) {
-          final file = part.value;
-          buffer
-            ..writeln('    ${part.key}:')
-            ..writeln('      type: MultipartFile')
-            ..writeln('      filename: ${file.filename ?? '(null)'}')
-            ..writeln(
-              '      contentType: ${file.contentType?.mimeType ?? '(null)'}',
-            )
-            ..writeln('      length: ${file.length} bytes');
-          if (sourceFile != null && part.key == 'avatar') {
-            final exists = sourceFile.existsSync();
-            buffer
-              ..writeln('      sourcePath: ${sourceFile.path}')
-              ..writeln('      sourceExistsOnDisk: $exists');
-            if (exists) {
-              buffer.writeln(
-                '      sourceSizeOnDisk: ${sourceFile.lengthSync()} bytes',
-              );
-            }
-          }
-        }
-      }
-      buffer.writeln(
-        '  note: API returns avatar (string URL) in JSON response; '
-        'upload uses file part key "avatar" (Postman).',
-      );
-    } else if (body is Map) {
-      buffer
-        ..writeln('  contentType: application/json')
-        ..writeln('  --- JSON body ---');
-      try {
-        buffer.writeln(
-          const JsonEncoder.withIndent('    ').convert(body),
-        );
-      } catch (_) {
-        buffer.writeln('    $body');
-      }
-    } else {
-      buffer.writeln('  body: $body');
+      ..writeln('  contentType: application/json')
+      ..writeln('  --- JSON body ---');
+    try {
+      buffer.writeln(const JsonEncoder.withIndent('    ').convert(body));
+    } catch (_) {
+      buffer.writeln('    $body');
     }
 
     debugPrint(buffer.toString());
@@ -421,17 +420,11 @@ class ProfileRepository {
       ),
     );
 
-    final displayAvatar =
-        resolveAvatarDisplayUrl(sessionAvatarFromUserData(merged));
-    if (displayAvatar != null &&
-        displayAvatar.isNotEmpty &&
-        Get.isRegistered<ProfileAvatarService>()) {
-      await Get.find<ProfileAvatarService>().clearLocalAvatar();
-    } else if (Get.isRegistered<ProfileAvatarService>()) {
+    if (Get.isRegistered<ProfileAvatarService>()) {
       Get.find<ProfileAvatarService>().revision.value++;
     }
 
-    return displayAvatar;
+    return sessionAvatarDisplayUrl(merged);
   }
 
   /// Supports `{ data: { id, avatar, … } }`, `{ user: … }`, or a flat profile map.

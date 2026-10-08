@@ -43,11 +43,10 @@ class _ProfilePageState extends State<ProfilePage> {
   /// Remote `avatar` URL string from session/API (for display after GET).
   String _avatarUrl = '';
 
-  /// New photo chosen in this session; sent as multipart `avatar` (file) on PUT.
+  /// Photo just picked, shown optimistically until the upload finishes.
   File? _pendingAvatarFile;
 
-  /// True after user picks a new photo until a successful profile save.
-  bool _avatarDirty = false;
+  bool _uploadingAvatar = false;
 
   ProfileAvatarService? get _avatarSvc =>
       Get.isRegistered<ProfileAvatarService>()
@@ -57,7 +56,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _openAvatarPicker() async {
     final l10n = AppLocalizations.of(context)!;
     final svc = _avatarSvc;
-    if (svc == null) return;
+    if (svc == null || _uploadingAvatar) return;
 
     final source = await showModalBottomSheet<_AvatarPickSource>(
       context: context,
@@ -153,30 +152,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (result.isCancelled) return;
 
     if (result.isSuccess) {
-      setState(() {
-        _pendingAvatarFile = result.file;
-        _avatarDirty = true;
-      });
-      if (Get.isRegistered<ProfileAvatarService>()) {
-        Get.find<ProfileAvatarService>().revision.value++;
-      }
-      final online = await _hasNetwork();
-      if (!mounted) return;
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFFE8E8E8),
-          content: Text(
-            online ? l10n.photoSelected : l10n.photoSavedOffline,
-            style: const TextStyle(
-              color: Color(0xFF0B0B0B),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      await _uploadPickedAvatar(result.file!);
       return;
     }
 
@@ -196,6 +172,71 @@ class _ProfilePageState extends State<ProfilePage> {
         duration: const Duration(seconds: 4),
       ),
     );
+  }
+
+  /// Shows [file] immediately, uploads it, then swaps to the server URL once
+  /// that image is decoded so the avatar never flashes the old photo.
+  Future<void> _uploadPickedAvatar(File file) async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      _pendingAvatarFile = file;
+      _uploadingAvatar = true;
+    });
+
+    if (!await _hasNetwork()) {
+      await _discardPendingAvatar();
+      if (mounted) _showSnack(l10n.photoUploadFailed, isError: true);
+      return;
+    }
+
+    final outcome = await Get.find<ProfileController>().uploadAvatar(file);
+    if (!mounted) return;
+
+    if (!outcome.success) {
+      await _discardPendingAvatar();
+      if (!mounted) return;
+      final fromErrors = _firstErrorString(outcome.errors);
+      final msg = outcome.isNetworkError
+          ? l10n.photoUploadFailed
+          : outcome.message.isNotEmpty
+              ? outcome.message
+              : (fromErrors.isNotEmpty ? fromErrors : l10n.photoUploadFailed);
+      _showSnack(msg, isError: true);
+      return;
+    }
+
+    final remote = outcome.avatarUrl?.trim() ?? '';
+    if (remote.isNotEmpty) {
+      await precacheImage(
+        NetworkImage(remote),
+        context,
+        onError: (_, __) {},
+      ).timeout(const Duration(seconds: 10), onTimeout: () {});
+      if (!mounted) return;
+    }
+
+    setState(() {
+      if (remote.isNotEmpty) {
+        _avatarUrl = remote;
+        _pendingAvatarFile = null;
+      }
+      _uploadingAvatar = false;
+    });
+    if (remote.isNotEmpty) await _avatarSvc?.clearLocalAvatar();
+    if (!mounted) return;
+    _showSnack(
+      outcome.message.isNotEmpty ? outcome.message : l10n.photoSyncedOnline,
+      isError: false,
+    );
+  }
+
+  Future<void> _discardPendingAvatar() async {
+    await _avatarSvc?.clearLocalAvatar();
+    if (!mounted) return;
+    setState(() {
+      _pendingAvatarFile = null;
+      _uploadingAvatar = false;
+    });
   }
 
   @override
@@ -258,8 +299,7 @@ class _ProfilePageState extends State<ProfilePage> {
       _municipality.text = _stringField(u, ['municipality', 'city']);
       _province.text = _stringField(u, ['province']);
       _country.text = _stringField(u, ['country']);
-      _avatarUrl =
-          resolveAvatarDisplayUrl(sessionAvatarFromUserData(u))?.trim() ?? '';
+      _avatarUrl = sessionAvatarDisplayUrl(u)?.trim() ?? '';
     });
   }
 
@@ -405,18 +445,6 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  /// File to upload when the user changed their photo (pending ref or local cache).
-  Future<File?> _resolveAvatarFileForUpload() async {
-    if (!_avatarDirty) return null;
-    final pending = _pendingAvatarFile;
-    if (pending != null && pending.existsSync()) return pending;
-    final svc = _avatarSvc;
-    if (svc == null) return null;
-    final cached = await svc.currentAvatarFile();
-    if (cached != null && cached.existsSync()) return cached;
-    return null;
-  }
-
   Future<void> _submitProfile() async {
     FocusScope.of(context).unfocus();
     final l10n = AppLocalizations.of(context)!;
@@ -433,13 +461,10 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    final avatarFile = await _resolveAvatarFileForUpload();
-
     final request = ProfileUpdateRequest(
       name: name,
       email: email,
       phone: _phone.text.trim(),
-      avatarFile: avatarFile,
       dob: _dobCtrl.text.trim(),
       address: _address.text.trim(),
       zipCode: _zip.text.trim(),
@@ -457,18 +482,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ? outcome.message
           : l10n.profileUpdateSuccessFallback;
       _showSnack(msg, isError: false);
-      setState(() {
-        _pendingAvatarFile = null;
-        _avatarDirty = false;
-        final remote = outcome.avatarUrl?.trim();
-        if (remote != null && remote.isNotEmpty) {
-          _avatarUrl = remote;
-        }
-      });
       await _loadFromSession();
-      if (Get.isRegistered<ProfileAvatarService>()) {
-        Get.find<ProfileAvatarService>().revision.value++;
-      }
       return;
     }
 
@@ -694,6 +708,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         pickedFile: _pendingAvatarFile,
                         remoteAvatarUrl:
                             _avatarUrl.isEmpty ? null : _avatarUrl,
+                        uploading: _uploadingAvatar,
                         onTapEdit: _openAvatarPicker,
                       ),
                       const SizedBox(height: 18),
@@ -1171,6 +1186,7 @@ class _ProfileAvatar extends StatelessWidget {
     required this.pickedFile,
     required this.remoteAvatarUrl,
     required this.onTapEdit,
+    this.uploading = false,
   });
 
   final double size;
@@ -1178,6 +1194,7 @@ class _ProfileAvatar extends StatelessWidget {
   final File? pickedFile;
   final String? remoteAvatarUrl;
   final VoidCallback onTapEdit;
+  final bool uploading;
 
   @override
   Widget build(BuildContext context) {
@@ -1209,7 +1226,26 @@ class _ProfileAvatar extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: _buildAvatarImage(),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildAvatarImage(),
+                      if (uploading)
+                        const ColoredBox(
+                          color: Color(0x8C000000),
+                          child: Center(
+                            child: SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Color(0xFFEDEDED),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1221,7 +1257,7 @@ class _ProfileAvatar extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: onTapEdit,
+              onTap: uploading ? null : onTapEdit,
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 width: badgeSize,

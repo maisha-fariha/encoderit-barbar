@@ -505,15 +505,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get cancel => 'Annulla';
 
   @override
-  String get photoSelected =>
-      'Foto selezionata. Tocca Aggiorna per salvare il profilo.';
+  String get photoSyncedOnline => 'Foto profilo aggiornata.';
 
   @override
-  String get photoSavedOffline =>
-      'Foto salvata sul dispositivo. Tocca Aggiorna quando sei online per caricarla.';
-
-  @override
-  String get photoSyncedOnline => 'Foto profilo sincronizzata.';
+  String get photoUploadFailed =>
+      'Impossibile caricare la foto. Controlla la connessione e riprova.';
 
   @override
   String get photoPickError =>

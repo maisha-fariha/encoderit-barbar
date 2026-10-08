@@ -501,15 +501,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
-  String get photoSelected =>
-      'Photo selected. Tap Update to save your profile.';
+  String get photoSyncedOnline => 'Profile photo updated.';
 
   @override
-  String get photoSavedOffline =>
-      'Photo saved on this device. Tap Update when you\'re online to upload.';
-
-  @override
-  String get photoSyncedOnline => 'Profile photo synced.';
+  String get photoUploadFailed =>
+      'Could not upload the photo. Check your connection and try again.';
 
   @override
   String get photoPickError => 'Could not access the selected image.';

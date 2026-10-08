@@ -14,6 +14,24 @@ String? sessionAvatarFromUserData(Map<String, dynamic>? userData) {
   return null;
 }
 
+/// Session user key holding a client-side stamp set after each avatar upload.
+const String avatarVersionKey = 'avatar_version';
+
+/// Display URL for the session avatar, tagged with `v=<avatar_version>` so a
+/// re-uploaded photo stored at the same server path is not served from the
+/// in-memory image cache.
+String? sessionAvatarDisplayUrl(Map<String, dynamic>? userData) {
+  final url = resolveAvatarDisplayUrl(sessionAvatarFromUserData(userData));
+  if (url == null) return null;
+  final version = userData?[avatarVersionKey];
+  if (version == null) return url;
+  final uri = Uri.tryParse(url);
+  if (uri == null) return url;
+  return uri.replace(
+    queryParameters: {...uri.queryParameters, 'v': '$version'},
+  ).toString();
+}
+
 /// Builds a displayable URL from API `avatar`.
 ///
 /// Backend responses normally include a full `https://…` URL; those are returned
