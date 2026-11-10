@@ -18,6 +18,7 @@ import '../services/app_services.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/avatar_url_resolver.dart';
 import '../widgets/avatar_image_preview.dart';
+import '../widgets/initials_avatar.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -239,9 +240,15 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  void _onNameFieldsChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
+    _firstName.addListener(_onNameFieldsChanged);
+    _lastName.addListener(_onNameFieldsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_loadProfile());
     });
@@ -249,6 +256,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   void dispose() {
+    _firstName.removeListener(_onNameFieldsChanged);
+    _lastName.removeListener(_onNameFieldsChanged);
     _firstName.dispose();
     _lastName.dispose();
     _email.dispose();
@@ -708,6 +717,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         pickedFile: _pendingAvatarFile,
                         remoteAvatarUrl:
                             _avatarUrl.isEmpty ? null : _avatarUrl,
+                        displayName: [
+                          _firstName.text.trim(),
+                          _lastName.text.trim(),
+                        ].where((s) => s.isNotEmpty).join(' '),
                         uploading: _uploadingAvatar,
                         onTapEdit: _openAvatarPicker,
                       ),
@@ -1185,6 +1198,7 @@ class _ProfileAvatar extends StatelessWidget {
     required this.service,
     required this.pickedFile,
     required this.remoteAvatarUrl,
+    required this.displayName,
     required this.onTapEdit,
     this.uploading = false,
   });
@@ -1193,8 +1207,11 @@ class _ProfileAvatar extends StatelessWidget {
   final ProfileAvatarService? service;
   final File? pickedFile;
   final String? remoteAvatarUrl;
+  final String displayName;
   final VoidCallback onTapEdit;
   final bool uploading;
+
+  String get _initial => avatarInitialFromName(displayName);
 
   @override
   Widget build(BuildContext context) {
@@ -1305,12 +1322,7 @@ class _ProfileAvatar extends StatelessWidget {
         return;
       }
     }
-
-    if (!context.mounted) return;
-    await showAvatarImagePreview(
-      context,
-      assetPath: 'assets/images/profile.jpg',
-    );
+    // No photo — letter placeholder has nothing useful to preview.
   }
 
   Widget _buildAvatarImage() {
@@ -1321,7 +1333,7 @@ class _ProfileAvatar extends StatelessWidget {
         key: ValueKey('pending-${pending.path}'),
         fit: BoxFit.cover,
         gaplessPlayback: true,
-        errorBuilder: (_, __, ___) => const _FallbackAvatar(),
+        errorBuilder: (_, __, ___) => _FallbackAvatar(initial: _initial),
       );
     }
 
@@ -1354,7 +1366,7 @@ class _ProfileAvatar extends StatelessWidget {
 
   Widget _buildLocalOrFallback() {
     final svc = service;
-    if (svc == null) return const _FallbackAvatar();
+    if (svc == null) return _FallbackAvatar(initial: _initial);
     return ValueListenableBuilder<int>(
       valueListenable: svc.revision,
       builder: (context, _, __) {
@@ -1363,14 +1375,15 @@ class _ProfileAvatar extends StatelessWidget {
           builder: (context, snapshot) {
             final file = snapshot.data;
             if (file == null || !file.existsSync()) {
-              return const _FallbackAvatar();
+              return _FallbackAvatar(initial: _initial);
             }
             return Image.file(
               file,
               key: ValueKey('local-${file.path}'),
               fit: BoxFit.cover,
               gaplessPlayback: true,
-              errorBuilder: (_, __, ___) => const _FallbackAvatar(),
+              errorBuilder: (_, __, ___) =>
+                  _FallbackAvatar(initial: _initial),
             );
           },
         );
@@ -1380,22 +1393,15 @@ class _ProfileAvatar extends StatelessWidget {
 }
 
 class _FallbackAvatar extends StatelessWidget {
-  const _FallbackAvatar();
+  const _FallbackAvatar({required this.initial});
+
+  final String initial;
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/images/profile.jpg',
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stack) => Container(
-        color: const Color(0xFF1A1A1A),
-        alignment: Alignment.center,
-        child: const Icon(
-          Icons.person_rounded,
-          size: 64,
-          color: Color(0xFF797979),
-        ),
-      ),
+    return InitialsAvatar(
+      initial: initial,
+      fontSize: 64,
     );
   }
 }

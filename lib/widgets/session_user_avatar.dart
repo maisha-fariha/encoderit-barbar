@@ -5,26 +5,32 @@ import 'package:get/get.dart';
 
 import '../services/profile_avatar_service.dart';
 import '../utils/avatar_url_resolver.dart';
+import 'initials_avatar.dart';
 
 /// Small circular avatar for app bars — a pending local pick wins over the
 /// remote [avatarUrl] so a new photo shows before its upload completes.
+///
+/// When no photo is available, shows the first letter of [displayName].
 class SessionUserAvatar extends StatelessWidget {
   const SessionUserAvatar({
     super.key,
     required this.radius,
     this.avatarUrl,
+    this.displayName,
     this.borderColor = const Color(0xFFDDDDDD),
     this.borderWidth = 2,
   });
 
   final double radius;
   final String? avatarUrl;
+  final String? displayName;
   final Color borderColor;
   final double borderWidth;
 
   @override
   Widget build(BuildContext context) {
     final size = radius * 2;
+    final initial = avatarInitialFromName(displayName);
     return Container(
       width: size + borderWidth * 2,
       height: size + borderWidth * 2,
@@ -36,7 +42,11 @@ class SessionUserAvatar extends StatelessWidget {
         child: SizedBox(
           width: size,
           height: size,
-          child: _SessionUserAvatarImage(avatarUrl: avatarUrl),
+          child: _SessionUserAvatarImage(
+            avatarUrl: avatarUrl,
+            initial: initial,
+            fontSize: radius * 0.9,
+          ),
         ),
       ),
     );
@@ -44,9 +54,15 @@ class SessionUserAvatar extends StatelessWidget {
 }
 
 class _SessionUserAvatarImage extends StatelessWidget {
-  const _SessionUserAvatarImage({this.avatarUrl});
+  const _SessionUserAvatarImage({
+    this.avatarUrl,
+    required this.initial,
+    required this.fontSize,
+  });
 
   final String? avatarUrl;
+  final String initial;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
@@ -77,52 +93,25 @@ class _SessionUserAvatarImage extends StatelessWidget {
 
   Widget _buildRemote() {
     final remote = resolveAvatarDisplayUrl(avatarUrl);
-    if (remote == null || remote.isEmpty) return const _AvatarPlaceholder();
+    if (remote == null || remote.isEmpty) {
+      return InitialsAvatar(initial: initial, fontSize: fontSize);
+    }
     return Image.network(
       remote,
       key: ValueKey(remote),
       fit: BoxFit.cover,
       gaplessPlayback: true,
-      errorBuilder: (_, __, ___) => const _AvatarPlaceholder(),
+      errorBuilder: (_, __, ___) =>
+          InitialsAvatar(initial: initial, fontSize: fontSize),
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
-        return const _AvatarPlaceholder(showSpinner: true);
+        return InitialsAvatar(
+          initial: initial,
+          fontSize: fontSize,
+          backgroundColor: const Color(0xFF2B2B2B),
+          foregroundColor: const Color(0xFFCCCCCC),
+        );
       },
-    );
-  }
-}
-
-class _AvatarPlaceholder extends StatelessWidget {
-  const _AvatarPlaceholder({this.showSpinner = false});
-
-  final bool showSpinner;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: const Color(0xFF2B2B2B),
-      child: showSpinner
-          ? const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Color(0xFFCCCCCC),
-                ),
-              ),
-            )
-          : Image.asset(
-              'assets/images/profile.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Center(
-                child: Icon(
-                  Icons.person_rounded,
-                  color: Color(0xFF797979),
-                  size: 28,
-                ),
-              ),
-            ),
     );
   }
 }

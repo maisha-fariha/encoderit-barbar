@@ -320,6 +320,7 @@ class _HomePageState extends State<HomePage> {
                     SessionUserAvatar(
                       radius: 22,
                       avatarUrl: _avatarUrl.isEmpty ? null : _avatarUrl,
+                      displayName: _userName,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
