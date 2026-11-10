@@ -13,7 +13,13 @@ class ShopListController extends BaseListController<Shop>
   int _selectedIndex = 0;
   int _loadGeneration = 0;
 
+  /// True only after the user taps a shop (browse / booking). Not persisted.
+  /// Used by Contattaci; booking still relies on [selectedIndex] as before.
+  bool _hasExplicitShopSelection = false;
+
   int get selectedIndex => _selectedIndex;
+
+  bool get hasExplicitShopSelection => _hasExplicitShopSelection;
 
   Shop? get selectedShop {
     if (items.isEmpty) return null;
@@ -26,9 +32,19 @@ class ShopListController extends BaseListController<Shop>
   List<ShopService> get selectedShopServices =>
       selectedShop?.services ?? const <ShopService>[];
 
+  Shop? shopById(String? id) {
+    final needle = id?.trim() ?? '';
+    if (needle.isEmpty || items.isEmpty) return null;
+    for (final shop in items) {
+      if (shop.id == needle) return shop;
+    }
+    return null;
+  }
+
   void selectShop(int index) {
     if (index < 0 || index >= items.length) return;
     _selectedIndex = index;
+    _hasExplicitShopSelection = true;
     update(['shop-selection']);
   }
 

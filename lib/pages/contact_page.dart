@@ -9,9 +9,11 @@ import 'package:latlong2/latlong.dart';
 import '../controllers/contact_controller.dart';
 import '../controllers/shop_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
+import '../models/appointment/appointment_model.dart';
 import '../models/shop/shop_model.dart';
-
+import '../repositories/appointment_repository.dart';
 import '../routes/app_pages.dart';
+import '../services/app_services.dart';
 
 class ContactPage extends StatefulWidget {
   const ContactPage({super.key});
@@ -27,6 +29,10 @@ class _ContactPageState extends State<ContactPage> {
   final _email = TextEditingController();
   final _subject = TextEditingController();
   final _message = TextEditingController();
+
+  /// Shop shown on this page only (selected shop, else last appointment shop).
+  Shop? _displayShop;
+  bool _resolvingShop = true;
 
   void _showSnack(String text, {required bool isError}) {
     final messenger = ScaffoldMessenger.maybeOf(context);
@@ -110,13 +116,9 @@ class _ContactPageState extends State<ContactPage> {
   @override
   void initState() {
     super.initState();
-    final shops = Get.find<ShopListController>();
-    if (shops.items.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        shops.loadItems();
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _resolveDisplayShop();
+    });
   }
 
   @override
@@ -128,17 +130,84 @@ class _ContactPageState extends State<ContactPage> {
     super.dispose();
   }
 
+  /// Contact-only: fresh shops fetch, then selected shop or last appointment shop.
+  Future<void> _resolveDisplayShop() async {
+    setState(() => _resolvingShop = true);
+    final shops = Get.find<ShopListController>();
+    await shops.loadItems();
+
+    Shop? shop;
+    if (shops.hasExplicitShopSelection) {
+      shop = shops.selectedShop;
+    } else {
+      shop = await _shopFromLatestAppointment(shops) ?? shops.selectedShop;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _displayShop = shop;
+      _resolvingShop = false;
+    });
+  }
+
+  Future<Shop?> _shopFromLatestAppointment(ShopListController shops) async {
+    try {
+      final repo = AppServices.getIt<AppointmentRepository>();
+      final result = await repo.getPage(1, forceNetwork: true);
+      String? shopId;
+      result.when(
+        success: (page) => shopId = _latestAppointmentShopId(page.items),
+        failure: (_) {},
+      );
+      if (shopId == null || shopId!.isEmpty) {
+        final upcoming = await repo.getPage(
+          1,
+          forceNetwork: true,
+          status: 'upcoming',
+        );
+        upcoming.when(
+          success: (page) {
+            shopId ??= _latestAppointmentShopId(page.items);
+          },
+          failure: (_) {},
+        );
+      }
+      return shops.shopById(shopId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _latestAppointmentShopId(List<AppointmentModel> items) {
+    AppointmentModel? latest;
+    for (final item in items) {
+      final id = item.shop?.id.trim() ?? '';
+      if (id.isEmpty) continue;
+      if (latest == null) {
+        latest = item;
+        continue;
+      }
+      final a = item.startsAt ?? item.activitySortTime;
+      final b = latest.startsAt ?? latest.activitySortTime;
+      if (a.isAfter(b)) latest = item;
+    }
+    return latest?.shop?.id;
+  }
+
   String _addressBody(Shop shop) {
-    if (shop.address.trim().isEmpty) return '—';
-    final line1 = shop.addressLine1;
-    final line2 = shop.addressLine2;
+    final raw = shop.address.trim();
+    if (raw.isEmpty) return '—';
+    final normalized = raw.replaceAll(RegExp(r'\s*,\s*'), ', ');
+    final idx = normalized.indexOf(',');
+    if (idx <= 0) return normalized;
+    final line1 = normalized.substring(0, idx).trim();
+    final line2 = normalized.substring(idx + 1).trim();
     if (line2.isEmpty) return line1;
     return '$line1,\n$line2';
   }
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
     final hPad = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 18,
@@ -214,59 +283,53 @@ class _ContactPageState extends State<ContactPage> {
                       const SizedBox(height: 16),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Obx(() {
-                            final shopCtrl = Get.find<ShopListController>();
-                            final loading = shopCtrl.isLoading.value;
-                            final _ = shopCtrl.items.length;
-                            return GetBuilder<ShopListController>(
-                              id: 'shop-selection',
-                              builder: (c) {
-                                if (loading && c.items.isEmpty) {
-                                  return const SizedBox(
-                                    height: 182,
-                                    child: Center(
-                                      child: SizedBox(
-                                        width: 28,
-                                        height: 28,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Color(0xFFCCCCCC),
-                                        ),
-                                      ),
+                        child: _resolvingShop
+                            ? const SizedBox(
+                                height: 182,
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 28,
+                                    height: 28,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFFCCCCCC),
                                     ),
-                                  );
-                                }
-                                final shop = c.selectedShop;
-                                if (shop == null) {
-                                  return _EmptyShopMapCard(
-                                    message: l10n.contactNoShopsHint,
-                                  );
-                                }
-                                return Padding(
-                                  padding: const EdgeInsets.only(left: 16.0, right: 16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      if (shop.name.trim().isNotEmpty) ...[
-                                        Text(
-                                          shop.name,
-                                          style: GoogleFonts.inter(
-                                            color: const Color(0xFFFFFFFF),
-                                            fontSize: 18 * fontScale,
-                                            fontWeight: FontWeight.w700,
-                                            height: 1.35,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
-                                      _MapPreviewCard(shop: shop, l10n: l10n),
-                                    ],
                                   ),
-                                );
-                              },
-                            );
-                        }),
+                                ),
+                              )
+                            : _displayShop == null
+                                ? const _EmptyShopMapCard(message: '—')
+                                : Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 16.0,
+                                      right: 16.0,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        if (_displayShop!
+                                            .name
+                                            .trim()
+                                            .isNotEmpty) ...[
+                                          Text(
+                                            _displayShop!.name,
+                                            style: GoogleFonts.inter(
+                                              color: const Color(0xFFFFFFFF),
+                                              fontSize: 18 * fontScale,
+                                              fontWeight: FontWeight.w700,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                        ],
+                                        _MapPreviewCard(
+                                          shop: _displayShop!,
+                                          l10n: l10n,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                       ),
                       const SizedBox(height: 14),
                     ],
@@ -299,23 +362,16 @@ class _ContactPageState extends State<ContactPage> {
                       const SizedBox(height: 15),
                       const _InsetDividerLine(),
                       const SizedBox(height: 15),
-                      GetBuilder<ShopListController>(
-                        id: 'shop-selection',
-                        builder: (c) {
-                          final shop = c.selectedShop;
-                          final body = shop == null
-                              ? l10n.contactNoShopsHint
-                              : _addressBody(shop);
-                          return Text(
-                            body,
-                            style: GoogleFonts.inter(
-                              color: Color(0xFFFFFFFF),
-                              fontSize: 14 * fontScale,
-                              height: 1.5,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          );
-                        },
+                      Text(
+                        _displayShop == null
+                            ? '—'
+                            : _addressBody(_displayShop!),
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFFFFFFFF),
+                          fontSize: 14 * fontScale,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       const SizedBox(height: 15),
                       _SectionHeader(
@@ -325,12 +381,12 @@ class _ContactPageState extends State<ContactPage> {
                       const SizedBox(height: 15),
                       const _InsetDividerLine(),
                       const SizedBox(height: 15),
-                      GetBuilder<ShopListController>(
-                        id: 'shop-selection',
-                        builder: (c) {
-                          final shop = c.selectedShop;
-                          final phone = (shop?.phone ?? '').trim();
-                          final email = (shop?.email ?? '').trim();
+                      Builder(
+                        builder: (_) {
+                          final phone =
+                              (_displayShop?.phone ?? '').trim();
+                          final email =
+                              (_displayShop?.email ?? '').trim();
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
