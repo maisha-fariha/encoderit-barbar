@@ -197,13 +197,8 @@ class _ContactPageState extends State<ContactPage> {
   String _addressBody(Shop shop) {
     final raw = shop.address.trim();
     if (raw.isEmpty) return '—';
-    final normalized = raw.replaceAll(RegExp(r'\s*,\s*'), ', ');
-    final idx = normalized.indexOf(',');
-    if (idx <= 0) return normalized;
-    final line1 = normalized.substring(0, idx).trim();
-    final line2 = normalized.substring(idx + 1).trim();
-    if (line2.isEmpty) return line1;
-    return '$line1,\n$line2';
+    // Keep on one line; only normalize comma spacing ("Chelsea,New york").
+    return raw.replaceAll(RegExp(r'\s*,\s*'), ', ');
   }
 
   @override
@@ -531,7 +526,10 @@ class _ContactPageState extends State<ContactPage> {
           ],
         ),
         child: FloatingActionButton(
-          onPressed: () => Get.toNamed(AppRoutes.appoinment),
+          onPressed: () async {
+            await Get.toNamed(AppRoutes.appoinment);
+            if (mounted) await _resolveDisplayShop();
+          },
           backgroundColor: Colors.transparent,
           elevation: 0,
           shape: const CircleBorder(),
@@ -552,7 +550,7 @@ class _ContactPageState extends State<ContactPage> {
             Get.toNamed(AppRoutes.profile);
           }
           if (i == 4) {
-            // already on contact
+            _resolveDisplayShop();
           }
         },
       ),
