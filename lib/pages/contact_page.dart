@@ -110,13 +110,12 @@ class _ContactPageState extends State<ContactPage> {
   @override
   void initState() {
     super.initState();
-    final shops = Get.find<ShopListController>();
-    if (shops.items.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        shops.loadItems();
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await Get.find<ShopListController>().ensureContextShop(
+        forceRefresh: true,
+      );
+    });
   }
 
   @override
@@ -129,16 +128,26 @@ class _ContactPageState extends State<ContactPage> {
   }
 
   String _addressBody(Shop shop) {
-    if (shop.address.trim().isEmpty) return '—';
-    final line1 = shop.addressLine1;
-    final line2 = shop.addressLine2;
+    final raw = shop.address.trim();
+    if (raw.isEmpty) return '—';
+    // Normalize "Chelsea,New york" → readable lines.
+    final normalized = raw.replaceAll(RegExp(r'\s*,\s*'), ', ');
+    final line1 = () {
+      final idx = normalized.indexOf(',');
+      if (idx <= 0) return normalized;
+      return normalized.substring(0, idx).trim();
+    }();
+    final line2 = () {
+      final idx = normalized.indexOf(',');
+      if (idx <= 0 || idx + 1 >= normalized.length) return '';
+      return normalized.substring(idx + 1).trim();
+    }();
     if (line2.isEmpty) return line1;
     return '$line1,\n$line2';
   }
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
     final hPad = ResponsiveHelper.getResponsiveValue<double>(
       context,
       small: 18,
@@ -236,7 +245,7 @@ class _ContactPageState extends State<ContactPage> {
                                     ),
                                   );
                                 }
-                                final shop = c.selectedShop;
+                                final shop = c.contextShop;
                                 if (shop == null) {
                                   return _EmptyShopMapCard(
                                     message: l10n.contactNoShopsHint,
@@ -302,7 +311,7 @@ class _ContactPageState extends State<ContactPage> {
                       GetBuilder<ShopListController>(
                         id: 'shop-selection',
                         builder: (c) {
-                          final shop = c.selectedShop;
+                          final shop = c.contextShop;
                           final body = shop == null
                               ? l10n.contactNoShopsHint
                               : _addressBody(shop);
@@ -328,7 +337,7 @@ class _ContactPageState extends State<ContactPage> {
                       GetBuilder<ShopListController>(
                         id: 'shop-selection',
                         builder: (c) {
-                          final shop = c.selectedShop;
+                          final shop = c.contextShop;
                           final phone = (shop?.phone ?? '').trim();
                           final email = (shop?.email ?? '').trim();
                           return Column(

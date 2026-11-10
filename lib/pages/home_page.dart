@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/appointment_ui_refresh_controller.dart';
+import '../controllers/shop_list_controller.dart';
 import '../gen/l10n/app_localizations.dart';
 import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
@@ -17,6 +18,7 @@ import '../utils/android_version_utils.dart';
 import '../utils/api_date_time_format.dart';
 import '../utils/appointment_status_label.dart';
 import '../utils/appointment_barber_display.dart';
+import '../utils/appointment_shop_context.dart';
 import '../utils/avatar_url_resolver.dart';
 import '../widgets/app_scroll_behavior.dart';
 import '../widgets/session_user_avatar.dart';
@@ -143,6 +145,12 @@ class _HomePageState extends State<HomePage> {
       _isLoadingUpcoming = true;
       _upcomingError = '';
     });
+    String? shopId;
+    if (Get.isRegistered<ShopListController>()) {
+      final shops = Get.find<ShopListController>();
+      await shops.ensureContextShop();
+      shopId = shops.contextShop?.id;
+    }
     final repository = AppServices.getIt<AppointmentRepository>();
     final result = await repository.getPage(
       1,
@@ -152,11 +160,12 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     result.when(
       success: (page) {
-        _totalAppointmentsCount = page.total;
+        final filtered = filterAppointmentsByShopId(page.items, shopId);
+        _totalAppointmentsCount = filtered.length;
         final languageCode = Localizations.localeOf(context).languageCode;
         final l10n = AppLocalizations.of(context)!;
         final mapped = _mapUpcomingItems(
-          page.items,
+          filtered,
           languageCode: languageCode,
           l10n: l10n,
         );
