@@ -290,8 +290,6 @@ class _RegisterPageState extends State<RegisterPage> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(height: 30),
-                                      _registerButton(),
                                       const SizedBox(height: 24),
                                       Row(
                                         crossAxisAlignment:
@@ -350,6 +348,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                           ),
                                         ],
                                       ),
+                                      const SizedBox(height: 24),
+                                      _registerButton(),
                                       const SizedBox(height: 18),
                                       Row(
                                         mainAxisAlignment:
