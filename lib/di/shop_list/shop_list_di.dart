@@ -1,7 +1,6 @@
 import 'package:gems_core/gems_core.dart';
 import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:get_it/get_it.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/shop_list_controller.dart';
 import '../../repositories/shop_repository.dart';
@@ -18,9 +17,6 @@ Future<void> setupShopListDomainServices() async {
   );
 
   DIHelper.registerController<ShopListController>(
-    factory: () => ShopListController(
-      repository: getIt<ShopRepository>(),
-      prefs: getIt<SharedPreferences>(),
-    ),
+    factory: () => ShopListController(repository: getIt<ShopRepository>()),
   );
 }

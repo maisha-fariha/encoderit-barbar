@@ -3,10 +3,8 @@ import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:get/get.dart';
 
 import 'appointment_ui_refresh_controller.dart';
-import 'shop_list_controller.dart';
 import '../models/appointment/appointment_model.dart';
 import '../repositories/appointment_repository.dart';
-import '../utils/appointment_shop_context.dart';
 
 class ReservationListController extends BaseListController<AppointmentModel>
     with BaseControllerMixin<AppointmentModel> {
@@ -34,31 +32,16 @@ class ReservationListController extends BaseListController<AppointmentModel>
     };
   }
 
-  Future<String?> _contextShopId() async {
-    if (!Get.isRegistered<ShopListController>()) return null;
-    final shops = Get.find<ShopListController>();
-    await shops.ensureContextShop();
-    return shops.contextShop?.id;
-  }
-
-  List<AppointmentModel> _filterForContext(
-    List<AppointmentModel> source,
-    String? shopId,
-  ) =>
-      filterAppointmentsByShopId(source, shopId);
-
-  void _applyPage(AppointmentPageResult page, {String? shopId}) {
-    final filtered = _filterForContext(page.items, shopId);
+  void _applyPage(AppointmentPageResult page) {
     items
       ..clear()
-      ..addAll(filtered);
+      ..addAll(page.items);
     currentPage = page.currentPage;
     hasMore = page.currentPage < page.lastPage;
-    // Frontend-only shop filter: count what we can show from this response.
-    tabCounts[activeTab] = filtered.length;
+    tabCounts[activeTab] = page.total;
   }
 
-  Future<void> _fetchTabTotal(int tab, {String? shopId}) async {
+  Future<void> _fetchTabTotal(int tab) async {
     final result = await repository.getPage(
       1,
       useCache: false,
@@ -66,31 +49,29 @@ class ReservationListController extends BaseListController<AppointmentModel>
       status: _statusForTab(tab),
     );
     result.when(
-      success: (page) {
-        tabCounts[tab] = _filterForContext(page.items, shopId).length;
-      },
+      success: (page) => tabCounts[tab] = page.total,
       failure: (_) {},
     );
   }
 
-  Future<void> _fetchFirstPageFromNetwork({String? shopId}) async {
+  Future<void> _fetchFirstPageFromNetwork() async {
     final result = await repository.getPage(
       1,
       forceNetwork: true,
       status: _statusForTab(activeTab),
     );
     result.when(
-      success: (page) => _applyPage(page, shopId: shopId),
+      success: _applyPage,
       failure: (error) => setError(error.message),
     );
   }
 
-  Future<void> loadTabCounts({int? skipTab, String? shopId}) async {
+  Future<void> loadTabCounts({int? skipTab}) async {
     final tabs = <int>[_upcomingTab, _completedTab, _cancelledTab];
     await Future.wait(
       tabs
           .where((tab) => tab != skipTab)
-          .map((tab) => _fetchTabTotal(tab, shopId: shopId)),
+          .map((tab) => _fetchTabTotal(tab)),
     );
     update(['reservation-list']);
   }
@@ -102,9 +83,8 @@ class ReservationListController extends BaseListController<AppointmentModel>
     setLoading(items.isEmpty);
     setError('');
     try {
-      final shopId = await _contextShopId();
-      await _fetchFirstPageFromNetwork(shopId: shopId);
-      await loadTabCounts(skipTab: activeTab, shopId: shopId);
+      await _fetchFirstPageFromNetwork();
+      await loadTabCounts(skipTab: activeTab);
     } finally {
       setLoading(false);
     }
@@ -119,8 +99,7 @@ class ReservationListController extends BaseListController<AppointmentModel>
     setLoading(items.isEmpty);
     setError('');
     try {
-      final shopId = await _contextShopId();
-      await _fetchFirstPageFromNetwork(shopId: shopId);
+      await _fetchFirstPageFromNetwork();
     } finally {
       setLoading(false);
     }
@@ -130,9 +109,8 @@ class ReservationListController extends BaseListController<AppointmentModel>
   Future<void> reloadItemsFromNetwork() async {
     setError('');
     try {
-      final shopId = await _contextShopId();
-      await _fetchFirstPageFromNetwork(shopId: shopId);
-      await loadTabCounts(skipTab: activeTab, shopId: shopId);
+      await _fetchFirstPageFromNetwork();
+      await loadTabCounts(skipTab: activeTab);
     } finally {
       update(['reservation-list']);
     }
@@ -142,7 +120,6 @@ class ReservationListController extends BaseListController<AppointmentModel>
     if (isLoading.value || isLoadingMore || !hasMore) return;
     isLoadingMore = true;
     try {
-      final shopId = await _contextShopId();
       final next = currentPage + 1;
       final result = await repository.getPage(
         next,
@@ -151,7 +128,7 @@ class ReservationListController extends BaseListController<AppointmentModel>
       );
       result.when(
         success: (page) {
-          items.addAll(_filterForContext(page.items, shopId));
+          items.addAll(page.items);
           currentPage = page.currentPage;
           hasMore = page.currentPage < page.lastPage;
         },
