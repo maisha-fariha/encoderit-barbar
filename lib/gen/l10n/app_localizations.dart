@@ -128,6 +128,30 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get signIn;
 
+  /// No description provided for @browseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shops & services'**
+  String get browseTitle;
+
+  /// No description provided for @shopsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Shops'**
+  String get shopsSection;
+
+  /// No description provided for @servicesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Services'**
+  String get servicesSection;
+
+  /// No description provided for @browseSelectShopHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a shop to see its services.'**
+  String get browseSelectShopHint;
+
   /// No description provided for @logIn.
   ///
   /// In en, this message translates to:
@@ -926,6 +950,48 @@ abstract class AppLocalizations {
   /// **'Logout'**
   String get logout;
 
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account?'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to permanently delete your account. This cannot be undone.'**
+  String get deleteAccountMessage;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account has been deleted.'**
+  String get deleteAccountSuccess;
+
+  /// No description provided for @deleteAccountNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete account. Check your connection and try again.'**
+  String get deleteAccountNetworkError;
+
+  /// No description provided for @deleteAccountPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is required to delete your account.'**
+  String get deleteAccountPasswordRequired;
+
   /// No description provided for @update.
   ///
   /// In en, this message translates to:
@@ -956,23 +1022,17 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get cancel;
 
-  /// No description provided for @photoSelected.
-  ///
-  /// In en, this message translates to:
-  /// **'Photo selected. Tap Update to save your profile.'**
-  String get photoSelected;
-
-  /// No description provided for @photoSavedOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Photo saved on this device. Tap Update when you\'re online to upload.'**
-  String get photoSavedOffline;
-
   /// No description provided for @photoSyncedOnline.
   ///
   /// In en, this message translates to:
-  /// **'Profile photo synced.'**
+  /// **'Profile photo updated.'**
   String get photoSyncedOnline;
+
+  /// No description provided for @photoUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not upload the photo. Check your connection and try again.'**
+  String get photoUploadFailed;
 
   /// No description provided for @photoPickError.
   ///

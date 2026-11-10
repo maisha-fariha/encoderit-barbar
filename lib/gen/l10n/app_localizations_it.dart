@@ -24,6 +24,19 @@ class AppLocalizationsIt extends AppLocalizations {
   String get signIn => 'Accedi';
 
   @override
+  String get browseTitle => 'Saloni e servizi';
+
+  @override
+  String get shopsSection => 'Saloni';
+
+  @override
+  String get servicesSection => 'Servizi';
+
+  @override
+  String get browseSelectShopHint =>
+      'Seleziona un salone per vedere i servizi.';
+
+  @override
   String get logIn => 'Accedi';
 
   @override
@@ -453,6 +466,30 @@ class AppLocalizationsIt extends AppLocalizations {
   String get logout => 'Esci';
 
   @override
+  String get deleteAccount => 'Elimina account';
+
+  @override
+  String get deleteAccountTitle => 'Eliminare l\'account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Inserisci la password per eliminare definitivamente il tuo account. Questa azione non può essere annullata.';
+
+  @override
+  String get deleteAccountConfirm => 'Elimina';
+
+  @override
+  String get deleteAccountSuccess => 'Il tuo account è stato eliminato.';
+
+  @override
+  String get deleteAccountNetworkError =>
+      'Impossibile eliminare l\'account. Controlla la connessione e riprova.';
+
+  @override
+  String get deleteAccountPasswordRequired =>
+      'La password è obbligatoria per eliminare l\'account.';
+
+  @override
   String get update => 'Aggiorna';
 
   @override
@@ -468,15 +505,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get cancel => 'Annulla';
 
   @override
-  String get photoSelected =>
-      'Foto selezionata. Tocca Aggiorna per salvare il profilo.';
+  String get photoSyncedOnline => 'Foto profilo aggiornata.';
 
   @override
-  String get photoSavedOffline =>
-      'Foto salvata sul dispositivo. Tocca Aggiorna quando sei online per caricarla.';
-
-  @override
-  String get photoSyncedOnline => 'Foto profilo sincronizzata.';
+  String get photoUploadFailed =>
+      'Impossibile caricare la foto. Controlla la connessione e riprova.';
 
   @override
   String get photoPickError =>

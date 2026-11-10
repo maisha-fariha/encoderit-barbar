@@ -24,6 +24,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signIn => 'Sign in';
 
   @override
+  String get browseTitle => 'Shops & services';
+
+  @override
+  String get shopsSection => 'Shops';
+
+  @override
+  String get servicesSection => 'Services';
+
+  @override
+  String get browseSelectShopHint => 'Select a shop to see its services.';
+
+  @override
   String get logIn => 'Log in';
 
   @override
@@ -450,6 +462,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logout => 'Logout';
 
   @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Enter your password to permanently delete your account. This cannot be undone.';
+
+  @override
+  String get deleteAccountConfirm => 'Delete';
+
+  @override
+  String get deleteAccountSuccess => 'Your account has been deleted.';
+
+  @override
+  String get deleteAccountNetworkError =>
+      'Could not delete account. Check your connection and try again.';
+
+  @override
+  String get deleteAccountPasswordRequired =>
+      'Password is required to delete your account.';
+
+  @override
   String get update => 'Update';
 
   @override
@@ -465,15 +501,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
-  String get photoSelected =>
-      'Photo selected. Tap Update to save your profile.';
+  String get photoSyncedOnline => 'Profile photo updated.';
 
   @override
-  String get photoSavedOffline =>
-      'Photo saved on this device. Tap Update when you\'re online to upload.';
-
-  @override
-  String get photoSyncedOnline => 'Profile photo synced.';
+  String get photoUploadFailed =>
+      'Could not upload the photo. Check your connection and try again.';
 
   @override
   String get photoPickError => 'Could not access the selected image.';

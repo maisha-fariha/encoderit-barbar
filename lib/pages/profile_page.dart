@@ -43,11 +43,10 @@ class _ProfilePageState extends State<ProfilePage> {
   /// Remote `avatar` URL string from session/API (for display after GET).
   String _avatarUrl = '';
 
-  /// New photo chosen in this session; sent as multipart `avatar` (file) on PUT.
+  /// Photo just picked, shown optimistically until the upload finishes.
   File? _pendingAvatarFile;
 
-  /// True after user picks a new photo until a successful profile save.
-  bool _avatarDirty = false;
+  bool _uploadingAvatar = false;
 
   ProfileAvatarService? get _avatarSvc =>
       Get.isRegistered<ProfileAvatarService>()
@@ -57,7 +56,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _openAvatarPicker() async {
     final l10n = AppLocalizations.of(context)!;
     final svc = _avatarSvc;
-    if (svc == null) return;
+    if (svc == null || _uploadingAvatar) return;
 
     final source = await showModalBottomSheet<_AvatarPickSource>(
       context: context,
@@ -153,30 +152,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (result.isCancelled) return;
 
     if (result.isSuccess) {
-      setState(() {
-        _pendingAvatarFile = result.file;
-        _avatarDirty = true;
-      });
-      if (Get.isRegistered<ProfileAvatarService>()) {
-        Get.find<ProfileAvatarService>().revision.value++;
-      }
-      final online = await _hasNetwork();
-      if (!mounted) return;
-      messenger.clearSnackBars();
-      messenger.showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFFE8E8E8),
-          content: Text(
-            online ? l10n.photoSelected : l10n.photoSavedOffline,
-            style: const TextStyle(
-              color: Color(0xFF0B0B0B),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      await _uploadPickedAvatar(result.file!);
       return;
     }
 
@@ -198,11 +174,76 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  /// Shows [file] immediately, uploads it, then swaps to the server URL once
+  /// that image is decoded so the avatar never flashes the old photo.
+  Future<void> _uploadPickedAvatar(File file) async {
+    final l10n = AppLocalizations.of(context)!;
+    setState(() {
+      _pendingAvatarFile = file;
+      _uploadingAvatar = true;
+    });
+
+    if (!await _hasNetwork()) {
+      await _discardPendingAvatar();
+      if (mounted) _showSnack(l10n.photoUploadFailed, isError: true);
+      return;
+    }
+
+    final outcome = await Get.find<ProfileController>().uploadAvatar(file);
+    if (!mounted) return;
+
+    if (!outcome.success) {
+      await _discardPendingAvatar();
+      if (!mounted) return;
+      final fromErrors = _firstErrorString(outcome.errors);
+      final msg = outcome.isNetworkError
+          ? l10n.photoUploadFailed
+          : outcome.message.isNotEmpty
+              ? outcome.message
+              : (fromErrors.isNotEmpty ? fromErrors : l10n.photoUploadFailed);
+      _showSnack(msg, isError: true);
+      return;
+    }
+
+    final remote = outcome.avatarUrl?.trim() ?? '';
+    if (remote.isNotEmpty) {
+      await precacheImage(
+        NetworkImage(remote),
+        context,
+        onError: (_, __) {},
+      ).timeout(const Duration(seconds: 10), onTimeout: () {});
+      if (!mounted) return;
+    }
+
+    setState(() {
+      if (remote.isNotEmpty) {
+        _avatarUrl = remote;
+        _pendingAvatarFile = null;
+      }
+      _uploadingAvatar = false;
+    });
+    if (remote.isNotEmpty) await _avatarSvc?.clearLocalAvatar();
+    if (!mounted) return;
+    _showSnack(
+      outcome.message.isNotEmpty ? outcome.message : l10n.photoSyncedOnline,
+      isError: false,
+    );
+  }
+
+  Future<void> _discardPendingAvatar() async {
+    await _avatarSvc?.clearLocalAvatar();
+    if (!mounted) return;
+    setState(() {
+      _pendingAvatarFile = null;
+      _uploadingAvatar = false;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_loadFromSession());
+      if (mounted) unawaited(_loadProfile());
     });
   }
 
@@ -231,6 +272,7 @@ class _ProfilePageState extends State<ProfilePage> {
     for (final k in keys) {
       final v = u[k];
       if (v is String && v.trim().isNotEmpty) return v.trim();
+      if (v is num) return v.toString();
     }
     return '';
   }
@@ -240,22 +282,35 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!mounted) return;
     final u = auth?.userData;
     if (u == null) return;
+    _applyUserMapToFields(u);
+  }
+
+  void _applyUserMapToFields(Map<String, dynamic> u) {
     final name = (u['name'] as String? ?? '').trim();
     final parts = name.isEmpty ? <String>[] : name.split(RegExp(r'\s+'));
     setState(() {
       _firstName.text = parts.isNotEmpty ? parts.first : '';
       _lastName.text = parts.length > 1 ? parts.sublist(1).join(' ') : '';
       _email.text = (u['email'] as String? ?? '').trim();
-      _phone.text = (u['phone'] as String? ?? '').trim();
+      _phone.text = _stringField(u, ['phone']);
       _dobCtrl.text = _stringField(u, ['dob', 'date_of_birth', 'birthday']);
       _address.text = _stringField(u, ['address']);
       _zip.text = _stringField(u, ['zip_code', 'zip']);
       _municipality.text = _stringField(u, ['municipality', 'city']);
       _province.text = _stringField(u, ['province']);
       _country.text = _stringField(u, ['country']);
-      _avatarUrl =
-          resolveAvatarDisplayUrl(sessionAvatarFromUserData(u))?.trim() ?? '';
+      _avatarUrl = sessionAvatarDisplayUrl(u)?.trim() ?? '';
     });
+  }
+
+  Future<void> _loadProfile() async {
+    await _loadFromSession();
+    if (!mounted) return;
+    if (!Get.isRegistered<ProfileController>()) return;
+    final refreshed =
+        await Get.find<ProfileController>().refreshSessionFromServer();
+    if (!mounted || !refreshed) return;
+    await _loadFromSession();
   }
 
   void _showSnack(String text, {required bool isError}) {
@@ -390,18 +445,6 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  /// File to upload when the user changed their photo (pending ref or local cache).
-  Future<File?> _resolveAvatarFileForUpload() async {
-    if (!_avatarDirty) return null;
-    final pending = _pendingAvatarFile;
-    if (pending != null && pending.existsSync()) return pending;
-    final svc = _avatarSvc;
-    if (svc == null) return null;
-    final cached = await svc.currentAvatarFile();
-    if (cached != null && cached.existsSync()) return cached;
-    return null;
-  }
-
   Future<void> _submitProfile() async {
     FocusScope.of(context).unfocus();
     final l10n = AppLocalizations.of(context)!;
@@ -418,13 +461,10 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    final avatarFile = await _resolveAvatarFileForUpload();
-
     final request = ProfileUpdateRequest(
       name: name,
       email: email,
       phone: _phone.text.trim(),
-      avatarFile: avatarFile,
       dob: _dobCtrl.text.trim(),
       address: _address.text.trim(),
       zipCode: _zip.text.trim(),
@@ -442,18 +482,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ? outcome.message
           : l10n.profileUpdateSuccessFallback;
       _showSnack(msg, isError: false);
-      setState(() {
-        _pendingAvatarFile = null;
-        _avatarDirty = false;
-        final remote = outcome.avatarUrl?.trim();
-        if (remote != null && remote.isNotEmpty) {
-          _avatarUrl = remote;
-        }
-      });
       await _loadFromSession();
-      if (Get.isRegistered<ProfileAvatarService>()) {
-        Get.find<ProfileAvatarService>().revision.value++;
-      }
       return;
     }
 
@@ -466,6 +495,54 @@ class _ProfilePageState extends State<ProfilePage> {
     final errMsg = outcome.message.isNotEmpty
         ? outcome.message
         : (fromErrors.isNotEmpty ? fromErrors : l10n.bookingGenericError);
+    _showSnack(errMsg, isError: true);
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final password = await showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.72),
+      builder: (dialogCtx) => const _DeleteAccountPasswordDialog(),
+    );
+    if (password == null || !mounted) return;
+    if (password.trim().isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
+      _showSnack(l10n.deleteAccountPasswordRequired, isError: true);
+      return;
+    }
+    await _deleteAccount(password.trim());
+  }
+
+  Future<void> _deleteAccount(String password) async {
+    FocusScope.of(context).unfocus();
+    final l10n = AppLocalizations.of(context)!;
+    final controller = Get.find<ProfileController>();
+    final outcome = await controller.deleteAccount(password: password);
+    if (!mounted) return;
+
+    if (outcome.success) {
+      final msg = outcome.message.isNotEmpty
+          ? outcome.message
+          : l10n.deleteAccountSuccess;
+      // Show success while this route still has Overlay, then leave.
+      _showSnack(msg, isError: false);
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (!mounted) return;
+      await Get.find<AuthController>().logout();
+      return;
+    }
+
+    if (outcome.isNetworkError) {
+      _showSnack(l10n.deleteAccountNetworkError, isError: true);
+      return;
+    }
+
+    final fromErrors = _firstErrorString(outcome.errors);
+    final errMsg = outcome.message.isNotEmpty
+        ? outcome.message
+        : (fromErrors.isNotEmpty
+            ? fromErrors
+            : l10n.deleteAccountPasswordRequired);
     _showSnack(errMsg, isError: true);
   }
 
@@ -631,6 +708,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         pickedFile: _pendingAvatarFile,
                         remoteAvatarUrl:
                             _avatarUrl.isEmpty ? null : _avatarUrl,
+                        uploading: _uploadingAvatar,
                         onTapEdit: _openAvatarPicker,
                       ),
                       const SizedBox(height: 18),
@@ -653,7 +731,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         topRight: Radius.circular(30),
                       ),
                     ),
-                    padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 30),
+                    padding: EdgeInsets.fromLTRB(hPad, 30, hPad, 100),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -829,6 +907,52 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        Obx(() {
+                          final busy = Get.find<ProfileController>()
+                              .isDeletingAccount
+                              .value;
+                          return SizedBox(
+                            height: 48,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFEF4444),
+                                ),
+                              ),
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                onPressed: busy ? null : _confirmDeleteAccount,
+                                child: busy
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Color(0xFFEF4444),
+                                        ),
+                                      )
+                                    : Text(
+                                        l10n.deleteAccount,
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFFEF4444),
+                                          fontSize: 16 * fontScale,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -893,6 +1017,168 @@ class _ProfilePageState extends State<ProfilePage> {
 
 enum _AvatarPickSource { camera, gallery }
 
+class _DeleteAccountPasswordDialog extends StatefulWidget {
+  const _DeleteAccountPasswordDialog();
+
+  @override
+  State<_DeleteAccountPasswordDialog> createState() =>
+      _DeleteAccountPasswordDialogState();
+}
+
+class _DeleteAccountPasswordDialogState
+    extends State<_DeleteAccountPasswordDialog> {
+  final _passwordCtrl = TextEditingController();
+  bool _obscure = true;
+  String? _passwordError;
+
+  @override
+  void dispose() {
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final l10n = AppLocalizations.of(context)!;
+    final v = _passwordCtrl.text.trim();
+    if (v.isEmpty) {
+      setState(() {
+        _passwordError = l10n.deleteAccountPasswordRequired;
+      });
+      return;
+    }
+    Navigator.of(context).pop(v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final hasError = _passwordError != null;
+
+    return AlertDialog(
+      backgroundColor: const Color(0xFF242424),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      title: Text(
+        l10n.deleteAccountTitle,
+        style: GoogleFonts.inter(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.deleteAccountMessage,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFDDDDDD),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _passwordCtrl,
+            obscureText: _obscure,
+            autofocus: true,
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+            onChanged: (_) {
+              if (_passwordError != null) {
+                setState(() => _passwordError = null);
+              }
+            },
+            decoration: InputDecoration(
+              hintText: l10n.passwordHint,
+              hintStyle: GoogleFonts.inter(
+                color: const Color(0xFFFFFFFF).withValues(alpha: 0.35),
+              ),
+              filled: true,
+              fillColor: const Color(0xFFFFFFFF).withValues(alpha: 0.08),
+              errorText: _passwordError,
+              errorMaxLines: 2,
+              errorStyle: GoogleFonts.inter(
+                color: const Color(0xFFFCA5A5),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: hasError
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFFFFFFFF).withValues(alpha: 0.15),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: hasError
+                      ? const Color(0xFFEF4444)
+                      : const Color(0xFFFFFFFF).withValues(alpha: 0.15),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: hasError ? const Color(0xFFEF4444) : Colors.white,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFEF4444)),
+              ),
+              suffixIcon: IconButton(
+                onPressed: () => setState(() => _obscure = !_obscure),
+                icon: Icon(
+                  _obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: const Color(0xFFB7B7B7),
+                ),
+              ),
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            l10n.cancel,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFDDDDDD),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: _submit,
+          child: Text(
+            l10n.deleteAccountConfirm,
+            style: GoogleFonts.inter(
+              color: const Color(0xFFEF4444),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({
     required this.size,
@@ -900,6 +1186,7 @@ class _ProfileAvatar extends StatelessWidget {
     required this.pickedFile,
     required this.remoteAvatarUrl,
     required this.onTapEdit,
+    this.uploading = false,
   });
 
   final double size;
@@ -907,6 +1194,7 @@ class _ProfileAvatar extends StatelessWidget {
   final File? pickedFile;
   final String? remoteAvatarUrl;
   final VoidCallback onTapEdit;
+  final bool uploading;
 
   @override
   Widget build(BuildContext context) {
@@ -938,7 +1226,26 @@ class _ProfileAvatar extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: _buildAvatarImage(),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildAvatarImage(),
+                      if (uploading)
+                        const ColoredBox(
+                          color: Color(0x8C000000),
+                          child: Center(
+                            child: SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Color(0xFFEDEDED),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -950,7 +1257,7 @@ class _ProfileAvatar extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: onTapEdit,
+              onTap: uploading ? null : onTapEdit,
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 width: badgeSize,

@@ -112,7 +112,10 @@ class _RegisterPageState extends State<RegisterPage> {
     );
     if (!mounted) return;
     if (verified == true) {
-      auth.completeRegistrationAfterOtp();
+      await auth.completeRegistrationAfterOtpAsync(
+        email: email,
+        password: _password.text,
+      );
     }
   }
 

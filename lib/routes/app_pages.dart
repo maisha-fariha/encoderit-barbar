@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../pages/appoinment_page.dart';
+import '../pages/browse_page.dart';
 import '../pages/home_page.dart';
 import '../pages/login_page.dart';
 import '../pages/onboarding_page.dart';
@@ -14,6 +15,7 @@ class AppRoutes {
   AppRoutes._();
 
   static const onboarding = '/onboarding';
+  static const browse = '/browse';
   static const appoinment = '/appoinment';
   static const home = '/home';
   static const reservations = '/reservations';
@@ -30,6 +32,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.onboarding,
       page: () => const OnboardingPage(),
+    ),
+    GetPage(
+      name: AppRoutes.browse,
+      page: () => const BrowsePage(),
     ),
     GetPage(
       name: AppRoutes.appoinment,

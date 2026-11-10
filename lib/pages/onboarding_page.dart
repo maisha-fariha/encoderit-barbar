@@ -75,10 +75,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
     await OnboardingPrefs.markCompleted(prefs);
   }
 
-  Future<void> _goToRegister() async {
+  Future<void> _goToBrowse() async {
     await _completeOnboarding();
     if (!mounted) return;
-    Get.offNamed(AppRoutes.register);
+    Get.offNamed(AppRoutes.browse);
   }
 
   Future<void> _goToLogin() async {
@@ -105,7 +105,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 children: [
                   const Spacer(),
                   GestureDetector(
-                    onTap: _goToRegister,
+                    onTap: _goToBrowse,
                     behavior: HitTestBehavior.opaque,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -137,7 +137,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       constraints: BoxConstraints(maxWidth: buttonMaxWidth),
                       child: _PrimaryButton(
                         label: l10n.continueLabel,
-                        onPressed: _goToRegister,
+                        onPressed: _goToBrowse,
                       ),
                     ),
                   ),

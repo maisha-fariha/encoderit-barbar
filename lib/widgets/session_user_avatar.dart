@@ -6,7 +6,8 @@ import 'package:get/get.dart';
 import '../services/profile_avatar_service.dart';
 import '../utils/avatar_url_resolver.dart';
 
-/// Small circular avatar for app bars — uses remote [avatarUrl], then local cache.
+/// Small circular avatar for app bars — a pending local pick wins over the
+/// remote [avatarUrl] so a new photo shows before its upload completes.
 class SessionUserAvatar extends StatelessWidget {
   const SessionUserAvatar({
     super.key,
@@ -49,45 +50,45 @@ class _SessionUserAvatarImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!Get.isRegistered<ProfileAvatarService>()) return _buildRemote();
+    final svc = Get.find<ProfileAvatarService>();
+    return ValueListenableBuilder<int>(
+      valueListenable: svc.revision,
+      builder: (context, _, __) {
+        return FutureBuilder<File?>(
+          future: svc.currentAvatarFile(),
+          builder: (context, snapshot) {
+            final file = snapshot.data;
+            if (file != null && file.existsSync()) {
+              return Image.file(
+                file,
+                key: ValueKey(file.path),
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => _buildRemote(),
+              );
+            }
+            return _buildRemote();
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRemote() {
     final remote = resolveAvatarDisplayUrl(avatarUrl);
-    if (remote != null && remote.isNotEmpty) {
-      return Image.network(
-        remote,
-        fit: BoxFit.cover,
-        gaplessPlayback: true,
-        errorBuilder: (_, __, ___) => const _AvatarPlaceholder(),
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return const _AvatarPlaceholder(showSpinner: true);
-        },
-      );
-    }
-
-    if (Get.isRegistered<ProfileAvatarService>()) {
-      final svc = Get.find<ProfileAvatarService>();
-      return ValueListenableBuilder<int>(
-        valueListenable: svc.revision,
-        builder: (context, _, __) {
-          return FutureBuilder<File?>(
-            future: svc.currentAvatarFile(),
-            builder: (context, snapshot) {
-              final file = snapshot.data;
-              if (file != null && file.existsSync()) {
-                return Image.file(
-                  file,
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                  errorBuilder: (_, __, ___) => const _AvatarPlaceholder(),
-                );
-              }
-              return const _AvatarPlaceholder();
-            },
-          );
-        },
-      );
-    }
-
-    return const _AvatarPlaceholder();
+    if (remote == null || remote.isEmpty) return const _AvatarPlaceholder();
+    return Image.network(
+      remote,
+      key: ValueKey(remote),
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      errorBuilder: (_, __, ___) => const _AvatarPlaceholder(),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const _AvatarPlaceholder(showSpinner: true);
+      },
+    );
   }
 }
 

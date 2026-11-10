@@ -3,11 +3,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gems_core/gems_core.dart';
+import 'package:gems_data_layer/gems_data_layer.dart';
 import 'package:gems_responsive/gems_responsive.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../controllers/appointment_controller.dart';
 import '../controllers/appointment_ui_refresh_controller.dart';
+import '../controllers/auth_controller.dart';
 import '../controllers/barber_list_controller.dart';
 import '../controllers/reservation_list_controller.dart';
 import '../controllers/shop_list_controller.dart';
@@ -1369,6 +1371,24 @@ class _AppoinmentPageState extends State<AppoinmentPage> {
   }
 
   Future<void> _showConfirmDialog() async {
+    final authController = Get.find<AuthController>();
+    var loggedIn = authController.isLoggedIn.value;
+    if (!loggedIn) {
+      final stored = await AppServices.getIt<AuthService>().getStoredAuth();
+      loggedIn = stored != null &&
+          stored.accessToken.isNotEmpty &&
+          !stored.isExpired;
+      if (loggedIn) {
+        authController.isLoggedIn.value = true;
+      }
+    }
+    if (!loggedIn) {
+      if (!mounted) return;
+      Get.toNamed(AppRoutes.login);
+      return;
+    }
+    if (!mounted) return;
+
     await showGeneralDialog<void>(
       context: context,
       // While booking is in progress, prevent dismissing by tapping outside.
