@@ -114,7 +114,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get onboardingTitle =>
-      'Salone di bellezza e barbiere\\nPrenotare è facile';
+      'Salone di bellezza e barbiere\nPrenotare è facile';
 
   @override
   String get enterFullName => 'Inserisci nome e cognome';

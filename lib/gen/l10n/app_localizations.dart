@@ -305,7 +305,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTitle.
   ///
   /// In en, this message translates to:
-  /// **'Beauty salon and barber\\nBooking is easy'**
+  /// **'Beauty salon and barber\nBooking is easy'**
   String get onboardingTitle;
 
   /// No description provided for @enterFullName.
@@ -611,7 +611,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionCannotBeUndone.
   ///
   /// In en, this message translates to:
-  /// **'This action cannot be undone.\\nConfirm if you want to proceed.'**
+  /// **'This action cannot be undone.\nConfirm if you want to proceed.'**
   String get actionCannotBeUndone;
 
   /// No description provided for @cancelAction.

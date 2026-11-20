@@ -112,7 +112,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Please accept the privacy policy and terms of service';
 
   @override
-  String get onboardingTitle => 'Beauty salon and barber\\nBooking is easy';
+  String get onboardingTitle => 'Beauty salon and barber\nBooking is easy';
 
   @override
   String get enterFullName => 'Enter full name';
@@ -269,7 +269,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionCannotBeUndone =>
-      'This action cannot be undone.\\nConfirm if you want to proceed.';
+      'This action cannot be undone.\nConfirm if you want to proceed.';
 
   @override
   String get cancelAction => 'Cancel';

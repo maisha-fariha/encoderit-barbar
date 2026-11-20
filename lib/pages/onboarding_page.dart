@@ -98,7 +98,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isWide = size.width >= 600;
-            final buttonMaxWidth = isWide ? 520.0 : double.infinity;
+            final buttonMaxWidth = isWide ? 760.0 : double.infinity;
             final header = Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               child: Row(
@@ -179,9 +179,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
             // Always scroll-safe to eliminate any RenderFlex overflow on edge cases.
             final pageViewHeight =
-                (constraints.maxHeight * (isWide ? 0.64 : 0.60)).clamp(
+                (constraints.maxHeight * (isWide ? 0.58 : 0.60)).clamp(
                   280.0,
-                  isWide ? 620.0 : 520.0,
+                  isWide ? 900.0 : 520.0,
                 );
 
             return SingleChildScrollView(
@@ -227,22 +227,23 @@ class _OnboardingSlide extends StatelessWidget {
         builder: (context, constraints) {
           final h = constraints.maxHeight;
           final isShort = h < 520;
+          final isWide = MediaQuery.sizeOf(context).width >= 600;
 
           // Cap image height to avoid overflow on landscape/tablets.
           final maxImageHeight = (isShort ? h * 0.58 : h * 0.64).clamp(
             200.0,
-            520.0,
+            isWide ? 700.0 : 520.0,
           );
 
           final titleStyle = GoogleFonts.inter(
             color: Colors.white,
-            fontSize: isShort ? 20 : 22,
+            fontSize: isWide ? 30 : (isShort ? 20 : 22),
             fontWeight: FontWeight.w600,
             height: 1.15,
           );
           final bodyStyle = GoogleFonts.inter(
             color: const Color(0xFFDDDDDD),
-            fontSize: isShort ? 11.5 : 12,
+            fontSize: isWide ? 17 : (isShort ? 11.5 : 12),
             fontWeight: FontWeight.w500,
             height: 1.35,
           );
@@ -254,9 +255,7 @@ class _OnboardingSlide extends StatelessWidget {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     // Large screens: allow a bit wider slide content.
-                    maxWidth: MediaQuery.sizeOf(context).width >= 600
-                        ? 520
-                        : double.infinity,
+                    maxWidth: isWide ? 760 : double.infinity,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(26),
