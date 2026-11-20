@@ -24,7 +24,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   final _items = const <_OnboardingItem>[
     _OnboardingItem(
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/onboarding_1.webp',
       title: 'onboardingTitle',
       body:
           'Lorem Ipsum è semplicemente un testo fittizio\n'
@@ -32,7 +32,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           'Lorem Ipsum',
     ),
     _OnboardingItem(
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/onboarding_2.webp',
       title: 'onboardingTitle',
       body:
           'Lorem Ipsum è semplicemente un testo fittizio\n'
@@ -40,7 +40,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           'Lorem Ipsum',
     ),
     _OnboardingItem(
-      imageAsset: 'assets/images/onboarding_1.png',
+      imageAsset: 'assets/images/onboarding_3.webp',
       title: 'onboardingTitle',
       body:
           'Lorem Ipsum è semplicemente un testo fittizio\n'
@@ -260,10 +260,15 @@ class _OnboardingSlide extends StatelessWidget {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(26),
-                    child: SizedBox(
-                      height: maxImageHeight,
-                      width: double.infinity,
-                      child: Image.asset(item.imageAsset, fit: BoxFit.cover),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: maxImageHeight),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Image.asset(
+                          item.imageAsset,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
                   ),
                 ),
